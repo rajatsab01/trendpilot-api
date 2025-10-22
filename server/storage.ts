@@ -5,8 +5,14 @@ import {
   type InsertAnalysis,
   type Broker,
   type InsertBroker,
+  users,
+  analyses,
+  brokers,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -83,6 +89,13 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const analysis: Analysis = {
       ...insertAnalysis,
+      rsi: insertAnalysis.rsi ?? null,
+      macd: insertAnalysis.macd ?? null,
+      stochastic: insertAnalysis.stochastic ?? null,
+      bollingerBands: insertAnalysis.bollingerBands ?? null,
+      entry: insertAnalysis.entry ?? null,
+      takeProfit: insertAnalysis.takeProfit ?? null,
+      stopLoss: insertAnalysis.stopLoss ?? null,
       id,
       createdAt: new Date(),
     };
@@ -105,6 +118,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const broker: Broker = {
       ...insertBroker,
+      apiKey: insertBroker.apiKey ?? null,
+      webhookUrl: insertBroker.webhookUrl ?? null,
       id,
       isConnected: 1,
       createdAt: new Date(),
@@ -130,4 +145,93 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// PostgreSQL storage implementation
+export class PgStorage implements IStorage {
+  private db;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL environment variable is not set");
+    }
+    const sql = neon(process.env.DATABASE_URL!);
+    this.db = drizzle(sql);
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async getUserByMobile(mobile: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.mobile, mobile));
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async updateUserTokens(id: string, tokens: number): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set({ tokens })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Analyses
+  async getAnalysis(id: string): Promise<Analysis | undefined> {
+    const result = await this.db.select().from(analyses).where(eq(analyses.id, id));
+    return result[0];
+  }
+
+  async getAnalysesByUser(userId: string): Promise<Analysis[]> {
+    return await this.db.select().from(analyses).where(eq(analyses.userId, userId));
+  }
+
+  async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
+    const result = await this.db.insert(analyses).values(insertAnalysis).returning();
+    return result[0];
+  }
+
+  // Brokers
+  async getBroker(id: string): Promise<Broker | undefined> {
+    const result = await this.db.select().from(brokers).where(eq(brokers.id, id));
+    return result[0];
+  }
+
+  async getBrokersByUser(userId: string): Promise<Broker[]> {
+    return await this.db.select().from(brokers).where(eq(brokers.userId, userId));
+  }
+
+  async createBroker(insertBroker: InsertBroker): Promise<Broker> {
+    const result = await this.db
+      .insert(brokers)
+      .values({ ...insertBroker, isConnected: 1 })
+      .returning();
+    return result[0];
+  }
+
+  async updateBroker(
+    id: string,
+    updates: Partial<Broker>
+  ): Promise<Broker | undefined> {
+    const result = await this.db
+      .update(brokers)
+      .set(updates)
+      .where(eq(brokers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteBroker(id: string): Promise<boolean> {
+    const result = await this.db.delete(brokers).where(eq(brokers.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+}
+
+// Use PostgreSQL storage in production, in-memory for development
+export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();
