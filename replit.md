@@ -171,3 +171,25 @@ Preferred communication style: Simple, everyday language.
 - Currently implemented as mock (no actual payment gateway)
 - Designed for future integration with payment providers
 - Token-based consumption model (2 tokens per analysis)
+
+## Recent Changes (October 22, 2025)
+
+### Database Migration
+- Migrated from in-memory storage to PostgreSQL database
+- Implemented `PgStorage` class using Drizzle ORM with Neon HTTP driver
+- All user data, analyses, and broker configurations now persist across sessions
+- Successfully tested end-to-end with E2E verification
+
+### Pending Integrations
+- **OTP Authentication**: User dismissed Twilio connector setup. To implement real OTP, user needs to:
+  1. Set up Twilio connector using the integration system, OR
+  2. Provide Twilio credentials (Account SID, Auth Token, Phone Number) as secrets for manual integration
+  - Current login flow: simplified mobile-based identification without OTP verification (MVP)
+
+## Next Phase Features (Priority Order)
+
+1. **Stripe Payment Integration** - Token purchase with INR pricing
+2. **Real-time Market Data** - Live price feeds using CoinGecko or Alpha Vantage
+3. **Broker API Integration** - Zerodha Kite Connect for live trade execution
+4. **Trade History & Analytics** - Performance dashboard with charts
+5. **OTP Authentication** - Once Twilio or similar SMS service is configured
