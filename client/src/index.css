@@ -76,7 +76,7 @@
   --chart-4: 280 65% 45%;
   --chart-5: 25 85% 45%;
 
-  --font-sans: 'Spline Sans', 'Open Sans', sans-serif;
+  --font-sans: 'Spline Sans', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: .5rem; /* 8px */
