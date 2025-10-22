@@ -1,15 +1,142 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import BottomNav from "@/components/BottomNav";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function BuyTokens() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<string | null>(null);
 
   const plans = [
-    { tokens: 10, price: 500, popular: false },
-    { tokens: 100, price: 2500, popular: true },
+    { id: "small", tokens: 10, price: 99, popular: false },
+    { id: "medium", tokens: 100, price: 899, popular: true },
+    { id: "large", tokens: 500, price: 3999, popular: false },
   ];
+
+  const handlePurchase = async (packageId: string, tokens: number, price: number) => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login first",
+        variant: "destructive",
+      });
+      setLocation("/login");
+      return;
+    }
+
+    setLoading(packageId);
+
+    try {
+      const response = await apiRequest("POST", "/api/payment/create-order", {
+        userId,
+        tokenPackage: packageId,
+      });
+      const orderData = await response.json();
+
+      if (orderData.demoMode) {
+        // Demo mode - simulate payment
+        toast({
+          title: "Demo Mode",
+          description: "Razorpay not configured. This is a demo payment - tokens will be added for free!",
+        });
+
+        // Simulate payment success after a short delay
+        setTimeout(async () => {
+          const verifyResponse = await apiRequest("POST", "/api/payment/verify", {
+            userId,
+            tokens,
+            demoMode: true,
+          });
+          const result = await verifyResponse.json();
+
+          if (result.success) {
+            toast({
+              title: "Success!",
+              description: `${tokens} tokens added to your account (Demo mode)`,
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+            setLocation("/dashboard");
+          }
+        }, 1000);
+        return;
+      }
+
+      // Real Razorpay checkout
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.orderId,
+        name: "Trend Pilot",
+        description: `${tokens} Analysis Tokens`,
+        handler: async function (response: any) {
+          try {
+            const verifyResponse = await apiRequest("POST", "/api/payment/verify", {
+              userId,
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              tokens,
+              demoMode: false,
+            });
+            const result = await verifyResponse.json();
+
+            if (result.success) {
+              toast({
+                title: "Payment Successful!",
+                description: `${tokens} tokens added to your account`,
+              });
+              queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+              setLocation("/dashboard");
+            }
+          } catch (error: any) {
+            toast({
+              title: "Payment Verification Failed",
+              description: error.message || "Please contact support",
+              variant: "destructive",
+            });
+          } finally {
+            setLoading(null);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(null);
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment",
+            });
+          }
+        },
+        theme: {
+          color: "#38e07b"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+      setLoading(null);
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to initiate payment",
+        variant: "destructive",
+      });
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
@@ -60,10 +187,14 @@ export default function BuyTokens() {
                   </p>
                 </div>
                 <button
-                  className="flex h-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#38e07b] text-base font-bold leading-normal tracking-[0.015em] text-[#111714] hover:bg-opacity-90 transition-colors"
+                  onClick={() => handlePurchase(plan.id, plan.tokens, plan.price)}
+                  disabled={loading === plan.id}
+                  className="flex h-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#38e07b] text-base font-bold leading-normal tracking-[0.015em] text-[#111714] hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid={`button-purchase-${plan.tokens}`}
                 >
-                  <span className="truncate">{t.purchase}</span>
+                  <span className="truncate">
+                    {loading === plan.id ? "Processing..." : t.purchase}
+                  </span>
                 </button>
               </div>
             ))}

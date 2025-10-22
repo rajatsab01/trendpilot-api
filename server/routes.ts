@@ -193,6 +193,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Razorpay: Create order for token purchase
+  app.post("/api/payment/create-order", async (req, res) => {
+    try {
+      const { userId, tokenPackage } = req.body;
+      
+      if (!userId || !tokenPackage) {
+        return res.status(400).json({ error: "User ID and token package required" });
+      }
+
+      // Token packages with INR pricing
+      const packages: Record<string, { tokens: number; amount: number }> = {
+        small: { tokens: 10, amount: 9900 },      // ₹99
+        medium: { tokens: 100, amount: 89900 },   // ₹899
+        large: { tokens: 500, amount: 399900 },   // ₹3,999
+      };
+
+      const selectedPackage = packages[tokenPackage];
+      if (!selectedPackage) {
+        return res.status(400).json({ error: "Invalid token package" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Check if Razorpay is configured
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        console.log("Razorpay not configured, using demo mode");
+        // Demo mode - return mock order
+        return res.json({
+          orderId: `demo_order_${Date.now()}`,
+          amount: selectedPackage.amount,
+          currency: "INR",
+          keyId: "demo_key",
+          demoMode: true,
+          tokens: selectedPackage.tokens,
+        });
+      }
+
+      // Real Razorpay integration
+      const Razorpay = require("razorpay");
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+      });
+
+      const order = await razorpay.orders.create({
+        amount: selectedPackage.amount, // amount in paise
+        currency: "INR",
+        receipt: `receipt_${userId}_${Date.now()}`,
+        notes: {
+          userId,
+          tokens: selectedPackage.tokens,
+        },
+      });
+
+      res.json({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: process.env.RAZORPAY_KEY_ID,
+        demoMode: false,
+        tokens: selectedPackage.tokens,
+      });
+    } catch (error: any) {
+      console.error("Create order error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  // Razorpay: Verify payment and add tokens
+  app.post("/api/payment/verify", async (req, res) => {
+    try {
+      const { userId, orderId, paymentId, signature, tokens, demoMode } = req.body;
+
+      if (!userId || !tokens) {
+        return res.status(400).json({ error: "User ID and tokens required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Demo mode - just add tokens without verification
+      if (demoMode) {
+        console.log(`Demo mode: Adding ${tokens} tokens to user ${userId}`);
+        await storage.updateUserTokens(userId, user.tokens + tokens);
+        return res.json({ 
+          success: true, 
+          newBalance: user.tokens + tokens,
+          message: "Demo payment successful" 
+        });
+      }
+
+      // Real Razorpay verification
+      if (!paymentId || !signature) {
+        return res.status(400).json({ error: "Payment ID and signature required" });
+      }
+
+      const crypto = require("crypto");
+      const body = orderId + "|" + paymentId;
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+        .update(body.toString())
+        .digest("hex");
+
+      if (expectedSignature !== signature) {
+        return res.status(400).json({ error: "Invalid payment signature" });
+      }
+
+      // Payment verified - add tokens
+      await storage.updateUserTokens(userId, user.tokens + tokens);
+
+      res.json({ 
+        success: true, 
+        newBalance: user.tokens + tokens,
+        message: "Payment successful" 
+      });
+    } catch (error: any) {
+      console.error("Verify payment error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
   // Analyze market symbol
   app.post("/api/analyze", async (req, res) => {
     try {
