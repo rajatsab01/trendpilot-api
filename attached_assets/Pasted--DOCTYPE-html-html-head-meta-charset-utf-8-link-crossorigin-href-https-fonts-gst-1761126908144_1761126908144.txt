@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Spline+Sans%3Awght%40400%3B500%3B700" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    :root {
+      --primary-50: #f0fdf4;
+      --primary-100: #dcfce7;
+      --primary-200: #bbf7d0;
+      --primary-300: #86efac;
+      --primary-400: #4ade80;
+      --primary-500: #22c55e;
+      --primary-600: #16a34a;
+      --primary-700: #15803d;
+      --primary-800: #166534;
+      --primary-900: #14532d;
+      --primary-950: #052e16;
+      --secondary-50: #fafaf9;
+      --secondary-100: #f5f5f4;
+      --secondary-200: #e7e5e4;
+      --secondary-300: #d6d3d1;
+      --secondary-400: #a8a29e;
+      --secondary-500: #78716c;
+      --secondary-600: #57534e;
+      --secondary-700: #44403c;
+      --secondary-800: #292524;
+      --secondary-900: #1c1917;
+      --secondary-950: #0c0a09;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#111714]">
+<div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark justify-between group/design-root" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
+<div class="flex flex-col h-full">
+<header class="flex items-center justify-between p-4">
+<button class="text-white">
+<span class="material-symbols-outlined text-3xl"> arrow_back_ios_new </span>
+</button>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-8">Login</h2>
+</header>
+<main class="flex-grow flex flex-col justify-center px-6">
+<div class="w-full max-w-md mx-auto">
+<h1 class="text-white text-3xl font-bold tracking-tight text-left mb-8">Welcome back</h1>
+<div class="space-y-6">
+<div class="relative">
+<label class="sr-only" for="name">Name</label>
+<input class="peer w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#9eb7a8] px-4 text-base focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#111714] focus:ring-[#38e07b] transition-shadow duration-200" id="name" placeholder="Name" type="text"/>
+</div>
+<div class="relative">
+<label class="sr-only" for="mobile">Mobile Number</label>
+<input class="peer w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#9eb7a8] px-4 text-base focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#111714] focus:ring-[#38e07b] transition-shadow duration-200" id="mobile" placeholder="Mobile Number" type="tel"/>
+</div>
+</div>
+<button class="mt-8 flex w-full items-center justify-center rounded-full h-12 px-5 bg-[#38e07b] text-[#111714] text-base font-bold leading-normal tracking-[0.015em] hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#111714] focus:ring-[#38e07b] transition-all duration-300">
+<span class="truncate">Send OTP</span>
+</button>
+</div>
+</main>
+<footer class="flex-shrink-0 py-16">
+</footer>
+</div>
+</div>
+
+</body></html>

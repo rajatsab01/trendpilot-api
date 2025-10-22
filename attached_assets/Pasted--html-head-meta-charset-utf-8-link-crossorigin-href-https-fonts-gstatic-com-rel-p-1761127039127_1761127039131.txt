@@ -1,0 +1,74 @@
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --primary-50: #f0fdf6;
+        --primary-100: #dcfce9;
+        --primary-200: #bbf7d4;
+        --primary-300: #86efb3;
+        --primary-400: #4ade8f;
+        --primary-500: #22c56a;
+        --primary-600: #16a354;
+        --primary-700: #158046;
+        --primary-800: #16653b;
+        --primary-900: #145332;
+        --primary-950: #052e1a;
+      }
+    </style>
+<title>Stitch Design</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-950">
+<div class="relative flex size-full min-h-screen flex-col bg-[#121212] dark justify-between group/design-root" style='font-family: Manrope, "Noto Sans", sans-serif;'>
+<div class="flex flex-col">
+<header class="flex h-16 shrink-0 items-center justify-between border-b border-b-gray-800 px-4">
+<button class="flex items-center justify-center text-white">
+<span class="material-symbols-outlined"> close </span>
+</button>
+<h1 class="text-lg font-bold text-white">Add Broker</h1>
+<div class="w-8"></div>
+</header>
+<main class="flex-1 overflow-y-auto p-6">
+<form class="flex flex-col gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-medium text-gray-300" for="broker-name">Broker Name</label>
+<input class="form-input w-full rounded-lg border-gray-700 bg-gray-800 p-3 text-white placeholder-gray-500 focus:border-primary-500 focus:ring-primary-500" id="broker-name" placeholder="Enter broker name"/>
+</div>
+<div class="relative flex flex-col gap-4">
+<p class="text-sm font-medium text-gray-400">Choose one of the following integration methods:</p>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-medium text-gray-300" for="api-key">API Key</label>
+<input class="form-input w-full rounded-lg border-gray-700 bg-gray-800 p-3 text-white placeholder-gray-500 focus:border-primary-500 focus:ring-primary-500" id="api-key" placeholder="Enter API key"/>
+</div>
+<div class="relative flex items-center justify-center">
+<hr class="w-full border-t border-gray-700"/>
+<span class="absolute bg-gray-900 px-2 text-sm text-gray-500">or</span>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-medium text-gray-300" for="webhook-url">Webhook URL</label>
+<input class="form-input w-full rounded-lg border-gray-700 bg-gray-800 p-3 text-white placeholder-gray-500 focus:border-primary-500 focus:ring-primary-500" id="webhook-url" placeholder="Enter webhook URL"/>
+</div>
+</div>
+</form>
+</main>
+</div>
+<footer class="border-t border-gray-800 p-4">
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-[#38e07b] py-3.5 text-base font-bold text-gray-950">
+<span class="truncate">Save Broker</span>
+</button>
+</footer>
+</div>
+</body></html>

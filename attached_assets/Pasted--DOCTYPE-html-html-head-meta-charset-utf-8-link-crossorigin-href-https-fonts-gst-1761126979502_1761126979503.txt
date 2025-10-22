@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Spline+Sans%3Awght%40400%3B500%3B700" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style type="text/tailwindcss">
+      :root {
+        --primary-color: #38e07b;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 1,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#111714]">
+<div class="relative flex size-full min-h-screen flex-col justify-between group/design-root overflow-x-hidden text-white" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
+<div class="flex flex-col gap-6">
+<div class="flex items-center p-4 pb-0">
+<button class="flex size-10 shrink-0 items-center justify-center rounded-full">
+<span class="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+</button>
+<h2 class="flex-1 text-center text-xl font-bold leading-tight tracking-[-0.015em] pr-10">Buy Tokens</h2>
+</div>
+<div class="flex flex-col gap-8 px-4">
+<h2 class="text-2xl font-bold leading-tight tracking-[-0.015em]">Choose a plan</h2>
+<div class="grid grid-cols-1 gap-4">
+<div class="flex flex-col gap-4 rounded-2xl border border-[#2a3c33] bg-[#1a241f] p-6">
+<div class="flex flex-col gap-2">
+<h3 class="text-lg font-bold leading-tight">10 Tokens</h3>
+<p class="flex items-baseline gap-2">
+<span class="text-5xl font-black leading-tight tracking-[-0.033em]">₹500</span>
+</p>
+</div>
+<button class="flex h-12 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[var(--primary-color)] text-base font-bold leading-normal tracking-[0.015em] text-black">
+<span class="truncate">Purchase</span>
+</button>
+</div>
+<div class="flex flex-col gap-4 rounded-2xl border-2 border-[var(--primary-color)] bg-[#1a241f] p-6 relative">
+<div class="absolute -top-4 right-6 bg-[var(--primary-color)] text-black text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</div>
+<div class="flex flex-col gap-2">
+<h3 class="text-lg font-bold leading-tight">100 Tokens</h3>
+<p class="flex items-baseline gap-2">
+<span class="text-5xl font-black leading-tight tracking-[-0.033em]">₹2500</span>
+</p>
+</div>
+<button class="flex h-12 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[var(--primary-color)] text-base font-bold leading-normal tracking-[0.015em] text-black">
+<span class="truncate">Purchase</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="sticky bottom-0">
+<div class="flex gap-2 border-t border-[#29382f] bg-[#111714] px-4 pb-5 pt-3">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-[#9eb7a8]" href="#">
+<span class="material-symbols-outlined text-2xl text-[#9eb7a8]">home</span>
+<p class="text-xs font-medium leading-normal">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-[#9eb7a8]" href="#">
+<span class="material-symbols-outlined text-2xl text-[#9eb7a8]">trending_up</span>
+<p class="text-xs font-medium leading-normal">Analyzer</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-white" href="#">
+<div class="bg-[var(--primary-color)] p-3 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl text-black">settings</span>
+</div>
+<p class="text-xs font-medium leading-normal text-white">Settings</p>
+</a>
+</div>
+</div>
+</div>
+
+</body></html>

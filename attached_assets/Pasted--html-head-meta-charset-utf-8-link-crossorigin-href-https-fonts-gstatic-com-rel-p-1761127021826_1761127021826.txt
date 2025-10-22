@@ -1,0 +1,106 @@
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --primary-color: #38e07b;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#111714]">
+<div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark justify-between group/design-root" style='font-family: Manrope, "Noto Sans", sans-serif;'>
+<div class="flex flex-col gap-6">
+<header class="flex items-center p-4">
+<button class="text-white">
+<span class="material-symbols-outlined"> arrow_back_ios_new </span>
+</button>
+<h1 class="flex-1 text-center text-xl font-bold text-white">Settings</h1>
+<div class="w-8"></div>
+</header>
+<main class="px-4">
+<div class="flex flex-col gap-8">
+<section class="flex flex-col gap-4">
+<h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] text-white">Broker Integrations</h2>
+<div class="flex flex-col divide-y divide-[#29382f] rounded-xl bg-[#1C2620]">
+<div class="flex items-center gap-4 p-4">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#29382f]">
+<img alt="Broker logo" class="h-6 w-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRSjRPZaINfuOXav51fA2f3-Y9EuuDgn5SAyDxF3ayPAT0UkHbMQJONu2rq-lxDPVeU9cSyIHTh3LFrbwzjUmV3mafvU3HgbAbSO-cZR9cvbG8X59ypuYiGJ4iq3FbNCV0mJ3DZf1Spvpm5l9askKf8xQWf28gA3mhfMWUE6SfZi_rI-B3g5BZLJUwSVR56aBytmmo7pVwl4_QGKuejB1gr1Asyn1uD_z_hwy2vlXofh7wYQ82WFtNpJzzAYrhjKLOdhxPNC81RDo"/>
+</div>
+<div class="flex-1">
+<p class="text-base font-medium text-white">RapidAPI</p>
+<p class="text-sm font-normal text-[#9eb7a8]">Connected</p>
+</div>
+<button class="text-white">
+<span class="material-symbols-outlined"> edit </span>
+</button>
+</div>
+<div class="flex items-center gap-4 p-4">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#29382f]">
+<img alt="Broker logo" class="h-6 w-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUt4xA7LRBMqWyJscfWfpdMxjxFciYM9tuYCjgddWFGQlU4PIXJsGjxgFQ11zcgPhyd09_facDN0c5JxQG4qaYfi5Gv41T7gjZGYYbLk3aQ5ZsWMq9d6fDdjyIt-cVV75VDKBz_EOknt6DSnd4ddkLzjQRwA2tf65AXf1pv371_BfygNieVBfuFlwKT1_lW41zn_eZCzk2-_wk6yzgalpLeqRaMsg7ehfe3ysELu7f1533MqTQP54VZtX89d5DgJzJa6f7OXTGRL8"/>
+</div>
+<div class="flex-1">
+<p class="text-base font-medium text-white">Render</p>
+<p class="text-sm font-normal text-[#9eb7a8]">Connected</p>
+</div>
+<button class="text-white">
+<span class="material-symbols-outlined"> edit </span>
+</button>
+</div>
+<button class="flex items-center justify-center gap-2 p-4 text-[var(--primary-color)]">
+<span class="material-symbols-outlined"> add </span>
+<span class="text-base font-medium">Add New Broker</span>
+</button>
+</div>
+</section>
+<section class="flex flex-col gap-4">
+<h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] text-white">Trade Settings</h2>
+<div class="rounded-xl bg-[#1C2620] p-4">
+<div class="flex items-center justify-between gap-4">
+<div>
+<p class="text-base font-medium text-white">Direct Trade Execution</p>
+<p class="text-sm font-normal text-[#9eb7a8]">Enable direct trade execution</p>
+</div>
+<label class="relative flex h-8 w-14 cursor-pointer items-center rounded-full bg-[#29382f] transition-colors has-[:checked]:bg-[var(--primary-color)]">
+<span class="absolute left-1 size-6 rounded-full bg-white shadow-md transition-transform has-[:checked]:translate-x-6"></span>
+<input class="peer sr-only" type="checkbox"/>
+</label>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+<footer class="sticky bottom-0">
+<div class="flex justify-around border-t border-[#29382f] bg-[#1c2620] py-2">
+<a class="flex flex-col items-center justify-end gap-1 text-[#9eb7a8]" href="#">
+<span class="material-symbols-outlined"> home </span>
+<p class="text-xs font-medium">Home</p>
+</a>
+<a class="flex flex-col items-center justify-end gap-1 text-[#9eb7a8]" href="#">
+<span class="material-symbols-outlined"> monitoring </span>
+<p class="text-xs font-medium">Analyzer</p>
+</a>
+<a class="flex flex-col items-center justify-end gap-1 text-[var(--primary-color)]" href="#">
+<span class="material-symbols-outlined"> settings </span>
+<p class="text-xs font-medium">Settings</p>
+</a>
+</div>
+<div class="h-5 bg-[#1c2620]"></div>
+</footer>
+</div>
+</body></html>

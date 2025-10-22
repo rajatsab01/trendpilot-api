@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Spline+Sans%3Awght%40400%3B500%3B700" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    :root {
+      --primary-color: #38e07b;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    input[type='checkbox'] {
+      accent-color: var(--primary-color);
+    }
+    select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239eb7a8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+        appearance: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#111714]">
+<div class="relative flex size-full min-h-screen flex-col dark justify-between group/design-root" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
+<div class="flex-grow">
+<header class="flex items-center p-4 justify-between sticky top-0 bg-[#111714]/80 backdrop-blur-sm z-10">
+<button class="text-white flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1c2620]">
+<span class="material-symbols-outlined">
+            arrow_back_ios_new
+          </span>
+</button>
+<h1 class="text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10">Analyzer</h1>
+</header>
+<main class="p-4 space-y-8">
+<div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4">Leading Indicators</h2>
+<div class="space-y-3 rounded-2xl bg-[#1c2620] p-4">
+<div class="flex justify-between items-center">
+<span class="text-[#9eb7a8] text-base font-normal">RSI</span>
+<span class="text-white text-base font-medium">45.2</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[#9eb7a8] text-base font-normal">MACD</span>
+<span class="text-white text-base font-medium">0.12</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[#9eb7a8] text-base font-normal">Stochastic</span>
+<span class="text-white text-base font-medium">60.5</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[#9eb7a8] text-base font-normal">Bollinger Bands</span>
+<span class="text-white text-base font-medium">20.3</span>
+</div>
+</div>
+</div>
+<div class="rounded-2xl bg-[#1c2620] p-4">
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4">AI Analysis</h2>
+<div class="flex items-center justify-around mb-4">
+<div class="relative w-40 h-40">
+<svg class="size-full" height="36" viewBox="0 0 36 36" width="36" xmlns="http://www.w3.org/2000/svg">
+<circle class="stroke-current text-gray-700" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-current text-[var(--primary-color)]" cx="18" cy="18" fill="none" r="16" stroke-dasharray="100" stroke-dashoffset="35" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-bold text-white">65%</span>
+<span class="text-lg font-medium text-[var(--primary-color)]">Bullish</span>
+</div>
+</div>
+<div class="text-center">
+<p class="text-[#9eb7a8] text-sm font-normal">Buy or Sell</p>
+<p class="text-[var(--primary-color)] text-2xl font-bold mt-2">Buy</p>
+</div>
+</div>
+<p class="text-[#9eb7a8] text-base font-normal leading-relaxed text-center">
+            The analysis indicates a potential upward trend in the short term, supported by positive signals from MACD and Stochastic indicators.
+          </p>
+</div>
+<div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4">Bracket Trade</h2>
+<div class="space-y-4">
+<div class="grid grid-cols-3 gap-3">
+<div class="bg-[#1c2620] p-4 rounded-2xl text-center">
+<p class="text-[#9eb7a8] text-sm font-normal">Entry</p>
+<p class="text-white text-lg font-bold mt-1">1.2500</p>
+<div class="flex justify-center mt-2">
+<input checked="" class="form-checkbox size-4 rounded bg-[#334139] border-none" type="checkbox"/>
+</div>
+</div>
+<div class="bg-[#1c2620] p-4 rounded-2xl text-center">
+<p class="text-[#9eb7a8] text-sm font-normal">Take Profit</p>
+<p class="text-[var(--primary-color)] text-lg font-bold mt-1">1.2650</p>
+<div class="flex justify-center mt-2">
+<input class="form-checkbox size-4 rounded bg-[#334139] border-none" type="checkbox"/>
+</div>
+</div>
+<div class="bg-[#1c2620] p-4 rounded-2xl text-center">
+<p class="text-[#9eb7a8] text-sm font-normal">Stop Loss</p>
+<p class="text-red-500 text-lg font-bold mt-1">1.2400</p>
+<div class="flex justify-center mt-2">
+<input class="form-checkbox size-4 rounded bg-[#334139] border-none" type="checkbox"/>
+</div>
+</div>
+</div>
+<div class="bg-[#1c2620] p-4 rounded-2xl flex items-center justify-between">
+<label class="text-[#9eb7a8] text-base font-normal" for="quantity">Quantity</label>
+<input class="w-24 bg-[#334139] text-white text-center rounded-md border-none focus:ring-2 focus:ring-[var(--primary-color)]" id="quantity" type="number" value="100"/>
+</div>
+<div class="bg-[#1c2620] p-4 rounded-2xl flex items-center justify-between">
+<label class="text-[#9eb7a8] text-base font-normal" for="broker">Broker Choice</label>
+<select class="form-select bg-[#334139] text-white rounded-md border-none focus:ring-2 focus:ring-[var(--primary-color)] w-auto min-w-[120px]" id="broker">
+<option>Broker A</option>
+<option>Broker B</option>
+<option>Broker C</option>
+</select>
+</div>
+<button class="w-full bg-[var(--primary-color)] text-black font-bold py-4 rounded-full text-center text-lg">Execute</button>
+</div>
+</div>
+</main>
+</div>
+<footer class="sticky bottom-0">
+<div class="flex justify-around bg-[#1c2620] p-2 mx-4 mb-4 rounded-full">
+<a class="flex flex-col items-center justify-center gap-1 text-[#9eb7a8] px-4 py-2 rounded-full" href="#">
+<span class="material-symbols-outlined">home</span>
+<p class="text-xs font-medium">Home</p>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-white bg-[var(--primary-color)]/20 px-4 py-2 rounded-full" href="#">
+<span class="material-symbols-outlined text-[var(--primary-color)]">bar_chart</span>
+<p class="text-xs font-medium text-[var(--primary-color)]">Analyzer</p>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-[#9eb7a8] px-4 py-2 rounded-full" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-xs font-medium">Settings</p>
+</a>
+</div>
+</footer>
+</div>
+
+</body></html>
