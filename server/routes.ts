@@ -4,18 +4,27 @@ import { storage } from "./storage";
 import { analyzeMarket } from "./gemini";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
+import { TOTP } from "otpauth";
+import QRCode from "qrcode";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth/Login - creates or retrieves user
   app.post("/api/auth/login", async (req, res) => {
     try {
       // Validate request body
-      const validationResult = insertUserSchema.safeParse(req.body);
+      const loginSchema = z.object({
+        name: z.string().min(1),
+        mobile: z.string().min(10),
+        language: z.enum(["en", "hi"]),
+        otp: z.string().optional(),
+      });
+
+      const validationResult = loginSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { name, mobile, language } = validationResult.data;
+      const { name, mobile, language, otp } = validationResult.data;
 
       // Check if user exists by mobile
       let user = await storage.getUserByMobile(mobile);
@@ -28,11 +37,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
           language,
           tokens: 100,
         });
+        // New users don't need OTP yet
+        return res.json({ userId: user.id, tokens: user.tokens, otpEnabled: false });
       }
 
-      res.json({ userId: user.id, tokens: user.tokens });
+      // If user has OTP enabled, verify it
+      if (user.otpEnabled === 1 && user.otpSecret) {
+        if (!otp) {
+          return res.status(400).json({ error: "OTP required", otpRequired: true });
+        }
+
+        const totp = new TOTP({
+          secret: user.otpSecret,
+          digits: 6,
+          period: 30,
+        });
+
+        const isValid = totp.validate({ token: otp, window: 1 }) !== null;
+        if (!isValid) {
+          return res.status(401).json({ error: "Invalid OTP" });
+        }
+      }
+
+      res.json({ userId: user.id, tokens: user.tokens, otpEnabled: user.otpEnabled === 1 });
     } catch (error) {
       console.error("Login error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Setup OTP - Generate secret and QR code
+  app.post("/api/auth/setup-otp", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Generate new TOTP secret
+      const totp = new TOTP({
+        issuer: "Trend Pilot",
+        label: user.mobile,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+      });
+
+      // Save secret to database (not enabled yet)
+      await storage.updateUserOtp(userId, totp.secret.base32, 0);
+
+      // Generate QR code
+      const otpauth = totp.toString();
+      const qrCode = await QRCode.toDataURL(otpauth);
+
+      res.json({ 
+        secret: totp.secret.base32, 
+        qrCode,
+        otpauth 
+      });
+    } catch (error) {
+      console.error("Setup OTP error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Verify and enable OTP
+  app.post("/api/auth/enable-otp", async (req, res) => {
+    try {
+      const { userId, otp } = req.body;
+      if (!userId || !otp) {
+        return res.status(400).json({ error: "User ID and OTP required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.otpSecret) {
+        return res.status(404).json({ error: "OTP not set up" });
+      }
+
+      // Verify OTP
+      const totp = new TOTP({
+        secret: user.otpSecret,
+        digits: 6,
+        period: 30,
+      });
+
+      const isValid = totp.validate({ token: otp, window: 1 }) !== null;
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid OTP" });
+      }
+
+      // Enable OTP for user
+      await storage.updateUserOtp(userId, user.otpSecret, 1);
+
+      res.json({ success: true, message: "OTP enabled successfully" });
+    } catch (error) {
+      console.error("Enable OTP error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Disable OTP
+  app.post("/api/auth/disable-otp", async (req, res) => {
+    try {
+      const { userId, otp } = req.body;
+      if (!userId || !otp) {
+        return res.status(400).json({ error: "User ID and OTP required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.otpSecret) {
+        return res.status(404).json({ error: "OTP not enabled" });
+      }
+
+      // Verify OTP before disabling
+      const totp = new TOTP({
+        secret: user.otpSecret,
+        digits: 6,
+        period: 30,
+      });
+
+      const isValid = totp.validate({ token: otp, window: 1 }) !== null;
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid OTP" });
+      }
+
+      // Disable OTP
+      await storage.updateUserOtp(userId, null, 0);
+
+      res.json({ success: true, message: "OTP disabled successfully" });
+    } catch (error) {
+      console.error("Disable OTP error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

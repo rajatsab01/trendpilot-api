@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   mobile: text("mobile").notNull().unique(),
   language: text("language").notNull().default("en"), // 'en' or 'hi'
   tokens: integer("tokens").notNull().default(10),
+  otpSecret: text("otp_secret"), // TOTP secret for 2FA
+  otpEnabled: integer("otp_enabled").notNull().default(0), // 0 = disabled, 1 = enabled
   createdAt: timestamp("created_at").defaultNow(),
 });
 
