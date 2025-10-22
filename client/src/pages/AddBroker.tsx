@@ -23,7 +23,7 @@ export default function AddBroker() {
         apiKey: apiKey || undefined,
         webhookUrl: webhookUrl || undefined,
       });
-      return result;
+      return await result.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/brokers", userId] });

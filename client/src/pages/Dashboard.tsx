@@ -28,7 +28,7 @@ export default function Dashboard() {
         symbol,
         duration,
       });
-      return result;
+      return await result.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });

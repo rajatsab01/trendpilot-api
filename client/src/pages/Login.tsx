@@ -19,7 +19,7 @@ export default function Login() {
         mobile,
         language,
       });
-      return result;
+      return await result.json();
     },
     onSuccess: (data) => {
       localStorage.setItem("userId", data.userId);
