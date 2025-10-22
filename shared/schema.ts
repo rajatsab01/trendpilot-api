@@ -52,7 +52,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   name: z.string().min(1, "Name is required"),
   mobile: z.string().min(10, "Valid mobile number required"),
   language: z.enum(["en", "hi"]),
-  tokens: z.number().int().min(0).default(10),
+  tokens: z.number().int().min(0).default(100),
 });
 
 export const insertAnalysisSchema = createInsertSchema(analyses).omit({

@@ -30,6 +30,12 @@ export async function analyzeMarket(
   symbol: string,
   duration: string
 ): Promise<MarketAnalysisResult> {
+  // Check if API key is available, if not use mock data
+  if (!process.env.GEMINI_API_KEY) {
+    console.log("No Gemini API key found, using mock data");
+    return getMockAnalysis(symbol, duration);
+  }
+
   try {
     const durationContext = {
       long_term: "long-term investment (months to years)",
@@ -97,8 +103,7 @@ Respond with JSON in this exact format:
       throw new Error("Empty response from Gemini");
     }
   } catch (error) {
-    console.error("Gemini API error:", error);
-    // Return mock data as fallback
+    console.error("Gemini API error, falling back to mock data:", error);
     return getMockAnalysis(symbol, duration);
   }
 }

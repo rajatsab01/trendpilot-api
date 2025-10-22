@@ -26,7 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name,
           mobile,
           language,
-          tokens: 10,
+          tokens: 100,
         });
       }
 

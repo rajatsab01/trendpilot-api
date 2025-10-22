@@ -8,10 +8,10 @@ import BottomNav from "@/components/BottomNav";
 import type { Analysis } from "@shared/schema";
 
 export default function Analyzer() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const searchParams = new URLSearchParams(location.split("?")[1] || "");
+  const searchParams = new URLSearchParams(window.location.search);
   const analysisId = searchParams.get("analysisId");
 
   const [symbol, setSymbol] = useState("");
