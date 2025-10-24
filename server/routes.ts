@@ -106,6 +106,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ userId: user.id, tokens: user.tokens });
       }
 
+      // Update user's language if it has changed (sync frontend preference with database)
+      if (user.language !== language) {
+        await storage.updateUserLanguage(user.id, language);
+        user.language = language;
+      }
+
       // Return existing user
       res.json({ userId: user.id, tokens: user.tokens });
     } catch (error) {
