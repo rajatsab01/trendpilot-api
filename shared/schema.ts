@@ -19,6 +19,7 @@ export const analyses = pgTable("analyses", {
   userId: varchar("user_id").notNull(),
   symbol: text("symbol").notNull(),
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
+  market: text("market").notNull().default("crypto"), // 'crypto', 'indian_nse', 'indian_bse', 'us', 'japan', 'singapore', 'currency'
   recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name
   confidence: integer("confidence").notNull(), // 0-100
   sentiment: text("sentiment").notNull(), // 'Bullish' or 'Bearish'
@@ -66,6 +67,7 @@ export const insertAnalysisSchema = createInsertSchema(analyses).omit({
   userId: z.string().min(1, "User ID is required"),
   symbol: z.string().min(1, "Symbol is required"),
   duration: z.enum(["long_term", "short_term", "scalping"]),
+  market: z.enum(["crypto", "indian_nse", "indian_bse", "us", "japan", "singapore", "currency"]),
   recommendation: z.enum(["BUY", "SELL"]),
   confidence: z.number().int().min(0).max(100),
   sentiment: z.enum(["Bullish", "Bearish"]),

@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { fetchMarketData } from "./marketData";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
 
@@ -40,6 +41,7 @@ const languageMap: Record<string, string> = {
 export async function analyzeMarketWithOpenAI(
   symbol: string,
   duration: string,
+  market: "crypto" | "indian_nse" | "indian_bse" | "us" | "japan" | "singapore" | "currency",
   language: string = "en"
 ): Promise<MarketAnalysisResult> {
   if (!process.env.OPENAI_API_KEY) {
@@ -47,6 +49,13 @@ export async function analyzeMarketWithOpenAI(
   }
 
   try {
+    // Fetch real market data
+    const marketData = await fetchMarketData(symbol, market);
+    
+    if (marketData.error) {
+      throw new Error(`Market data unavailable: ${marketData.error}`);
+    }
+
     const durationContext = {
       long_term: "long-term investment (months to years)",
       short_term: "short-term trading (days to weeks)",
@@ -55,18 +64,31 @@ export async function analyzeMarketWithOpenAI(
 
     const languageName = languageMap[language] || "English";
 
-    const prompt = `You are an expert financial analyst with real-time market data access. Analyze the trading symbol "${symbol}" for ${durationContext}.
+    // Build market context string with real data
+    const marketContext = `
+REAL-TIME MARKET DATA FOR ${marketData.symbol}:
+- Current Price: ${marketData.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+${marketData.priceChange24h ? `- 24h Price Change: ${marketData.priceChange24h > 0 ? '+' : ''}${marketData.priceChange24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marketData.priceChangePercentage24h?.toFixed(2)}%)` : ''}
+${marketData.volume24h ? `- 24h Trading Volume: ${marketData.volume24h.toLocaleString('en-US')}` : ''}
+${marketData.high24h ? `- 24h High: ${marketData.high24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
+${marketData.low24h ? `- 24h Low: ${marketData.low24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
+${marketData.marketCap ? `- Market Cap: ${marketData.marketCap.toLocaleString('en-US')}` : ''}
+`;
+
+    const prompt = `You are an expert financial analyst. Analyze the trading symbol "${marketData.symbol}" for ${durationContext}.
+
+${marketContext}
 
 CRITICAL REQUIREMENTS:
-1. Use REAL CURRENT market data - look up the actual current price, 52-week range, and recent price action for ${symbol}
-2. Calculate REALISTIC technical indicator values based on current market conditions
-3. Generate bracket order prices (entry, take profit, stop loss) based on ACTUAL current market price
+1. Use the REAL market data provided above - Current Price is ${marketData.currentPrice.toFixed(2)}
+2. Calculate REALISTIC technical indicator values based on the current market data and price action
+3. Generate bracket order prices (entry, take profit, stop loss) based on the ACTUAL current price of ${marketData.currentPrice.toFixed(2)}
 4. Provide your ENTIRE analysis in ${languageName}
-
-For reference:
-- If analyzing stocks: Research current stock price, P/E ratio, volume, recent news
-- If analyzing crypto: Research current crypto price in USD, 24h change, market cap, trading volume
-- Base ALL analysis on real current market conditions, NOT hypothetical values
+5. For entry price, use the current market price: ${marketData.currentPrice.toFixed(2)}
+6. Calculate take profit and stop loss as realistic percentages from current price:
+   - For scalping: 0.5-1.5% moves
+   - For short-term: 2-5% moves
+   - For long-term: 8-15% moves
 
 Provide a comprehensive 3-layer analysis:
 
@@ -79,10 +101,10 @@ Examine chart patterns, support/resistance levels, volume analysis, and momentum
 **Layer 3: AI Final Verdict**
 Based on all indicators + market sentiment + deep analysis using REAL data, provide your final trading recommendation with justification. 2-3 sentences. Write in ${languageName}.
 
-IMPORTANT: All numeric values MUST be based on actual current market prices. For example:
-- If ${symbol} is trading at $111,140 (like BTC), your entry should be near that price (e.g., "111140.00")
-- If ${symbol} is trading at ₹1431 (like RELIANCE), your entry should be near that price (e.g., "1431.20")
-- Take profit and stop loss MUST be realistic percentages from current price (typically 1-3% for scalping, 3-7% for short-term, 10%+ for long-term)
+IMPORTANT: All numeric values MUST be based on the real current market price provided above.
+- Entry price: ${marketData.currentPrice.toFixed(2)} (the actual current market price)
+- Take profit and stop loss: Calculate based on current price and duration type
+- Example: For ${durationContext}, if recommending BUY at ${marketData.currentPrice.toFixed(2)}, take profit might be ${(marketData.currentPrice * 1.03).toFixed(2)} (3% up) and stop loss might be ${(marketData.currentPrice * 0.98).toFixed(2)} (2% down)
 
 Respond with JSON in this exact format:
 {
@@ -96,9 +118,9 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "ACTUAL CURRENT MARKET PRICE (e.g., for BTC at $111,140 use '111140.00', for RELIANCE at ₹1431 use '1431.20')",
-  "takeProfit": "realistic take profit based on actual entry price",
-  "stopLoss": "realistic stop loss based on actual entry price"
+  "entry": "${marketData.currentPrice.toFixed(2)}",
+  "takeProfit": "realistic take profit price based on ${marketData.currentPrice.toFixed(2)} and ${durationContext}",
+  "stopLoss": "realistic stop loss price based on ${marketData.currentPrice.toFixed(2)} and ${durationContext}"
 }`;
 
     const completion = await openai.chat.completions.create({

@@ -272,6 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: z.string().min(1),
         symbol: z.string().min(1),
         duration: z.enum(["long_term", "short_term", "scalping"]),
+        market: z.enum(["crypto", "indian_nse", "indian_bse", "us", "japan", "singapore", "currency"]),
       });
 
       const validationResult = analyzeSchema.safeParse(req.body);
@@ -279,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { userId, symbol, duration } = validationResult.data;
+      const { userId, symbol, duration, market } = validationResult.data;
 
       // Check user has enough tokens
       const user = await storage.getUser(userId);
@@ -295,13 +296,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUserTokens(userId, user.tokens - 2);
 
       // Perform analysis using OpenAI with real market data (use user's language)
-      const analysisResult = await analyzeMarketWithOpenAI(symbol, duration, user.language);
+      const analysisResult = await analyzeMarketWithOpenAI(symbol, duration, market, user.language);
 
       // Save analysis
       const analysis = await storage.createAnalysis({
         userId,
         symbol,
         duration,
+        market,
         recommendation: analysisResult.recommendation,
         confidence: analysisResult.confidence,
         sentiment: analysisResult.sentiment,

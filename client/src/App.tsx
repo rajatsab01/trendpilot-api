@@ -11,9 +11,6 @@ import Welcome from "@/pages/Welcome";
 import Dashboard from "@/pages/Dashboard";
 import Analyzer from "@/pages/Analyzer";
 import BuyTokens from "@/pages/BuyTokens";
-import Settings from "@/pages/Settings";
-import AddBroker from "@/pages/AddBroker";
-import EditBroker from "@/pages/EditBroker";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,9 +22,6 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/analyzer" component={Analyzer} />
       <Route path="/buy-tokens" component={BuyTokens} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/add-broker" component={AddBroker} />
-      <Route path="/edit-broker/:id" component={EditBroker} />
       <Route component={NotFound} />
     </Switch>
   );
