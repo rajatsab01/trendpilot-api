@@ -12,6 +12,8 @@ interface MarketAnalysisResult {
   recommendation: "BUY" | "SELL";
   confidence: number;
   sentiment: "Bullish" | "Bearish";
+  marketSentiment: string;
+  deepAnalysis: string;
   analysis: string;
   indicators: {
     rsi: string;
@@ -45,22 +47,27 @@ export async function analyzeMarket(
 
     const prompt = `You are an expert financial analyst. Analyze the trading symbol "${symbol}" for ${durationContext}.
 
-Provide a comprehensive analysis with the following:
-1. Trading recommendation (BUY or SELL)
-2. Confidence level (0-100%)
-3. Market sentiment (Bullish or Bearish)
-4. Technical indicators: RSI, MACD, Stochastic, Bollinger Bands (provide realistic values)
-5. Bracket order suggestions: Entry price, Take Profit price, Stop Loss price
-6. Brief analysis explanation (2-3 sentences)
+Provide a comprehensive 3-layer analysis:
 
-Important: Provide realistic values based on typical market conditions for this symbol and timeframe. All prices should be in the format "1.2345" or similar.
+**Layer 1: Market Sentiment**
+Analyze overall market conditions, trends, news sentiment, and macro factors affecting this symbol. 3-4 sentences.
+
+**Layer 2: Deep Technical Analysis**
+Examine chart patterns, support/resistance levels, volume analysis, and momentum indicators in detail. 3-4 sentences.
+
+**Layer 3: AI Final Verdict**
+Based on all indicators + market sentiment + deep analysis, provide your final trading recommendation with justification. 2-3 sentences.
+
+Important: Provide realistic values based on typical market conditions for this symbol and timeframe.
 
 Respond with JSON in this exact format:
 {
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
-  "analysis": "your analysis text",
+  "marketSentiment": "your market sentiment analysis (3-4 sentences)",
+  "deepAnalysis": "your deep technical analysis (3-4 sentences)",
+  "analysis": "your final AI verdict based on all factors (2-3 sentences)",
   "rsi": "45.2",
   "macd": "0.12",
   "stochastic": "60.5",
@@ -86,6 +93,8 @@ Respond with JSON in this exact format:
         recommendation: data.recommendation,
         confidence: data.confidence,
         sentiment: data.sentiment,
+        marketSentiment: data.marketSentiment || data.analysis,
+        deepAnalysis: data.deepAnalysis || data.analysis,
         analysis: data.analysis,
         indicators: {
           rsi: data.rsi,
@@ -116,11 +125,9 @@ function getMockAnalysis(symbol: string, duration: string): MarketAnalysisResult
     recommendation: isBullish ? "BUY" : "SELL",
     confidence,
     sentiment: isBullish ? "Bullish" : "Bearish",
-    analysis: `The analysis for ${symbol} indicates a ${
-      isBullish ? "potential upward" : "potential downward"
-    } trend in the ${duration.replace("_", " ")} timeframe, supported by ${
-      isBullish ? "positive" : "negative"
-    } signals from MACD and Stochastic indicators.`,
+    marketSentiment: `Market conditions for ${symbol} show ${isBullish ? "strong buying interest" : "increased selling pressure"} with ${isBullish ? "positive" : "negative"} momentum. Overall sentiment remains ${isBullish ? "optimistic" : "cautious"} given current market dynamics and recent price action.`,
+    deepAnalysis: `Technical analysis reveals ${isBullish ? "bullish" : "bearish"} chart patterns with ${isBullish ? "support holding strong" : "resistance preventing upward movement"}. Volume indicators ${isBullish ? "confirm accumulation" : "suggest distribution"} while momentum oscillators align with the ${isBullish ? "upward" : "downward"} trend.`,
+    analysis: `Based on comprehensive analysis of all indicators, market sentiment, and technical factors, a ${isBullish ? "BUY" : "SELL"} position is recommended for ${symbol} in the ${duration.replace("_", " ")} timeframe with ${confidence}% confidence.`,
     indicators: {
       rsi: (Math.random() * 40 + 30).toFixed(1),
       macd: (Math.random() * 0.5 - 0.25).toFixed(2),

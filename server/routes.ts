@@ -360,6 +360,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recommendation: analysisResult.recommendation,
         confidence: analysisResult.confidence,
         sentiment: analysisResult.sentiment,
+        marketSentiment: analysisResult.marketSentiment,
+        deepAnalysis: analysisResult.deepAnalysis,
         analysis: analysisResult.analysis,
         rsi: analysisResult.indicators.rsi,
         macd: analysisResult.indicators.macd,

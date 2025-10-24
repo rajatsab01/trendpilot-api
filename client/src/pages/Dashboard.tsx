@@ -76,20 +76,23 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
       <div className="flex flex-col flex-1">
-        <header className="flex items-center p-4 pb-2 justify-between">
-          <div className="w-12"></div>
-          <h1 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
-            {t.home}
-          </h1>
-          <div className="flex w-12 items-center justify-end">
-            <button
-              onClick={() => setLocation("/settings")}
-              className="flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-white hover-elevate active-elevate-2"
-              data-testid="button-settings"
-            >
-              <span className="material-symbols-outlined text-white">settings</span>
-            </button>
+        <header className="flex flex-col p-4 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-12"></div>
+            <h1 className="text-[#38e07b] text-2xl font-bold leading-tight tracking-tight flex-1 text-center">
+              Trend Pilot
+            </h1>
+            <div className="flex w-12 items-center justify-end">
+              <button
+                onClick={() => setLocation("/settings")}
+                className="flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-white hover-elevate active-elevate-2"
+                data-testid="button-settings"
+              >
+                <span className="material-symbols-outlined text-white">settings</span>
+              </button>
+            </div>
           </div>
+          <p className="text-center text-xs text-[#9eb7a8]">{t.home}</p>
         </header>
 
         <main className="flex-1 px-4 py-6 space-y-6">

@@ -22,13 +22,18 @@ export default function LanguageSelection() {
       </header>
 
       <main className="flex flex-col items-center justify-center flex-grow text-center px-4">
-        <div className="w-24 h-24 mb-12 bg-[#29382f] rounded-3xl flex items-center justify-center">
+        <div className="w-24 h-24 mb-6 bg-[#29382f] rounded-3xl flex items-center justify-center">
           <span className="material-symbols-outlined text-[#38e07b]" style={{ fontSize: "48px" }}>
             trending_up
           </span>
         </div>
+        
+        <h1 className="text-4xl font-bold mb-2 tracking-tight text-[#38e07b]">
+          Trend Pilot
+        </h1>
+        <p className="text-sm text-[#9eb7a8] mb-8">AI Trading Assistant</p>
 
-        <h1 className="text-3xl font-bold mb-4 tracking-tight">Welcome</h1>
+        <h2 className="text-2xl font-bold mb-4 tracking-tight">Welcome</h2>
         <p className="text-lg text-[#9eb7a8] mb-12 max-w-sm">
           Please select your preferred language.
         </p>

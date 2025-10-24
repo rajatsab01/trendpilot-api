@@ -21,10 +21,12 @@ export const analyses = pgTable("analyses", {
   userId: varchar("user_id").notNull(),
   symbol: text("symbol").notNull(),
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
-  recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL'
+  recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name
   confidence: integer("confidence").notNull(), // 0-100
   sentiment: text("sentiment").notNull(), // 'Bullish' or 'Bearish'
-  analysis: text("analysis").notNull(),
+  marketSentiment: text("market_sentiment"), // Market sentiment analysis
+  deepAnalysis: text("deep_analysis"), // Deep technical analysis
+  analysis: text("analysis").notNull(), // Final AI verdict
   rsi: text("rsi"),
   macd: text("macd"),
   stochastic: text("stochastic"),

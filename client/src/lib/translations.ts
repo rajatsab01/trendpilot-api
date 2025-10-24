@@ -44,6 +44,12 @@ export const translations = {
 
     // Analysis
     analyzer: "Analyzer",
+    availableTokens: "Available Tokens",
+    analysisMessage: "Each analysis costs 2 tokens",
+    tradingSymbol: "Trading Symbol",
+    duration: "Duration",
+    analyzeMarket: "Analyze Market",
+    insufficientTokens: "Insufficient tokens. Please buy more tokens.",
     leadingIndicators: "Leading Indicators",
     rsi: "RSI",
     macd: "MACD",
@@ -136,6 +142,12 @@ export const translations = {
 
     // Analysis
     analyzer: "विश्लेषक",
+    availableTokens: "उपलब्ध टोकन",
+    analysisMessage: "प्रत्येक विश्लेषण में 2 टोकन खर्च होते हैं",
+    tradingSymbol: "ट्रेडिंग प्रतीक",
+    duration: "अवधि",
+    analyzeMarket: "बाजार विश्लेषण करें",
+    insufficientTokens: "अपर्याप्त टोकन। कृपया अधिक टोकन खरीदें।",
     leadingIndicators: "प्रमुख संकेतक",
     rsi: "RSI",
     macd: "MACD",
