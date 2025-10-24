@@ -18,6 +18,8 @@ export const analyses = pgTable("analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
   symbol: text("symbol").notNull(),
+  instrumentName: text("instrument_name"), // Full name of the instrument (e.g., "Apple Inc.")
+  currentPrice: text("current_price"), // Current market price at time of analysis
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
   market: text("market").notNull(), // 'stock_equities', 'commodity', 'forex', 'derivatives_futures', 'bond', 'cryptocurrency'
   recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name
