@@ -3,6 +3,7 @@
 
 interface MarketData {
   symbol: string;
+  instrumentName?: string;
   currentPrice: number;
   priceChange24h?: number;
   priceChangePercentage24h?: number;
@@ -65,6 +66,7 @@ export async function fetchCryptoData(symbol: string): Promise<MarketData> {
     
     return {
       symbol: symbol.toUpperCase(),
+      instrumentName: data.name || symbol.toUpperCase(),
       currentPrice: data.market_data.current_price.usd,
       priceChange24h: data.market_data.price_change_24h,
       priceChangePercentage24h: data.market_data.price_change_percentage_24h,
@@ -139,6 +141,7 @@ export async function fetchStockData(symbol: string, market: string): Promise<Ma
     
     return {
       symbol: tickerSymbol,
+      instrumentName: meta.longName || meta.shortName || tickerSymbol,
       currentPrice: meta.regularMarketPrice,
       priceChange24h: meta.regularMarketPrice - meta.previousClose,
       priceChangePercentage24h: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,
@@ -194,6 +197,7 @@ export async function fetchCurrencyData(symbol: string): Promise<MarketData> {
     
     return {
       symbol: tickerSymbol,
+      instrumentName: meta.longName || meta.shortName || tickerSymbol,
       currentPrice: meta.regularMarketPrice,
       priceChange24h: meta.regularMarketPrice - meta.previousClose,
       priceChangePercentage24h: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,

@@ -458,6 +458,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analysis = await storage.createAnalysis({
         userId,
         symbol,
+        instrumentName: analysisResult.instrumentName,
+        currentPrice: analysisResult.currentPrice,
         duration,
         market,
         recommendation: analysisResult.recommendation,

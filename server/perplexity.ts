@@ -7,6 +7,8 @@ interface MarketAnalysisResult {
   marketSentiment: string;
   deepAnalysis: string;
   analysis: string;
+  currentPrice: string | null;
+  instrumentName: string | null;
   indicators: {
     rsi: string;
     macd: string;
@@ -58,22 +60,26 @@ export async function analyzeMarketWithPerplexity(
     // Fetch real market data for crypto and forex (others may not have real-time APIs)
     let marketData = null;
     let currentPrice = 0;
+    let instrumentName: string | null = null;
     
     if (market === "cryptocurrency") {
       marketData = await fetchMarketData(symbol, "crypto");
       if (!marketData.error) {
         currentPrice = marketData.currentPrice;
+        instrumentName = marketData.instrumentName || null;
       }
     } else if (market === "forex") {
       marketData = await fetchMarketData(symbol, "currency");
       if (!marketData.error) {
         currentPrice = marketData.currentPrice;
+        instrumentName = marketData.instrumentName || null;
       }
     } else if (market === "stock_equities") {
       // Try to fetch stock data - assume US market by default
       marketData = await fetchMarketData(symbol, "us");
       if (!marketData.error) {
         currentPrice = marketData.currentPrice;
+        instrumentName = marketData.instrumentName || null;
       }
     }
 
@@ -217,6 +223,8 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
       marketSentiment: data.marketSentiment || data.analysis,
       deepAnalysis: data.deepAnalysis || data.analysis,
       analysis: data.analysis,
+      currentPrice: currentPrice > 0 ? currentPrice.toFixed(2) : null,
+      instrumentName: instrumentName,
       indicators: {
         rsi: data.rsi,
         macd: data.macd,
