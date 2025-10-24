@@ -9,7 +9,7 @@ Trend Pilot is an AI-powered financial trading assistant that provides intellige
 - Multi-timeframe trading strategies (long-term, short-term, scalping)
 - Token-based usage system
 - Broker integration capabilities
-- Multi-language support (English and Hindi)
+- Multi-language support (12 languages: English, Spanish, Chinese, Hindi, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian)
 - Analysis history tracking
 
 **Tech Stack:**
@@ -172,9 +172,28 @@ Preferred communication style: Simple, everyday language.
 - Designed for future integration with payment providers
 - Token-based consumption model (2 tokens per analysis)
 
-## Recent Changes (October 22, 2025)
+## Recent Changes (October 24, 2025)
 
-### Database Migration
+### Multi-Language Support Enhancement
+- Expanded from 2 languages to 12 languages: English (default), Spanish, Chinese, Hindi, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian
+- Updated language selection screen with 2-column grid layout displaying all supported languages with flag emojis
+- All UI components now support comprehensive translations
+- Language preference persists in localStorage
+- Default language set to English (en) for new users
+
+### Payment Gateway Recommendations
+**Recommended Dual-Gateway Strategy for Global Coverage:**
+- **Razorpay** (already integrated) - Primary for India market (UPI, cards, wallets, net banking)
+- **Stripe** - Primary for rest of world (200+ countries)
+- Smart detection to show appropriate gateway based on user location
+
+**Alternative Options:**
+- PayPal - Global coverage including India
+- Razorpay International - Now supports international payments
+- PayU - Strong in India, Latin America, Eastern Europe
+- 2Checkout/Verifone - True global solution
+
+### Database Migration (October 22, 2025)
 - Migrated from in-memory storage to PostgreSQL database
 - Implemented `PgStorage` class using Drizzle ORM with Neon HTTP driver
 - All user data, analyses, and broker configurations now persist across sessions
