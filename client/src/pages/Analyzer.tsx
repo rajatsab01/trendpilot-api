@@ -29,6 +29,7 @@ export default function Analyzer() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const latestQueryRef = useRef<{ symbol: string; market: string }>({ symbol: '', market: '' });
 
   const userId = localStorage.getItem("userId");
 
@@ -104,10 +105,14 @@ export default function Analyzer() {
       clearTimeout(debounceTimerRef.current);
     }
 
+    // Update latest query ref
+    latestQueryRef.current = { symbol, market: market || '' };
+
     // Don't search if no symbol or no market or if viewing analysis results
     if (!symbol.trim() || !market || analysisId) {
       setSymbolSuggestions([]);
       setShowSuggestions(false);
+      setIsSearching(false);
       return;
     }
 
@@ -115,27 +120,49 @@ export default function Analyzer() {
     if (market !== 'cryptocurrency') {
       setSymbolSuggestions([]);
       setShowSuggestions(false);
+      setIsSearching(false);
       return;
     }
+
+    // Capture current query for this fetch
+    const querySymbol = symbol;
+    const queryMarket = market;
 
     // Debounce search - wait 500ms after user stops typing
     debounceTimerRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
         const response = await fetch(
-          `/api/symbols/search?query=${encodeURIComponent(symbol)}&market=${market}`
+          `/api/symbols/search?query=${encodeURIComponent(querySymbol)}&market=${queryMarket}`
         );
         if (response.ok) {
           const data = await response.json();
-          setSymbolSuggestions(data.suggestions || []);
-          setShowSuggestions((data.suggestions || []).length > 0);
+          
+          // Only update state if this query is still the latest (prevents stale results)
+          if (latestQueryRef.current.symbol === querySymbol && latestQueryRef.current.market === queryMarket) {
+            setSymbolSuggestions(data.suggestions || []);
+            setShowSuggestions((data.suggestions || []).length > 0);
+            setIsSearching(false);
+          } else {
+            // Query is stale, stop spinner if needed
+            setIsSearching(false);
+          }
+        } else {
+          // Only update if query is still current
+          if (latestQueryRef.current.symbol === querySymbol && latestQueryRef.current.market === queryMarket) {
+            setIsSearching(false);
+          }
         }
       } catch (error) {
         console.error('Symbol search error:', error);
-        setSymbolSuggestions([]);
-        setShowSuggestions(false);
-      } finally {
-        setIsSearching(false);
+        // Only clear if query is still current
+        if (latestQueryRef.current.symbol === querySymbol && latestQueryRef.current.market === queryMarket) {
+          setSymbolSuggestions([]);
+          setShowSuggestions(false);
+          setIsSearching(false);
+        } else {
+          setIsSearching(false);
+        }
       }
     }, 500);
 
