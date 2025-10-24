@@ -234,16 +234,9 @@ export default function Analyzer() {
               <div className="mt-4">
                 <p className="text-[#9eb7a8] text-sm mb-1">{t.currentPrice}</p>
                 {analysis.currentPrice && parseFloat(analysis.currentPrice) > 0 ? (
-                  <>
-                    <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
-                      ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    {analysis.priceSource && (
-                      <p className="text-[#6a7f72] text-xs mt-2" data-testid="text-price-source">
-                        via {analysis.priceSource}
-                      </p>
-                    )}
-                  </>
+                  <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
+                    ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
                 ) : (
                   <p className="text-[#9eb7a8] text-2xl font-medium" data-testid="text-current-price-unavailable">
                     {t.priceDataUnavailable}
