@@ -28,11 +28,11 @@ Authentication uses Phone.Email for phone number verification, allowing login/re
 
 ### System Design Choices
 
-The application supports 12 languages, a token-based usage model, and provides advisory-only recommendations. Real market data is fetched from CoinGecko (crypto) and Yahoo Finance (stocks/forex). AI analysis uses Perplexity AI (llama-3.1-sonar-large-128k-online) with real-time web search capabilities to access latest news, market trends, and price data. This generates structured analysis including technical indicators and bracket order calculations based on actual market prices. The system calculates and displays a risk-reward ratio for trade evaluation. Market types include: Stock Market (Equities), Commodity Market, Forex, Derivatives (Futures), Bond Market, and Cryptocurrency Market.
+The application supports 12 languages, a token-based usage model, and provides advisory-only recommendations. Real market data is fetched from CoinGecko (crypto) and Yahoo Finance (stocks/forex). AI analysis uses Perplexity AI (sonar-pro model) with real-time web search capabilities to access latest news, market trends, and price data. This generates structured analysis including technical indicators and bracket order calculations based on actual market prices. The system calculates and displays a risk-reward ratio for trade evaluation. Market types include: Stock Market (Equities), Commodity Market, Forex, Derivatives (Futures), Bond Market, and Cryptocurrency Market.
 
 ## External Dependencies
 
-*   **AI Service:** Perplexity AI for market analysis using llama-3.1-sonar-large-128k-online with real-time web search
+*   **AI Service:** Perplexity AI for market analysis using sonar-pro model with real-time web search
 *   **Market Data:** CoinGecko API (crypto, free), Yahoo Finance API (stocks/forex, free)
 *   **Database Service:** Neon PostgreSQL (`@neondatabase/serverless`)
 *   **Authentication:** Phone.Email
@@ -46,7 +46,7 @@ The application supports 12 languages, a token-based usage model, and provides a
   - Perplexity has real-time web search built-in for latest market news and trends
   - Can access current earnings reports, market sentiment, and price movements
   - More cost-effective: ~$0.001-0.005 per request vs OpenAI's ~$0.01-0.03
-  - Model: llama-3.1-sonar-large-128k-online (128k context window)
+  - Model: sonar-pro (advanced search with grounding)
   - Better for factual, research-based trading advisory
   - Integrated via Replit Perplexity blueprint
 - **Market Type Reorganization**
