@@ -86,6 +86,11 @@ export default function Analyzer() {
         messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.contracts\}\}/g, quantity.toString());
         messageTemplate = messageTemplate.replace(/\{\{timenow\}\}/g, new Date().toISOString());
         
+        // Replace strategy_id if broker has it configured
+        if (selectedBroker.strategyId) {
+          messageTemplate = messageTemplate.replace(/\{\{strategy_id\}\}/g, selectedBroker.strategyId);
+        }
+        
         // Replace take profit and stop loss with values or remove them
         if (includeTakeProfit) {
           messageTemplate = messageTemplate.replace(/\{\{take_profit\}\}/g, analysis.takeProfit || "");
