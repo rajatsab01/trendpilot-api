@@ -193,6 +193,23 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
 
     const data = JSON.parse(jsonContent);
 
+    // FIX: For SELL trades, AI often returns inverted bracket values
+    // For SELL: take profit should be BELOW entry, stop loss should be ABOVE entry
+    let takeProfit = data.takeProfit;
+    let stopLoss = data.stopLoss;
+    
+    if (data.recommendation === "SELL") {
+      const entryPrice = parseFloat(data.entry);
+      const tpPrice = parseFloat(data.takeProfit);
+      const slPrice = parseFloat(data.stopLoss);
+      
+      // Check if values are inverted (TP above entry or SL below entry)
+      if (tpPrice > entryPrice || slPrice < entryPrice) {
+        // Swap them to correct the logic
+        [takeProfit, stopLoss] = [data.stopLoss, data.takeProfit];
+      }
+    }
+
     return {
       recommendation: data.recommendation,
       confidence: data.confidence,
@@ -208,8 +225,8 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
       },
       bracketOrder: {
         entry: data.entry,
-        takeProfit: data.takeProfit,
-        stopLoss: data.stopLoss,
+        takeProfit: takeProfit,
+        stopLoss: stopLoss,
       },
     };
   } catch (error: any) {

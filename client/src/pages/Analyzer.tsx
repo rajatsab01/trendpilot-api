@@ -290,7 +290,7 @@ export default function Analyzer() {
                   <p className="text-[#9eb7a8] text-sm font-normal mb-2">Risk-Reward Ratio</p>
                   <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
                     {(() => {
-                      const entry = parseFloat(analysis.entry);
+                      const entry = parseFloat(analysis.entry || "0");
                       const takeProfit = parseFloat(analysis.takeProfit || "0");
                       const stopLoss = parseFloat(analysis.stopLoss || "0");
                       
