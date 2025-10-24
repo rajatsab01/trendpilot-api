@@ -1,0 +1,41 @@
+{
+  "name": "Trend Pilot - AI Trading Assistant",
+  "short_name": "Trend Pilot",
+  "description": "AI-powered trading advisory tool delivering intelligent buy/sell recommendations across crypto, stocks, forex, commodities, and bonds markets",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111714",
+  "theme_color": "#38e07b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Analyze Market",
+      "short_name": "Analyze",
+      "description": "Get AI market analysis",
+      "url": "/analyzer",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Buy Tokens",
+      "short_name": "Tokens",
+      "description": "Purchase analysis tokens",
+      "url": "/buy-tokens",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    }
+  ]
+}
