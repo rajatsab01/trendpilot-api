@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   mobile: text("mobile").notNull().unique(),
   language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
-  tokens: integer("tokens").notNull().default(100),
+  tokens: integer("tokens").notNull().default(20),
   otpSecret: text("otp_secret"), // TOTP secret for 2FA
   otpEnabled: integer("otp_enabled").notNull().default(0), // 0 = disabled, 1 = enabled
   createdAt: timestamp("created_at").defaultNow(),
