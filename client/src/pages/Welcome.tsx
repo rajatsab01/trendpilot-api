@@ -13,7 +13,7 @@ export default function Welcome() {
     <div className="relative flex min-h-screen flex-col bg-[#111714]">
       <header className="flex items-center justify-between p-4">
         <div className="w-8"></div>
-        <h1 className="text-xl font-bold text-white">{t.appName}</h1>
+        <h1 className="text-xl font-bold text-white">Trend Pilot</h1>
         <button className="text-white" data-testid="button-help">
           <span className="material-symbols-outlined">help</span>
         </button>

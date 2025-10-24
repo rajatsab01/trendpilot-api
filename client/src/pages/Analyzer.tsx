@@ -148,7 +148,7 @@ export default function Analyzer() {
               <div className="rounded-2xl bg-[#1c2620] p-4">
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">sentiment_satisfied</span>
-                  Market Sentiments
+                  {t.marketSentiments}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-market-sentiment">
                   {analysis.marketSentiment}
@@ -160,7 +160,7 @@ export default function Analyzer() {
               <div className="rounded-2xl bg-[#1c2620] p-4">
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">analytics</span>
-                  Deep Analysis
+                  {t.deepAnalysis}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-deep-analysis">
                   {analysis.deepAnalysis}
@@ -171,7 +171,7 @@ export default function Analyzer() {
             <div className="rounded-2xl bg-[#1c2620] p-4">
               <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#38e07b]">psychology</span>
-                AI Analysis
+                {t.aiAnalysisHeader}
               </h2>
               <div className="flex items-center justify-around mb-4">
                 <div className="relative w-40 h-40">
