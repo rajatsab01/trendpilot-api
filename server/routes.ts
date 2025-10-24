@@ -6,6 +6,7 @@ import { analyzeMarketWithPerplexity } from "./perplexity";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 import Razorpay from "razorpay";
+import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Verify phone number from Phone.Email service
@@ -249,7 +250,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Payment ID and signature required" });
       }
 
-      const crypto = require("crypto");
       const body = orderId + "|" + paymentId;
       const expectedSignature = crypto
         .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
