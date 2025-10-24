@@ -144,3 +144,34 @@ The application supports 12 languages, a token-based usage model, and provides a
     - Example: "Bitcoin (BTCUSDT)", "Ethereum (ETHUSDT)"
     - Falls back to crypto name only for simple symbols like "BTC" or "ETH"
   - **Status:** Trading pairs now work correctly, price data displays properly
+
+### Smart Symbol Validator with Real-Time Suggestions (October 24, 2025)
+- **Implemented intelligent symbol validation with auto-suggestions**
+  - **Backend Search API** (server/marketData.ts, server/routes.ts):
+    - Added `searchCryptoSymbols()` function using CoinGecko search API
+    - Returns top 5 matching cryptocurrencies with id, symbol, and name
+    - Created GET `/api/symbols/search?query=...&market=...` endpoint
+    - Currently supports cryptocurrency market only
+  - **Frontend Smart Search** (client/src/pages/Analyzer.tsx):
+    - Debounced search with 500ms delay to prevent API spam
+    - Race condition prevention using `latestQueryRef` to discard stale results
+    - Only triggers for cryptocurrency market with valid symbol input
+    - Shows loading spinner during search
+    - Automatically clears suggestions when switching markets or viewing results
+  - **UX Features:**
+    - Real-time dropdown suggestions appear as user types
+    - Click-to-fill: selecting a suggestion auto-populates the symbol field
+    - Displays crypto name and symbol (e.g., "BTC - Bitcoin")
+    - Hover effects with forward arrow icon
+    - Styled with green accent theme matching app design
+  - **Edge Cases Handled:**
+    - User types "btc" then "eth" before response → only "eth" results shown
+    - Empty symbol or no market selected → no search triggered
+    - Rapid typing → debounce prevents excessive API calls
+    - Stale responses → validation ensures only latest query updates UI
+    - API errors → gracefully fails with empty suggestions
+  - **Performance:**
+    - 500ms debounce reduces server load
+    - Ref-based validation prevents UI flicker from outdated responses
+    - Clean UI state management on market switches
+  - **Status:** Symbol validation working correctly, improves UX for crypto trading
