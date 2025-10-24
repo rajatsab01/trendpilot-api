@@ -42,6 +42,12 @@ export default function BuyTokens() {
         userId,
         tokenPackage: packageId,
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+      
       const orderData = await response.json();
 
       if (orderData.demoMode) {
@@ -129,9 +135,10 @@ export default function BuyTokens() {
       setLoading(null);
     } catch (error: any) {
       console.error("Payment error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       toast({
         title: "Error",
-        description: error.message || "Failed to initiate payment",
+        description: error.message || error.toString() || "Failed to initiate payment. Please check your connection.",
         variant: "destructive",
       });
       setLoading(null);

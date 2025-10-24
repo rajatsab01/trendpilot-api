@@ -292,9 +292,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Insufficient tokens" });
       }
 
-      // Deduct tokens
-      await storage.updateUserTokens(userId, user.tokens - 2);
-
       // Perform analysis using Perplexity with real market data (use user's language)
       const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language);
 
@@ -318,6 +315,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         takeProfit: analysisResult.bracketOrder.takeProfit,
         stopLoss: analysisResult.bracketOrder.stopLoss,
       });
+
+      // Only deduct tokens after successful analysis (atomic operation to prevent race conditions)
+      const updatedUser = await storage.decrementUserTokens(userId, 2);
+      if (!updatedUser) {
+        // This can happen if tokens were consumed by concurrent request
+        return res.status(400).json({ error: "Insufficient tokens. Please try again." });
+      }
 
       res.json({ analysisId: analysis.id });
     } catch (error: any) {

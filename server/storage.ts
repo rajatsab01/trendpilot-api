@@ -12,7 +12,7 @@ import {
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq } from "drizzle-orm";
+import { eq, sql, gte, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -20,6 +20,7 @@ export interface IStorage {
   getUserByMobile(mobile: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserTokens(id: string, tokens: number): Promise<User | undefined>;
+  decrementUserTokens(id: string, amount: number): Promise<User | undefined>;
   updateUserMobile(id: string, mobile: string): Promise<User | undefined>;
   updateUserLanguage(id: string, language: string): Promise<User | undefined>;
 
@@ -72,6 +73,18 @@ export class MemStorage implements IStorage {
     if (!user) return undefined;
 
     const updatedUser = { ...user, tokens };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async decrementUserTokens(id: string, amount: number): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    // Check if user has enough tokens
+    if (user.tokens < amount) return undefined;
+
+    const updatedUser = { ...user, tokens: user.tokens - amount };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -143,6 +156,7 @@ export class MemStorage implements IStorage {
       apiKey: insertBroker.apiKey ?? null,
       webhookUrl: insertBroker.webhookUrl ?? null,
       webhookMessage: insertBroker.webhookMessage ?? null,
+      strategyId: insertBroker.strategyId ?? null,
       id,
       isConnected: 1,
       createdAt: new Date(),
@@ -203,6 +217,16 @@ export class PgStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result[0];
+  }
+
+  async decrementUserTokens(id: string, amount: number): Promise<User | undefined> {
+    // Atomic decrement with balance check - only succeeds if user has enough tokens
+    const result = await this.db
+      .update(users)
+      .set({ tokens: sql`${users.tokens} - ${amount}` })
+      .where(and(eq(users.id, id), gte(users.tokens, amount)))
+      .returning();
+    return result[0]; // Returns undefined if no rows updated (insufficient balance)
   }
 
   async updateUserMobile(id: string, mobile: string): Promise<User | undefined> {
