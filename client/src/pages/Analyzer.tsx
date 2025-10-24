@@ -595,23 +595,15 @@ export default function Analyzer() {
                     </div>
 
                     {/* Right Side: Strength Thermometer */}
-                    <div className="w-12 flex flex-col items-center justify-between py-3">
+                    <div className="relative w-16 flex flex-col items-center justify-center py-3">
                       {/* Thermometer Visual */}
-                      <div className="relative w-8 flex-1 rounded-full bg-gradient-to-b from-red-500 via-yellow-500 to-[#38e07b] opacity-30">
-                        <div className="absolute inset-0 rounded-full border-2 border-white/10"></div>
-                      </div>
+                      <div className="w-6 flex-1 rounded-full bg-gradient-to-b from-red-500 via-yellow-500 to-[#38e07b] opacity-30 border-2 border-white/10"></div>
                       
-                      {/* Labels */}
-                      <div className="flex flex-col items-center gap-8 absolute right-0 top-8 bottom-8 justify-between">
-                        <div className="text-right">
-                          <p className="text-red-500 text-[10px] font-bold">High</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-yellow-500 text-[10px] font-bold">Mid</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[#38e07b] text-[10px] font-bold">Strong</p>
-                        </div>
+                      {/* Labels - positioned alongside thermometer */}
+                      <div className="absolute right-0 inset-y-0 flex flex-col justify-around py-8 pr-1">
+                        <p className="text-red-500 text-[9px] font-bold leading-none">High</p>
+                        <p className="text-yellow-500 text-[9px] font-bold leading-none">Mid</p>
+                        <p className="text-[#38e07b] text-[9px] font-bold leading-none">Safe</p>
                       </div>
                     </div>
                   </div>
