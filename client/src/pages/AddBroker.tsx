@@ -13,6 +13,7 @@ export default function AddBroker() {
   const [apiKey, setApiKey] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookMessage, setWebhookMessage] = useState("");
+  const [strategyId, setStrategyId] = useState("");
 
   const userId = localStorage.getItem("userId");
 
@@ -24,6 +25,7 @@ export default function AddBroker() {
         apiKey: apiKey || undefined,
         webhookUrl: webhookUrl || undefined,
         webhookMessage: webhookMessage || undefined,
+        strategyId: strategyId || undefined,
       });
       return await result.json();
     },
@@ -136,22 +138,41 @@ export default function AddBroker() {
               </div>
 
               {webhookUrl && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#9eb7a8]" htmlFor="webhook-message">
-                    Webhook Message Template
-                  </label>
-                  <textarea
-                    className="w-full rounded-xl border-[#29382f] bg-[#29382f] p-3 text-white placeholder-[#6a7f72] focus:border-[#38e07b] focus:ring-2 focus:ring-[#38e07b] font-mono text-sm min-h-[120px]"
-                    id="webhook-message"
-                    placeholder={'Enter webhook JSON template\nExample:\n{"symbol":"{{ticker}}","side":"{{strategy.order.action}}","qty":"{{strategy.order.contracts}}"}'}
-                    value={webhookMessage}
-                    onChange={(e) => setWebhookMessage(e.target.value)}
-                    data-testid="input-webhook-message"
-                  />
-                  <p className="text-xs text-[#6a7f72]">
-                    Use placeholders like {`{{ticker}}`}, {`{{strategy.order.action}}`}, {`{{strategy.order.contracts}}`}, {`{{timenow}}`}
-                  </p>
-                </div>
+                <>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-[#9eb7a8]" htmlFor="webhook-message">
+                      Webhook Message Template
+                    </label>
+                    <textarea
+                      className="w-full rounded-xl border-[#29382f] bg-[#29382f] p-3 text-white placeholder-[#6a7f72] focus:border-[#38e07b] focus:ring-2 focus:ring-[#38e07b] font-mono text-sm min-h-[120px]"
+                      id="webhook-message"
+                      placeholder={'Enter webhook JSON template\nExample:\n{"symbol":"{{ticker}}","side":"{{strategy.order.action}}","qty":"{{strategy.order.contracts}}","strategy_id":"{{strategy_id}}"}'}
+                      value={webhookMessage}
+                      onChange={(e) => setWebhookMessage(e.target.value)}
+                      data-testid="input-webhook-message"
+                    />
+                    <p className="text-xs text-[#6a7f72]">
+                      Use placeholders like {`{{ticker}}`}, {`{{strategy.order.action}}`}, {`{{strategy.order.contracts}}`}, {`{{timenow}}`}, {`{{strategy_id}}`}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-[#9eb7a8]" htmlFor="strategy-id">
+                      Strategy ID
+                    </label>
+                    <input
+                      className="w-full rounded-xl border-[#29382f] bg-[#29382f] p-3 text-white placeholder-[#6a7f72] focus:border-[#38e07b] focus:ring-2 focus:ring-[#38e07b]"
+                      id="strategy-id"
+                      placeholder="Enter broker's strategy ID (from webhook message)"
+                      value={strategyId}
+                      onChange={(e) => setStrategyId(e.target.value)}
+                      data-testid="input-strategy-id"
+                    />
+                    <p className="text-xs text-[#6a7f72]">
+                      This is the encrypted strategy_id provided by your broker when creating the webhook
+                    </p>
+                  </div>
+                </>
               )}
             </div>
           </form>
