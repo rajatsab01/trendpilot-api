@@ -18,6 +18,8 @@ export default function Analyzer() {
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
   const [quantity, setQuantity] = useState(100);
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
+  const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
+  const [includeStopLoss, setIncludeStopLoss] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -57,6 +59,77 @@ export default function Analyzer() {
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze market. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const executeMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedBrokerId) throw new Error("Please select a broker");
+      if (!analysis) throw new Error("No analysis data available");
+      
+      const selectedBroker = brokers?.find(b => b.id === selectedBrokerId);
+      if (!selectedBroker) throw new Error("Broker not found");
+      if (!selectedBroker.webhookUrl) throw new Error("Broker has no webhook URL configured");
+      
+      // Prepare the webhook payload with placeholder replacements
+      let webhookPayload: any;
+      
+      if (selectedBroker.webhookMessage) {
+        // Parse the template and replace placeholders
+        let messageTemplate = selectedBroker.webhookMessage;
+        
+        // Replace placeholders
+        messageTemplate = messageTemplate.replace(/\{\{ticker\}\}/g, analysis.symbol);
+        messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.action\}\}/g, analysis.recommendation);
+        messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.contracts\}\}/g, quantity.toString());
+        messageTemplate = messageTemplate.replace(/\{\{timenow\}\}/g, new Date().toISOString());
+        
+        // Handle take profit and stop loss if included
+        if (includeTakeProfit) {
+          messageTemplate = messageTemplate.replace(/\{\{take_profit\}\}/g, analysis.takeProfit || "");
+        }
+        if (includeStopLoss) {
+          messageTemplate = messageTemplate.replace(/\{\{stop_loss\}\}/g, analysis.stopLoss || "");
+        }
+        
+        try {
+          webhookPayload = JSON.parse(messageTemplate);
+        } catch (e) {
+          throw new Error("Invalid webhook message template - must be valid JSON");
+        }
+      } else {
+        // Default payload if no template is provided
+        webhookPayload = {
+          symbol: analysis.symbol,
+          action: analysis.recommendation,
+          quantity: quantity,
+          timestamp: new Date().toISOString(),
+          ...(includeTakeProfit && { takeProfit: analysis.takeProfit }),
+          ...(includeStopLoss && { stopLoss: analysis.stopLoss }),
+        };
+      }
+      
+      // Send webhook to broker
+      const result = await apiRequest("POST", "/api/execute-trade", {
+        brokerId: selectedBrokerId,
+        webhookUrl: selectedBroker.webhookUrl,
+        payload: webhookPayload,
+      });
+      
+      return await result.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Trade Executed",
+        description: "Order sent to broker successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Execution Failed",
+        description: error.message || "Failed to execute trade. Please try again.",
         variant: "destructive",
       });
     },
@@ -102,7 +175,7 @@ export default function Analyzer() {
         <div className="flex-grow">
           <header className="flex items-center p-4 justify-between sticky top-0 bg-[#111714]/80 backdrop-blur-sm z-10">
             <button
-              onClick={() => setLocation("/analyzer")}
+              onClick={() => setLocation("/dashboard")}
               className="text-white flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1c2620] hover-elevate active-elevate-2"
               data-testid="button-back"
             >
@@ -258,6 +331,8 @@ export default function Analyzer() {
                     <div className="flex justify-center mt-2">
                       <input
                         type="checkbox"
+                        checked={includeTakeProfit}
+                        onChange={(e) => setIncludeTakeProfit(e.target.checked)}
                         className="size-4 rounded bg-[#334139] border-none accent-[#38e07b]"
                         data-testid="checkbox-take-profit"
                       />
@@ -271,6 +346,8 @@ export default function Analyzer() {
                     <div className="flex justify-center mt-2">
                       <input
                         type="checkbox"
+                        checked={includeStopLoss}
+                        onChange={(e) => setIncludeStopLoss(e.target.checked)}
                         className="size-4 rounded bg-[#334139] border-none accent-[#38e07b]"
                         data-testid="checkbox-stop-loss"
                       />
@@ -319,10 +396,12 @@ export default function Analyzer() {
                 </div>
 
                 <button
-                  className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
+                  onClick={() => executeMutation.mutate()}
+                  disabled={!selectedBrokerId || executeMutation.isPending}
+                  className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-execute"
                 >
-                  {t.execute}
+                  {executeMutation.isPending ? "Executing..." : t.execute}
                 </button>
               </div>
             </div>

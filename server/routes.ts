@@ -352,6 +352,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Execute trade - send webhook to broker
+  app.post("/api/execute-trade", async (req, res) => {
+    try {
+      const executeSchema = z.object({
+        brokerId: z.string().min(1),
+        webhookUrl: z.string().url(),
+        payload: z.any(),
+      });
+
+      const validationResult = executeSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ error: validationResult.error.errors[0].message });
+      }
+
+      const { brokerId, webhookUrl, payload } = validationResult.data;
+
+      // Verify broker exists
+      const broker = await storage.getBroker(brokerId);
+      if (!broker) {
+        return res.status(404).json({ error: "Broker not found" });
+      }
+
+      // Send webhook to broker
+      const webhookResponse = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(broker.apiKey && { "Authorization": `Bearer ${broker.apiKey}` }),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!webhookResponse.ok) {
+        const errorText = await webhookResponse.text();
+        return res.status(502).json({ 
+          error: "Broker webhook failed", 
+          details: errorText || webhookResponse.statusText 
+        });
+      }
+
+      const responseData = await webhookResponse.json().catch(() => ({}));
+
+      res.json({ 
+        success: true, 
+        message: "Trade executed successfully",
+        brokerResponse: responseData
+      });
+    } catch (error: any) {
+      console.error("Execute trade error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
   // Get user's brokers
   app.get("/api/brokers/:userId", async (req, res) => {
     try {
