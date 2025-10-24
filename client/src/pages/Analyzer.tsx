@@ -36,7 +36,7 @@ export default function Analyzer() {
 
   const analyzeMutation = useMutation({
     mutationFn: async () => {
-      if (!userId) throw new Error("User not found");
+      if (!userId) throw new Error(t.userNotFound);
       const result = await apiRequest("POST", "/api/analyze", {
         userId,
         symbol,
@@ -51,8 +51,8 @@ export default function Analyzer() {
     },
     onError: (error: any) => {
       toast({
-        title: "Analysis Failed",
-        description: error.message || "Failed to analyze market. Please try again.",
+        title: t.analysisFailed,
+        description: error.message || t.failedToAnalyzeMarket,
         variant: "destructive",
       });
     },
@@ -62,24 +62,24 @@ export default function Analyzer() {
     e.preventDefault();
     if (!symbol.trim()) {
       toast({
-        title: "Symbol Required",
-        description: "Please enter a trading symbol",
+        title: t.symbolRequired,
+        description: t.pleaseEnterSymbol,
         variant: "destructive",
       });
       return;
     }
     if (!market) {
       toast({
-        title: "Market Required",
-        description: "Please select a market type",
+        title: t.marketRequired,
+        description: t.pleaseSelectMarket,
         variant: "destructive",
       });
       return;
     }
     if (!user || user.tokens < 2) {
       toast({
-        title: "Insufficient Tokens",
-        description: "You need at least 2 tokens to analyze a symbol",
+        title: t.insufficientTokensTitle,
+        description: t.needTokensToAnalyze,
         variant: "destructive",
       });
       return;
@@ -91,7 +91,7 @@ export default function Analyzer() {
   if (analysisId && isLoadingAnalysis) {
     return (
       <div className="min-h-screen bg-[#111714] flex items-center justify-center">
-        <div className="text-white">Loading analysis...</div>
+        <div className="text-white">{t.loadingAnalysis}</div>
       </div>
     );
   }
@@ -131,14 +131,14 @@ export default function Analyzer() {
                 )}
               </div>
               <div className="mt-4">
-                <p className="text-[#9eb7a8] text-sm mb-1">Current Price</p>
+                <p className="text-[#9eb7a8] text-sm mb-1">{t.currentPrice}</p>
                 {analysis.currentPrice && parseFloat(analysis.currentPrice) > 0 ? (
                   <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
                     ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 ) : (
                   <p className="text-[#9eb7a8] text-2xl font-medium" data-testid="text-current-price-unavailable">
-                    Price data unavailable
+                    {t.priceDataUnavailable}
                   </p>
                 )}
               </div>
@@ -233,14 +233,14 @@ export default function Analyzer() {
                       fill="none"
                       r="16"
                       strokeDasharray="100"
-                      strokeDashoffset={100 - analysis.confidence}
+                      strokeDashoffset={100 - Math.min(Math.max(analysis.probabilityScore || 0, 0), 100)}
                       strokeLinecap="round"
                       strokeWidth="3"
                     ></circle>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-4xl font-bold text-white" data-testid="text-confidence">
-                      {analysis.confidence}%
+                      {Math.min(Math.max(analysis.probabilityScore || 0, 0), 100)}%
                     </span>
                     <span className={`text-lg font-medium ${sentimentColor}`} data-testid="text-sentiment">
                       {analysis.sentiment === "Bullish" ? t.bullish : t.bearish}
@@ -609,7 +609,7 @@ export default function Analyzer() {
               className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="button-analyze"
             >
-              {analyzeMutation.isPending ? "Analyzing..." : t.analyzeMarket}
+              {analyzeMutation.isPending ? t.analyzing : t.analyzeMarket}
             </button>
 
             {user && user.tokens < 2 && (
