@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
+import logoImage from "@assets/logo 3_1761320611938.png";
 
 export default function Welcome() {
   const [, setLocation] = useLocation();
@@ -21,13 +22,12 @@ export default function Welcome() {
 
       <main className="flex flex-1 flex-col justify-center px-6 text-center">
         <div className="flex justify-center mb-8">
-          <div className="rounded-full bg-[#29382f] p-4">
-            <span
-              className="material-symbols-outlined text-[#38e07b]"
-              style={{ fontSize: "48px" }}
-            >
-              auto_awesome
-            </span>
+          <div className="w-32 h-32">
+            <img 
+              src={logoImage} 
+              alt="Trend Pilot Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
 

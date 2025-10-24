@@ -6,6 +6,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { User } from "@shared/schema";
+import logoImage from "@assets/logo 3_1761320611938.png";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -89,6 +90,13 @@ export default function Dashboard() {
       <div className="flex flex-col flex-1">
         <header className="flex flex-col p-4 pb-2">
           <div className="flex items-center justify-center mb-2">
+            <div className="w-16 h-16 mr-2">
+              <img 
+                src={logoImage} 
+                alt="Trend Pilot Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
             <h1 className="text-[#38e07b] text-2xl font-bold leading-tight tracking-tight">
               Trend Pilot
             </h1>
