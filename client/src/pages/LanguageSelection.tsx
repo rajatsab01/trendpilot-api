@@ -9,6 +9,7 @@ export default function LanguageSelection() {
 
   const handleLanguageSelect = (lang: Language) => {
     setLanguage(lang);
+    localStorage.setItem("languageCompleted", "true");
     setLocation("/login");
   };
 

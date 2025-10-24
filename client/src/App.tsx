@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,7 +15,22 @@ import BuyTokens from "@/pages/BuyTokens";
 import Charity from "@/pages/Charity";
 import NotFound from "@/pages/not-found";
 
-function Router() {
+function SmartRouter() {
+  const [location, setLocation] = useLocation();
+  
+  useEffect(() => {
+    // Only run smart routing on initial load (when at root)
+    if (location === "/") {
+      const languageCompleted = localStorage.getItem("languageCompleted");
+      const loginCompleted = localStorage.getItem("loginCompleted");
+      
+      // If both onboarding steps completed, skip to welcome screen
+      if (languageCompleted && loginCompleted) {
+        setLocation("/welcome");
+      }
+    }
+  }, [location, setLocation]);
+  
   return (
     <Switch>
       <Route path="/" component={LanguageSelection} />
@@ -27,6 +43,10 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+function Router() {
+  return <SmartRouter />;
 }
 
 function App() {

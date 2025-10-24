@@ -54,6 +54,7 @@ export default function Login() {
     },
     onSuccess: (data) => {
       localStorage.setItem("userId", data.userId);
+      localStorage.setItem("loginCompleted", "true");
       setLocation("/welcome");
     },
     onError: () => {
