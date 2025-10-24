@@ -22,14 +22,13 @@ export default function Analyzer() {
 
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
-  const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency" | "">("");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
   const [symbolSuggestions, setSymbolSuggestions] = useState<SymbolSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const latestQueryRef = useRef<{ symbol: string; market: string }>({ symbol: '', market: '' });
+  const latestQueryRef = useRef<{ symbol: string }>({ symbol: '' });
 
   const userId = localStorage.getItem("userId");
 
@@ -52,7 +51,6 @@ export default function Analyzer() {
         userId,
         symbol,
         duration,
-        market,
       });
       return await result.json();
     },
@@ -79,14 +77,6 @@ export default function Analyzer() {
       });
       return;
     }
-    if (!market) {
-      toast({
-        title: t.marketRequired,
-        description: t.pleaseSelectMarket,
-        variant: "destructive",
-      });
-      return;
-    }
     if (!user || user.tokens < 2) {
       toast({
         title: t.insufficientTokensTitle,
@@ -106,18 +96,10 @@ export default function Analyzer() {
     }
 
     // Update latest query ref
-    latestQueryRef.current = { symbol, market: market || '' };
+    latestQueryRef.current = { symbol };
 
-    // Don't search if no symbol or no market or if viewing analysis results
-    if (!symbol.trim() || !market || analysisId) {
-      setSymbolSuggestions([]);
-      setShowSuggestions(false);
-      setIsSearching(false);
-      return;
-    }
-
-    // Only support cryptocurrency market for now
-    if (market !== 'cryptocurrency') {
+    // Don't search if no symbol or if viewing analysis results
+    if (!symbol.trim() || analysisId) {
       setSymbolSuggestions([]);
       setShowSuggestions(false);
       setIsSearching(false);
@@ -126,20 +108,19 @@ export default function Analyzer() {
 
     // Capture current query for this fetch
     const querySymbol = symbol;
-    const queryMarket = market;
 
     // Debounce search - wait 500ms after user stops typing
     debounceTimerRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
         const response = await fetch(
-          `/api/symbols/search?query=${encodeURIComponent(querySymbol)}&market=${queryMarket}`
+          `/api/symbols/search?query=${encodeURIComponent(querySymbol)}&market=cryptocurrency`
         );
         if (response.ok) {
           const data = await response.json();
           
           // Only update state if this query is still the latest (prevents stale results)
-          if (latestQueryRef.current.symbol === querySymbol && latestQueryRef.current.market === queryMarket) {
+          if (latestQueryRef.current.symbol === querySymbol) {
             setSymbolSuggestions(data.suggestions || []);
             setShowSuggestions((data.suggestions || []).length > 0);
             setIsSearching(false);
@@ -149,14 +130,14 @@ export default function Analyzer() {
           }
         } else {
           // Only update if query is still current
-          if (latestQueryRef.current.symbol === querySymbol && latestQueryRef.current.market === queryMarket) {
+          if (latestQueryRef.current.symbol === querySymbol) {
             setIsSearching(false);
           }
         }
       } catch (error) {
         console.error('Symbol search error:', error);
         // Only clear if query is still current
-        if (latestQueryRef.current.symbol === querySymbol && latestQueryRef.current.market === queryMarket) {
+        if (latestQueryRef.current.symbol === querySymbol) {
           setSymbolSuggestions([]);
           setShowSuggestions(false);
           setIsSearching(false);
@@ -171,7 +152,7 @@ export default function Analyzer() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [symbol, market, analysisId]);
+  }, [symbol, analysisId]);
 
   const handleSuggestionClick = (suggestion: SymbolSuggestion) => {
     setSymbol(suggestion.symbol);
@@ -747,25 +728,6 @@ export default function Analyzer() {
               </select>
             </div>
 
-            <div>
-              <label className="text-white text-base font-medium mb-2 block">
-                Market Selection
-              </label>
-              <select
-                value={market}
-                onChange={(e) => setMarket(e.target.value as any)}
-                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
-                data-testid="select-market"
-              >
-                <option value="">Select Market</option>
-                <option value="stock_equities">Stock Market (Equities)</option>
-                <option value="commodity">Commodity Market</option>
-                <option value="forex">Foreign Exchange (Forex) Market</option>
-                <option value="derivatives_futures">Derivatives Market (Futures)</option>
-                <option value="bond">Bond Market</option>
-                <option value="cryptocurrency">Cryptocurrency Market</option>
-              </select>
-            </div>
 
             <button
               type="submit"

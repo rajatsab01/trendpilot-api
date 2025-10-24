@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentPrice: analysisResult.currentPrice, // Perplexity-validated price
         priceSource: analysisResult.priceSource, // Where Perplexity found the price
         duration,
-        market: analysisResult.marketType, // Auto-detected by Perplexity
+        market: analysisResult.marketType as "stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency", // Auto-detected by Perplexity
         recommendation: analysisResult.recommendation,
         confidence: analysisResult.confidence,
         sentiment: analysisResult.sentiment,
