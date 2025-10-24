@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeMarket } from "./gemini";
+import { analyzeMarketWithOpenAI } from "./openai";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 
@@ -293,8 +294,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Deduct tokens
       await storage.updateUserTokens(userId, user.tokens - 2);
 
-      // Perform analysis using Gemini AI with user's language
-      const analysisResult = await analyzeMarket(symbol, duration, user.language);
+      // Perform analysis using OpenAI with real market data (use user's language)
+      const analysisResult = await analyzeMarketWithOpenAI(symbol, duration, user.language);
 
       // Save analysis
       const analysis = await storage.createAnalysis({
