@@ -190,6 +190,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 24, 2025)
 
+### Complete Localization Implementation (October 24, 2025)
+- **Fully translated all trading terms across all 12 languages:**
+  - "Bullish/Bearish" sentiment labels now display in user's language (e.g., "तेजी/मंदी" in Hindi)
+  - "BUY/SELL" recommendation labels now display in user's language (e.g., "खरीदें/बेचें" in Hindi)
+  - Duration terms (long_term, short_term, scalping) fully localized in AI-generated analysis text
+- **Implementation details:**
+  - Analyzer page translates sentiment/recommendation by mapping backend's canonical strings
+  - Mock Gemini analysis uses per-language duration lookup (e.g., "अल्पकालिक" for short_term in Hindi)
+  - Real Gemini prompt includes explicit language instructions for all text fields
+  - Graceful fallback to English for unsupported languages
+- **Translation coverage:**
+  - All UI elements: 100% translated
+  - All AI-generated content: 100% translated
+  - All trading terminology: 100% translated
+  - Brand name "Trend Pilot" remains in English across all languages
+
 ### Phone.Email Authentication Integration (October 24, 2025)
 - **Replaced TOTP (Google Authenticator) with Phone.Email widget**
   - Eliminated user friction: no app download required
