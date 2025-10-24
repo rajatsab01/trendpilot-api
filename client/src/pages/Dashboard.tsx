@@ -151,13 +151,13 @@ export default function Dashboard() {
                 onChange={(e) => setMarket(e.target.value as any)}
                 data-testid="select-market"
               >
-                <option value="">Select Market</option>
-                <option value="stock_equities">Stock Market (Equities)</option>
-                <option value="commodity">Commodity Market</option>
-                <option value="forex">Foreign Exchange (Forex) Market</option>
-                <option value="derivatives_futures">Derivatives Market (Futures)</option>
-                <option value="bond">Bond Market</option>
-                <option value="cryptocurrency">Cryptocurrency Market</option>
+                <option value="">{t.selectMarket}</option>
+                <option value="stock_equities">{t.stockMarket}</option>
+                <option value="commodity">{t.commodityMarket}</option>
+                <option value="forex">{t.forexMarket}</option>
+                <option value="derivatives_futures">{t.derivativesMarket}</option>
+                <option value="bond">{t.bondMarket}</option>
+                <option value="cryptocurrency">{t.cryptocurrencyMarket}</option>
               </select>
             </label>
           </div>

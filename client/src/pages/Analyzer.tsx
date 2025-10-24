@@ -287,7 +287,7 @@ export default function Analyzer() {
                 </div>
 
                 <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                  <p className="text-[#9eb7a8] text-sm font-normal mb-2">Risk-Reward Ratio</p>
+                  <p className="text-[#9eb7a8] text-sm font-normal mb-2">{t.riskRewardRatio}</p>
                   <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
                     {(() => {
                       const entry = parseFloat(analysis.entry || "0");

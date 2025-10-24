@@ -5,6 +5,7 @@ import { analyzeMarket } from "./gemini";
 import { analyzeMarketWithPerplexity } from "./perplexity";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
+import Razorpay from "razorpay";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Verify phone number from Phone.Email service
@@ -179,7 +180,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Real Razorpay integration
-      const Razorpay = require("razorpay");
       const razorpay = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET,
