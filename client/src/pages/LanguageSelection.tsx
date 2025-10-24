@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
+import logoImage from "@assets/logo 3_1761320611938.png";
 
 export default function LanguageSelection() {
   const [, setLocation] = useLocation();
@@ -38,10 +39,12 @@ export default function LanguageSelection() {
       </header>
 
       <main className="flex flex-col items-center justify-center flex-grow text-center px-4 py-8">
-        <div className="w-20 h-20 mb-4 bg-[#29382f] rounded-3xl flex items-center justify-center">
-          <span className="material-symbols-outlined text-[#38e07b]" style={{ fontSize: "40px" }}>
-            trending_up
-          </span>
+        <div className="w-32 h-32 mb-4 flex items-center justify-center">
+          <img 
+            src={logoImage} 
+            alt="Trend Pilot Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
         
         <h1 className="text-3xl font-bold mb-1 tracking-tight text-[#38e07b]">
