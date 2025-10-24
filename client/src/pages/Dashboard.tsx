@@ -13,7 +13,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState("short_term");
-  const [market, setMarket] = useState<"crypto" | "indian_nse" | "indian_bse" | "us" | "japan" | "singapore" | "currency">("crypto");
+  const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency" | "">("");
 
   const userId = localStorage.getItem("userId");
 
@@ -50,6 +50,15 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: "Please enter a financial symbol",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!market) {
+      toast({
+        title: "Error",
+        description: "Please select a market type",
         variant: "destructive",
       });
       return;
@@ -142,13 +151,13 @@ export default function Dashboard() {
                 onChange={(e) => setMarket(e.target.value as any)}
                 data-testid="select-market"
               >
-                <option value="crypto">Cryptocurrency</option>
-                <option value="indian_nse">Indian NSE</option>
-                <option value="indian_bse">Indian BSE</option>
-                <option value="us">US Stocks</option>
-                <option value="japan">Japan Stocks</option>
-                <option value="singapore">Singapore Stocks</option>
-                <option value="currency">Currency/Forex</option>
+                <option value="">Select Market</option>
+                <option value="stock_equities">Stock Market (Equities)</option>
+                <option value="commodity">Commodity Market</option>
+                <option value="forex">Foreign Exchange (Forex) Market</option>
+                <option value="derivatives_futures">Derivatives Market (Futures)</option>
+                <option value="bond">Bond Market</option>
+                <option value="cryptocurrency">Cryptocurrency Market</option>
               </select>
             </label>
           </div>

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeMarket } from "./gemini";
-import { analyzeMarketWithOpenAI } from "./openai";
+import { analyzeMarketWithPerplexity } from "./perplexity";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 
@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: z.string().min(1),
         symbol: z.string().min(1),
         duration: z.enum(["long_term", "short_term", "scalping"]),
-        market: z.enum(["crypto", "indian_nse", "indian_bse", "us", "japan", "singapore", "currency"]),
+        market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
       });
 
       const validationResult = analyzeSchema.safeParse(req.body);
@@ -295,8 +295,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Deduct tokens
       await storage.updateUserTokens(userId, user.tokens - 2);
 
-      // Perform analysis using OpenAI with real market data (use user's language)
-      const analysisResult = await analyzeMarketWithOpenAI(symbol, duration, market, user.language);
+      // Perform analysis using Perplexity with real market data (use user's language)
+      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language);
 
       // Save analysis
       const analysis = await storage.createAnalysis({

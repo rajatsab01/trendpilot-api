@@ -16,7 +16,7 @@ export default function Analyzer() {
 
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
-  const [market, setMarket] = useState<"crypto" | "indian_nse" | "indian_bse" | "us" | "japan" | "singapore" | "currency">("crypto");
+  const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency" | "">("");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
 
@@ -64,6 +64,14 @@ export default function Analyzer() {
       toast({
         title: "Symbol Required",
         description: "Please enter a trading symbol",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!market) {
+      toast({
+        title: "Market Required",
+        description: "Please select a market type",
         variant: "destructive",
       });
       return;
@@ -381,13 +389,13 @@ export default function Analyzer() {
                 className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
                 data-testid="select-market"
               >
-                <option value="crypto">Cryptocurrency</option>
-                <option value="indian_nse">Indian NSE</option>
-                <option value="indian_bse">Indian BSE</option>
-                <option value="us">US Stocks</option>
-                <option value="japan">Japan Stocks</option>
-                <option value="singapore">Singapore Stocks</option>
-                <option value="currency">Currency/Forex</option>
+                <option value="">Select Market</option>
+                <option value="stock_equities">Stock Market (Equities)</option>
+                <option value="commodity">Commodity Market</option>
+                <option value="forex">Foreign Exchange (Forex) Market</option>
+                <option value="derivatives_futures">Derivatives Market (Futures)</option>
+                <option value="bond">Bond Market</option>
+                <option value="cryptocurrency">Cryptocurrency Market</option>
               </select>
             </div>
 
