@@ -16,8 +16,7 @@ export default function Analyzer() {
 
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
-  const [quantity, setQuantity] = useState(100);
-  const [selectedBrokerId, setSelectedBrokerId] = useState("");
+  const [market, setMarket] = useState<"crypto" | "indian_nse" | "indian_bse" | "us" | "japan" | "singapore" | "currency">("crypto");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
 
@@ -27,12 +26,6 @@ export default function Analyzer() {
   const { data: user } = useQuery<{ id: string; tokens: number; name: string; mobile: string; language: string }>({
     queryKey: ["/api/user", userId],
     enabled: !!userId && !analysisId,
-  });
-
-  // Fetch user's brokers
-  const { data: brokers } = useQuery<Array<{ id: string; name: string; userId: string; apiKey: string | null; webhookUrl: string | null; webhookMessage: string | null }>>({
-    queryKey: [`/api/brokers/${userId}`],
-    enabled: !!userId,
   });
 
   // Fetch analysis results
@@ -48,6 +41,7 @@ export default function Analyzer() {
         userId,
         symbol,
         duration,
+        market,
       });
       return await result.json();
     },
@@ -59,91 +53,6 @@ export default function Analyzer() {
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze market. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const executeMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedBrokerId) throw new Error("Please select a broker");
-      if (!analysis) throw new Error("No analysis data available");
-      
-      const selectedBroker = brokers?.find(b => b.id === selectedBrokerId);
-      if (!selectedBroker) throw new Error("Broker not found");
-      if (!selectedBroker.webhookUrl) throw new Error("Broker has no webhook URL configured");
-      
-      // Prepare the webhook payload with placeholder replacements
-      let webhookPayload: any;
-      
-      if (selectedBroker.webhookMessage) {
-        // Parse the template and replace placeholders
-        let messageTemplate = selectedBroker.webhookMessage;
-        
-        // Replace all placeholders
-        messageTemplate = messageTemplate.replace(/\{\{ticker\}\}/g, analysis.symbol);
-        messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.action\}\}/g, analysis.recommendation);
-        messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.contracts\}\}/g, quantity.toString());
-        messageTemplate = messageTemplate.replace(/\{\{timenow\}\}/g, new Date().toISOString());
-        
-        // Replace strategy_id if broker has it configured
-        if (selectedBroker.strategyId) {
-          messageTemplate = messageTemplate.replace(/\{\{strategy_id\}\}/g, selectedBroker.strategyId);
-        }
-        
-        // Replace take profit and stop loss with values or remove them
-        if (includeTakeProfit) {
-          messageTemplate = messageTemplate.replace(/\{\{take_profit\}\}/g, analysis.takeProfit || "");
-        } else {
-          // Remove the entire field if not included
-          messageTemplate = messageTemplate.replace(/,?\s*"[^"]*":\s*"\{\{take_profit\}\}"/g, "");
-          messageTemplate = messageTemplate.replace(/,?\s*'[^']*':\s*'\{\{take_profit\}\}'/g, "");
-        }
-        
-        if (includeStopLoss) {
-          messageTemplate = messageTemplate.replace(/\{\{stop_loss\}\}/g, analysis.stopLoss || "");
-        } else {
-          // Remove the entire field if not included
-          messageTemplate = messageTemplate.replace(/,?\s*"[^"]*":\s*"\{\{stop_loss\}\}"/g, "");
-          messageTemplate = messageTemplate.replace(/,?\s*'[^']*':\s*'\{\{stop_loss\}\}'/g, "");
-        }
-        
-        try {
-          webhookPayload = JSON.parse(messageTemplate);
-        } catch (e) {
-          throw new Error("Invalid webhook message template - must be valid JSON");
-        }
-      } else {
-        // Default payload if no template is provided
-        webhookPayload = {
-          symbol: analysis.symbol,
-          action: analysis.recommendation,
-          quantity: quantity,
-          timestamp: new Date().toISOString(),
-          ...(includeTakeProfit && { takeProfit: analysis.takeProfit }),
-          ...(includeStopLoss && { stopLoss: analysis.stopLoss }),
-        };
-      }
-      
-      // Send webhook to broker
-      const result = await apiRequest("POST", "/api/execute-trade", {
-        brokerId: selectedBrokerId,
-        webhookUrl: selectedBroker.webhookUrl,
-        payload: webhookPayload,
-      });
-      
-      return await result.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Trade Executed",
-        description: "Order sent to broker successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Execution Failed",
-        description: error.message || "Failed to execute trade. Please try again.",
         variant: "destructive",
       });
     },
@@ -369,54 +278,30 @@ export default function Analyzer() {
                   </div>
                 </div>
 
-                <div className="bg-[#29382f]/50 p-3 rounded-xl border border-[#38e07b]/20">
-                  <p className="text-xs text-[#9eb7a8] leading-relaxed">
-                    <span className="font-semibold text-[#38e07b]">Disclaimer:</span> Bracket order will only work if the webhook message provided by the broker has the relevant fields like take profit and stop loss.
+                <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
+                  <p className="text-[#9eb7a8] text-sm font-normal mb-2">Risk-Reward Ratio</p>
+                  <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
+                    {(() => {
+                      const entry = parseFloat(analysis.entry);
+                      const takeProfit = parseFloat(analysis.takeProfit || "0");
+                      const stopLoss = parseFloat(analysis.stopLoss || "0");
+                      
+                      let risk, reward;
+                      if (analysis.recommendation === "BUY") {
+                        risk = entry - stopLoss;
+                        reward = takeProfit - entry;
+                      } else {
+                        risk = stopLoss - entry;
+                        reward = entry - takeProfit;
+                      }
+                      
+                      if (risk <= 0 || reward <= 0) return "N/A";
+                      
+                      const ratio = reward / risk;
+                      return `1:${ratio.toFixed(2)}`;
+                    })()}
                   </p>
                 </div>
-
-                <div className="bg-[#1c2620] p-4 rounded-2xl flex items-center justify-between">
-                  <label className="text-[#9eb7a8] text-base font-normal" htmlFor="quantity">
-                    {t.quantity}
-                  </label>
-                  <input
-                    className="w-24 bg-[#334139] text-white text-center rounded-md border-none focus:ring-2 focus:ring-[#38e07b] px-2 py-1"
-                    id="quantity"
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                    data-testid="input-quantity"
-                  />
-                </div>
-
-                <div className="bg-[#1c2620] p-4 rounded-2xl flex items-center justify-between">
-                  <label className="text-[#9eb7a8] text-base font-normal" htmlFor="broker">
-                    {t.brokerChoice}
-                  </label>
-                  <select
-                    className="bg-[#334139] text-white rounded-md border-none focus:ring-2 focus:ring-[#38e07b] px-3 py-1 min-w-[120px]"
-                    id="broker"
-                    value={selectedBrokerId}
-                    onChange={(e) => setSelectedBrokerId(e.target.value)}
-                    data-testid="select-broker"
-                  >
-                    <option value="">{brokers && brokers.length > 0 ? "Select Broker" : "No Brokers"}</option>
-                    {brokers && brokers.map((broker) => (
-                      <option key={broker.id} value={broker.id}>
-                        {broker.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => executeMutation.mutate()}
-                  disabled={!selectedBrokerId || executeMutation.isPending}
-                  className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  data-testid="button-execute"
-                >
-                  {executeMutation.isPending ? "Executing..." : t.execute}
-                </button>
               </div>
             </div>
           </main>
@@ -483,6 +368,26 @@ export default function Analyzer() {
                 <option value="long_term">{t.longTerm}</option>
                 <option value="short_term">{t.shortTerm}</option>
                 <option value="scalping">{t.scalping}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-white text-base font-medium mb-2 block">
+                Market Selection
+              </label>
+              <select
+                value={market}
+                onChange={(e) => setMarket(e.target.value as any)}
+                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
+                data-testid="select-market"
+              >
+                <option value="crypto">Cryptocurrency</option>
+                <option value="indian_nse">Indian NSE</option>
+                <option value="indian_bse">Indian BSE</option>
+                <option value="us">US Stocks</option>
+                <option value="japan">Japan Stocks</option>
+                <option value="singapore">Singapore Stocks</option>
+                <option value="currency">Currency/Forex</option>
               </select>
             </div>
 
