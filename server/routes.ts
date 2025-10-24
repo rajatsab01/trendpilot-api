@@ -180,11 +180,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Real Razorpay integration
+      console.log("Initializing Razorpay with keys...");
       const razorpay = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET,
       });
 
+      console.log("Creating Razorpay order...");
       const order = await razorpay.orders.create({
         amount: selectedPackage.amount, // amount in paise
         currency: "INR",
@@ -194,6 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tokens: selectedPackage.tokens,
         },
       });
+      console.log("Razorpay order created successfully:", order.id);
 
       res.json({
         orderId: order.id,
@@ -205,6 +208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Create order error:", error);
+      console.error("Error stack:", error.stack);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
@@ -260,6 +265,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Verify payment error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  // In-memory store for tracking last ad watch time per user (prevents spam)
+  const lastAdWatchTime = new Map<string, number>();
+
+  // Watch Ad - Add 2 free tokens for watching an ad
+  // NOTE: Demo mode implementation. For production with real Google AdSense:
+  // 1. Require authenticated session/user context
+  // 2. Validate ad completion with signed callback from ad provider
+  // 3. Persist watch timestamps in database for multi-instance support
+  // 4. Add daily/weekly reward limits per user
+  app.post("/api/watch-ad", async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Rate limiting: User must wait at least 60 seconds between ad watches
+      const now = Date.now();
+      const lastWatchTime = lastAdWatchTime.get(userId) || 0;
+      const timeSinceLastWatch = now - lastWatchTime;
+      const minWaitTime = 60000; // 60 seconds in milliseconds
+
+      if (timeSinceLastWatch < minWaitTime) {
+        const remainingTime = Math.ceil((minWaitTime - timeSinceLastWatch) / 1000);
+        return res.status(429).json({ 
+          error: `Please wait ${remainingTime} seconds before watching another ad`,
+          remainingTime 
+        });
+      }
+
+      // Update last watch time BEFORE adding tokens (prevents race conditions)
+      lastAdWatchTime.set(userId, now);
+
+      // Add 2 tokens for watching the ad
+      const newTokenBalance = user.tokens + 2;
+      await storage.updateUserTokens(userId, newTokenBalance);
+
+      console.log(`User ${userId} watched ad and earned 2 tokens. New balance: ${newTokenBalance}`);
+
+      res.json({ 
+        success: true, 
+        tokensAdded: 2,
+        newBalance: newTokenBalance 
+      });
+    } catch (error: any) {
+      console.error("Watch ad error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
     }
   });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -15,6 +15,9 @@ export default function Dashboard() {
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState("short_term");
   const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency" | "">("");
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(60);
+  const [tokenAnimation, setTokenAnimation] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -22,6 +25,63 @@ export default function Dashboard() {
     queryKey: ["/api/user", userId],
     enabled: !!userId,
   });
+
+  // Countdown timer for ad
+  useEffect(() => {
+    if (showAdModal && adCountdown > 0) {
+      const timer = setTimeout(() => {
+        setAdCountdown(adCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (showAdModal && adCountdown === 0) {
+      // Ad finished, add tokens
+      handleAdComplete();
+    }
+  }, [showAdModal, adCountdown]);
+
+  const watchAdMutation = useMutation({
+    mutationFn: async () => {
+      const result = await apiRequest("POST", "/api/watch-ad", {
+        userId,
+      });
+      return await result.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+      setTokenAnimation(true);
+      setTimeout(() => setTokenAnimation(false), 1000);
+      toast({
+        title: "Tokens Added!",
+        description: "You earned 2 tokens for watching the ad!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add tokens",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleWatchAd = () => {
+    setShowAdModal(true);
+    setAdCountdown(60);
+  };
+
+  const handleAdComplete = () => {
+    setShowAdModal(false);
+    watchAdMutation.mutate();
+  };
+
+  const handleSkipAd = () => {
+    setShowAdModal(false);
+    setAdCountdown(60);
+    toast({
+      title: "Ad Skipped",
+      description: "Watch the full ad to earn tokens",
+    });
+  };
 
   const analyzeMutation = useMutation({
     mutationFn: async () => {
@@ -174,7 +234,12 @@ export default function Dashboard() {
             <p className="text-[#9eb7a8] text-sm font-medium leading-normal">
               {t.yourTokens}
             </p>
-            <p className="text-white text-base font-bold" data-testid="text-tokens">
+            <p 
+              className={`text-white text-base font-bold transition-all duration-500 ${
+                tokenAnimation ? 'scale-150 text-[#38e07b]' : 'scale-100'
+              }`}
+              data-testid="text-tokens"
+            >
               {user?.tokens ?? 0}/20
             </p>
           </div>
@@ -205,7 +270,9 @@ export default function Dashboard() {
               <span className="truncate">{t.buyTokens}</span>
             </button>
             <button
-              className="flex items-center justify-center rounded-full h-12 px-6 bg-[#29382f] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-opacity-80 transition-opacity"
+              onClick={handleWatchAd}
+              disabled={watchAdMutation.isPending}
+              className="flex items-center justify-center rounded-full h-12 px-6 bg-[#29382f] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-opacity-80 transition-opacity disabled:opacity-50"
               data-testid="button-watch-ad"
             >
               <span className="material-symbols-outlined mr-2">smart_display</span>
@@ -216,6 +283,61 @@ export default function Dashboard() {
       </div>
 
       <BottomNav />
+
+      {/* Ad Modal */}
+      {showAdModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <div className="bg-[#1c2620] rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-24 h-24 mx-auto mb-4 bg-[#29382f] rounded-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-[#38e07b] text-5xl">
+                  smart_display
+                </span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {adCountdown > 0 ? "Watching Ad..." : "Ad Complete!"}
+              </h2>
+              <p className="text-[#9eb7a8] text-sm">
+                {adCountdown > 0 
+                  ? "Please wait while the ad plays" 
+                  : "You earned 2 tokens!"}
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <div className="text-6xl font-bold text-[#38e07b] mb-2">
+                {adCountdown}
+              </div>
+              <div className="text-sm text-[#9eb7a8]">seconds remaining</div>
+              
+              {/* Progress bar */}
+              <div className="mt-4 h-2 bg-[#29382f] rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#38e07b] transition-all duration-1000"
+                  style={{ width: `${((60 - adCountdown) / 60) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Demo Ad Content */}
+            <div className="mb-6 p-4 bg-[#29382f] rounded-xl">
+              <p className="text-white text-sm mb-2">📢 Demo Ad</p>
+              <p className="text-[#9eb7a8] text-xs">
+                This is a simulated ad experience. In production, real ads from Google AdSense will be displayed here.
+              </p>
+            </div>
+
+            {adCountdown > 5 && (
+              <button
+                onClick={handleSkipAd}
+                className="text-[#9eb7a8] text-sm hover:text-white transition-colors"
+              >
+                Skip (lose reward)
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
