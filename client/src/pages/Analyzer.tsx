@@ -341,6 +341,171 @@ export default function Analyzer() {
               </div>
             </div>
 
+            {/* Probability Score Meter */}
+            {analysis.probabilityScore !== null && analysis.probabilityScore !== undefined && (
+              <div className="rounded-2xl bg-[#1c2620] p-6">
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">percent</span>
+                  {t.tradeProbability}
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[#9eb7a8] text-base">{t.successProbability}</span>
+                    <span className="text-white text-2xl font-bold" data-testid="text-probability-score">
+                      {analysis.probabilityScore}%
+                    </span>
+                  </div>
+                  {/* Probability bar */}
+                  <div className="w-full bg-[#29382f] rounded-full h-4 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#38e07b] to-[#2ab865] rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(Math.max(analysis.probabilityScore, 0), 100)}%` }}
+                      data-testid="bar-probability"
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-[#9eb7a8] mt-1">
+                    <span>{t.low}</span>
+                    <span>{t.moderate}</span>
+                    <span>{t.high}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Multiple Take Profit Targets */}
+            {(analysis.tp1 || analysis.tp2 || analysis.tp3) && (
+              <div>
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">flag</span>
+                  {t.multipleTakeProfitTargets}
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {analysis.tp1 && (
+                    <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
+                      <p className="text-[#9eb7a8] text-sm font-normal">TP1 (1:1)</p>
+                      <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp1">
+                        {analysis.tp1}
+                      </p>
+                      <p className="text-[#6a7f72] text-xs mt-1">{t.bookProfit}</p>
+                    </div>
+                  )}
+                  {analysis.tp2 && (
+                    <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
+                      <p className="text-[#9eb7a8] text-sm font-normal">TP2 (1:2)</p>
+                      <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp2">
+                        {analysis.tp2}
+                      </p>
+                      <p className="text-[#6a7f72] text-xs mt-1">{t.trailToBreakeven}</p>
+                    </div>
+                  )}
+                  {analysis.tp3 && (
+                    <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
+                      <p className="text-[#9eb7a8] text-sm font-normal">TP3 (1:3)</p>
+                      <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp3">
+                        {analysis.tp3}
+                      </p>
+                      <p className="text-[#6a7f72] text-xs mt-1">{t.maxTarget}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Support & Resistance Levels */}
+            {((analysis.s1 || analysis.s2 || analysis.s3) || (analysis.r1 || analysis.r2 || analysis.r3)) && (
+              <div>
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">multiline_chart</span>
+                  {t.supportResistanceLevels}
+                </h2>
+                <div className="space-y-4">
+                  {/* Resistance Levels */}
+                  {(analysis.r1 || analysis.r2 || analysis.r3) && (
+                    <div className="bg-[#1c2620] p-4 rounded-2xl">
+                      <p className="text-white text-base font-bold mb-3 flex items-center gap-2">
+                        <span className="text-red-500">▲</span> {t.resistance}
+                      </p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {analysis.r3 && (
+                          <div className="text-center">
+                            <p className="text-[#9eb7a8] text-xs">R3</p>
+                            <p className="text-red-500 text-base font-bold mt-1" data-testid="text-r3">{analysis.r3}</p>
+                          </div>
+                        )}
+                        {analysis.r2 && (
+                          <div className="text-center">
+                            <p className="text-[#9eb7a8] text-xs">R2</p>
+                            <p className="text-red-500 text-base font-bold mt-1" data-testid="text-r2">{analysis.r2}</p>
+                          </div>
+                        )}
+                        {analysis.r1 && (
+                          <div className="text-center">
+                            <p className="text-[#9eb7a8] text-xs">R1</p>
+                            <p className="text-red-500 text-base font-bold mt-1" data-testid="text-r1">{analysis.r1}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Support Levels */}
+                  {(analysis.s1 || analysis.s2 || analysis.s3) && (
+                    <div className="bg-[#1c2620] p-4 rounded-2xl">
+                      <p className="text-white text-base font-bold mb-3 flex items-center gap-2">
+                        <span className="text-[#38e07b]">▼</span> {t.support}
+                      </p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {analysis.s1 && (
+                          <div className="text-center">
+                            <p className="text-[#9eb7a8] text-xs">S1</p>
+                            <p className="text-[#38e07b] text-base font-bold mt-1" data-testid="text-s1">{analysis.s1}</p>
+                          </div>
+                        )}
+                        {analysis.s2 && (
+                          <div className="text-center">
+                            <p className="text-[#9eb7a8] text-xs">S2</p>
+                            <p className="text-[#38e07b] text-base font-bold mt-1" data-testid="text-s2">{analysis.s2}</p>
+                          </div>
+                        )}
+                        {analysis.s3 && (
+                          <div className="text-center">
+                            <p className="text-[#9eb7a8] text-xs">S3</p>
+                            <p className="text-[#38e07b] text-base font-bold mt-1" data-testid="text-s3">{analysis.s3}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Trailing Stop Strategy */}
+            {analysis.trailingStopStrategy && (
+              <div className="rounded-2xl bg-[#1c2620] p-4">
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">trending_up</span>
+                  {t.trailingStopStrategy}
+                </h2>
+                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-trailing-stop">
+                  {analysis.trailingStopStrategy}
+                </p>
+              </div>
+            )}
+
+            {/* Explanatory Notes / Disclaimers */}
+            {analysis.explanatoryNotes && (
+              <div className="rounded-2xl bg-[#1c2620] p-4 border-2 border-[#38e07b]/30">
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">info</span>
+                  {t.importantNotesDisclaimers}
+                </h2>
+                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-explanatory-notes">
+                  {analysis.explanatoryNotes}
+                </p>
+              </div>
+            )}
+
             {/* Analyse More Button */}
             <div className="mt-8">
               <button
