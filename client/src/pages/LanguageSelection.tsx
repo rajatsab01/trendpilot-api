@@ -1,14 +1,30 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
+import type { Language } from "@/lib/translations";
 
 export default function LanguageSelection() {
   const [, setLocation] = useLocation();
   const { setLanguage } = useLanguage();
 
-  const handleLanguageSelect = (lang: "en" | "hi") => {
+  const handleLanguageSelect = (lang: Language) => {
     setLanguage(lang);
     setLocation("/login");
   };
+
+  const languages = [
+    { code: "en" as Language, name: "English", flag: "🇬🇧" },
+    { code: "es" as Language, name: "Español", flag: "🇪🇸" },
+    { code: "zh" as Language, name: "中文", flag: "🇨🇳" },
+    { code: "hi" as Language, name: "हिन्दी", flag: "🇮🇳" },
+    { code: "ar" as Language, name: "العربية", flag: "🇸🇦" },
+    { code: "fr" as Language, name: "Français", flag: "🇫🇷" },
+    { code: "de" as Language, name: "Deutsch", flag: "🇩🇪" },
+    { code: "pt" as Language, name: "Português", flag: "🇧🇷" },
+    { code: "ru" as Language, name: "Русский", flag: "🇷🇺" },
+    { code: "ja" as Language, name: "日本語", flag: "🇯🇵" },
+    { code: "ko" as Language, name: "한국어", flag: "🇰🇷" },
+    { code: "it" as Language, name: "Italiano", flag: "🇮🇹" },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#111714] text-white">
@@ -21,42 +37,43 @@ export default function LanguageSelection() {
         </button>
       </header>
 
-      <main className="flex flex-col items-center justify-center flex-grow text-center px-4">
-        <div className="w-24 h-24 mb-6 bg-[#29382f] rounded-3xl flex items-center justify-center">
-          <span className="material-symbols-outlined text-[#38e07b]" style={{ fontSize: "48px" }}>
+      <main className="flex flex-col items-center justify-center flex-grow text-center px-4 py-8">
+        <div className="w-20 h-20 mb-4 bg-[#29382f] rounded-3xl flex items-center justify-center">
+          <span className="material-symbols-outlined text-[#38e07b]" style={{ fontSize: "40px" }}>
             trending_up
           </span>
         </div>
         
-        <h1 className="text-4xl font-bold mb-2 tracking-tight text-[#38e07b]">
+        <h1 className="text-3xl font-bold mb-1 tracking-tight text-[#38e07b]">
           Trend Pilot
         </h1>
-        <p className="text-sm text-[#9eb7a8] mb-8">AI Trading Assistant</p>
+        <p className="text-xs text-[#9eb7a8] mb-6">AI Trading Assistant</p>
 
-        <h2 className="text-2xl font-bold mb-4 tracking-tight">Welcome</h2>
-        <p className="text-lg text-[#9eb7a8] mb-12 max-w-sm">
+        <h2 className="text-xl font-bold mb-2 tracking-tight">Welcome</h2>
+        <p className="text-sm text-[#9eb7a8] mb-8 max-w-sm">
           Please select your preferred language.
         </p>
 
-        <div className="w-full max-w-sm space-y-4">
-          <button
-            onClick={() => handleLanguageSelect("en")}
-            className="block w-full text-center py-4 px-6 bg-[#38e07b] text-[#111714] rounded-full font-bold text-lg hover:bg-opacity-90 transition-colors"
-            data-testid="button-language-english"
-          >
-            English
-          </button>
-          <button
-            onClick={() => handleLanguageSelect("hi")}
-            className="block w-full text-center py-4 px-6 bg-[#29382f] text-white rounded-full font-bold text-lg hover:bg-opacity-80 transition-colors"
-            data-testid="button-language-hindi"
-          >
-            हिन्दी
-          </button>
+        <div className="w-full max-w-2xl grid grid-cols-2 gap-3 px-2">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => handleLanguageSelect(lang.code)}
+              className={`flex items-center justify-between py-3 px-4 rounded-xl font-medium text-sm transition-colors ${
+                lang.code === "en"
+                  ? "bg-[#38e07b] text-[#111714]"
+                  : "bg-[#1c2620] text-white hover-elevate active-elevate-2"
+              }`}
+              data-testid={`button-language-${lang.code}`}
+            >
+              <span className="text-2xl mr-2">{lang.flag}</span>
+              <span className="flex-1 text-left">{lang.name}</span>
+            </button>
+          ))}
         </div>
       </main>
 
-      <footer className="p-4 text-center">
+      <footer className="p-4 text-center pb-8">
         <p className="text-xs text-[#6a7f72] max-w-xs mx-auto">
           By continuing, you agree to our{" "}
           <a href="#" className="underline">

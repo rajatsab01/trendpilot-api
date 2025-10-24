@@ -8,8 +8,8 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   mobile: text("mobile").notNull().unique(),
-  language: text("language").notNull().default("en"), // 'en' or 'hi'
-  tokens: integer("tokens").notNull().default(10),
+  language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
+  tokens: integer("tokens").notNull().default(100),
   otpSecret: text("otp_secret"), // TOTP secret for 2FA
   otpEnabled: integer("otp_enabled").notNull().default(0), // 0 = disabled, 1 = enabled
   createdAt: timestamp("created_at").defaultNow(),
