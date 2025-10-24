@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -6,6 +6,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { Analysis } from "@shared/schema";
+
+interface SymbolSuggestion {
+  id: string;
+  symbol: string;
+  name: string;
+}
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
@@ -19,6 +25,10 @@ export default function Analyzer() {
   const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency" | "">("");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
+  const [symbolSuggestions, setSymbolSuggestions] = useState<SymbolSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const userId = localStorage.getItem("userId");
 
@@ -85,6 +95,60 @@ export default function Analyzer() {
       return;
     }
     analyzeMutation.mutate();
+  };
+
+  // Debounced symbol search effect
+  useEffect(() => {
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Don't search if no symbol or no market or if viewing analysis results
+    if (!symbol.trim() || !market || analysisId) {
+      setSymbolSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    // Only support cryptocurrency market for now
+    if (market !== 'cryptocurrency') {
+      setSymbolSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    // Debounce search - wait 500ms after user stops typing
+    debounceTimerRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `/api/symbols/search?query=${encodeURIComponent(symbol)}&market=${market}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setSymbolSuggestions(data.suggestions || []);
+          setShowSuggestions((data.suggestions || []).length > 0);
+        }
+      } catch (error) {
+        console.error('Symbol search error:', error);
+        setSymbolSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [symbol, market, analysisId]);
+
+  const handleSuggestionClick = (suggestion: SymbolSuggestion) => {
+    setSymbol(suggestion.symbol);
+    setShowSuggestions(false);
   };
 
   // Show loading state while fetching analysis
@@ -552,14 +616,50 @@ export default function Analyzer() {
               <label className="text-white text-base font-medium mb-2 block">
                 {t.tradingSymbol}
               </label>
-              <input
-                type="text"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                placeholder="e.g., AAPL, TSLA, GOOGL"
-                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#6a7f72] px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
-                data-testid="input-symbol"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                  placeholder="e.g., BTC, ETH, BTCUSDT"
+                  className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#6a7f72] px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
+                  data-testid="input-symbol"
+                />
+                {isSearching && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin h-5 w-5 border-2 border-[#38e07b] border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                
+                {/* Symbol Suggestions Dropdown */}
+                {showSuggestions && symbolSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-2 bg-[#1c2620] rounded-xl border border-[#38e07b]/20 shadow-lg overflow-hidden">
+                    <div className="p-2 text-[#9eb7a8] text-xs font-medium border-b border-[#38e07b]/10">
+                      Suggested symbols:
+                    </div>
+                    {symbolSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.id}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="w-full text-left px-4 py-3 hover-elevate active-elevate-2 flex items-center justify-between group"
+                        data-testid={`suggestion-${suggestion.symbol}`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-white text-base font-medium">
+                            {suggestion.symbol}
+                          </span>
+                          <span className="text-[#9eb7a8] text-sm">
+                            {suggestion.name}
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-[#38e07b] opacity-0 group-hover:opacity-100 transition-opacity">
+                          arrow_forward
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
