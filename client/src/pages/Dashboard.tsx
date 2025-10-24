@@ -149,8 +149,8 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#111714] flex flex-col">
       <div className="flex flex-col flex-1">
         <header className="flex flex-col p-4 pb-2">
-          <div className="flex items-center justify-center mb-2">
-            <div className="w-16 h-16 mr-2">
+          <div className="flex flex-col items-center mb-2">
+            <div className="w-20 h-20 mb-2">
               <img 
                 src={logoImage} 
                 alt="Trend Pilot Logo" 

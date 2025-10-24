@@ -21,17 +21,20 @@ export default function Welcome() {
       </header>
 
       <main className="flex flex-1 flex-col justify-center px-6 text-center">
-        <div className="flex justify-center mb-8">
-          <div className="w-32 h-32">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-32 h-32 mb-4">
             <img 
               src={logoImage} 
               alt="Trend Pilot Logo" 
               className="w-full h-full object-contain"
             />
           </div>
+          <h1 className="text-3xl font-bold text-[#38e07b] tracking-tight">
+            Trend Pilot
+          </h1>
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+        <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
           {t.aiGuidedTrading}
         </h2>
         <p className="text-[#9eb7a8] leading-relaxed max-w-lg mx-auto">

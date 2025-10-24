@@ -187,10 +187,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log("Creating Razorpay order...");
+      // Generate short receipt (max 40 chars per Razorpay requirement)
+      const shortUserId = userId.split('-')[0]; // First 8 chars of UUID
+      const timestamp = Date.now().toString().slice(-8); // Last 8 digits of timestamp
+      const receipt = `rcpt_${shortUserId}_${timestamp}`; // ~22 chars total
+      
       const order = await razorpay.orders.create({
         amount: selectedPackage.amount, // amount in paise
         currency: "INR",
-        receipt: `receipt_${userId}_${Date.now()}`,
+        receipt: receipt,
         notes: {
           userId,
           tokens: selectedPackage.tokens,
