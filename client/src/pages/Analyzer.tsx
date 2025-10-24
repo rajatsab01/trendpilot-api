@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -6,12 +6,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { Analysis } from "@shared/schema";
-
-interface SymbolSuggestion {
-  id: string;
-  symbol: string;
-  name: string;
-}
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
@@ -24,11 +18,6 @@ export default function Analyzer() {
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
-  const [symbolSuggestions, setSymbolSuggestions] = useState<SymbolSuggestion[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const latestQueryRef = useRef<{ symbol: string }>({ symbol: '' });
 
   const userId = localStorage.getItem("userId");
 
@@ -88,76 +77,6 @@ export default function Analyzer() {
     analyzeMutation.mutate();
   };
 
-  // Debounced symbol search effect
-  useEffect(() => {
-    // Clear previous timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Update latest query ref
-    latestQueryRef.current = { symbol };
-
-    // Don't search if no symbol or if viewing analysis results
-    if (!symbol.trim() || analysisId) {
-      setSymbolSuggestions([]);
-      setShowSuggestions(false);
-      setIsSearching(false);
-      return;
-    }
-
-    // Capture current query for this fetch
-    const querySymbol = symbol;
-
-    // Debounce search - wait 500ms after user stops typing
-    debounceTimerRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const response = await fetch(
-          `/api/symbols/search?query=${encodeURIComponent(querySymbol)}&market=cryptocurrency`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Only update state if this query is still the latest (prevents stale results)
-          if (latestQueryRef.current.symbol === querySymbol) {
-            setSymbolSuggestions(data.suggestions || []);
-            setShowSuggestions((data.suggestions || []).length > 0);
-            setIsSearching(false);
-          } else {
-            // Query is stale, stop spinner if needed
-            setIsSearching(false);
-          }
-        } else {
-          // Only update if query is still current
-          if (latestQueryRef.current.symbol === querySymbol) {
-            setIsSearching(false);
-          }
-        }
-      } catch (error) {
-        console.error('Symbol search error:', error);
-        // Only clear if query is still current
-        if (latestQueryRef.current.symbol === querySymbol) {
-          setSymbolSuggestions([]);
-          setShowSuggestions(false);
-          setIsSearching(false);
-        } else {
-          setIsSearching(false);
-        }
-      }
-    }, 500);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [symbol, analysisId]);
-
-  const handleSuggestionClick = (suggestion: SymbolSuggestion) => {
-    setSymbol(suggestion.symbol);
-    setShowSuggestions(false);
-  };
 
   // Show loading state while fetching analysis
   if (analysisId && isLoadingAnalysis) {
@@ -666,50 +585,14 @@ export default function Analyzer() {
               <label className="text-white text-base font-medium mb-2 block">
                 {t.tradingSymbol}
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  placeholder="e.g., BTC, ETH, BTCUSDT"
-                  className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#6a7f72] px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
-                  data-testid="input-symbol"
-                />
-                {isSearching && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin h-5 w-5 border-2 border-[#38e07b] border-t-transparent rounded-full"></div>
-                  </div>
-                )}
-                
-                {/* Symbol Suggestions Dropdown */}
-                {showSuggestions && symbolSuggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-2 bg-[#1c2620] rounded-xl border border-[#38e07b]/20 shadow-lg overflow-hidden">
-                    <div className="p-2 text-[#9eb7a8] text-xs font-medium border-b border-[#38e07b]/10">
-                      Suggested symbols:
-                    </div>
-                    {symbolSuggestions.map((suggestion) => (
-                      <button
-                        key={suggestion.id}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full text-left px-4 py-3 hover-elevate active-elevate-2 flex items-center justify-between group"
-                        data-testid={`suggestion-${suggestion.symbol}`}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-white text-base font-medium">
-                            {suggestion.symbol}
-                          </span>
-                          <span className="text-[#9eb7a8] text-sm">
-                            {suggestion.name}
-                          </span>
-                        </div>
-                        <span className="material-symbols-outlined text-[#38e07b] opacity-0 group-hover:opacity-100 transition-opacity">
-                          arrow_forward
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <input
+                type="text"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                placeholder="e.g., BTC, AAPL, EURUSD, GOLD"
+                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#6a7f72] px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
+                data-testid="input-symbol"
+              />
             </div>
 
             <div>

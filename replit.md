@@ -33,3 +33,26 @@ The design emphasizes a clean, simple analyzer form. The application features a 
 *   **UI Libraries:** Radix UI, shadcn/ui, Tailwind CSS, Lucide React
 *   **Fonts:** Google Fonts (Spline Sans, Manrope), Material Symbols
 *   **Payment Gateway:** Razorpay
+## Recent Changes
+
+### Market Type Auto-Detection (October 24, 2025)
+- **Removed market type dropdown** - Perplexity AI now automatically detects market type via real-time web search
+- **Removed symbol autocomplete** - Simplified to pure text input (Perplexity validates all symbols anyway)
+- **Problem solved:**
+  - Users selecting wrong market type (e.g., "Stock Market" for BTC) caused incorrect analysis
+  - Symbol autocomplete only worked for cryptocurrency, limiting usability to one market
+- **Solution:**
+  - Perplexity AI automatically identifies whether symbol is: cryptocurrency, stock, forex, commodity, bond, or derivative
+  - Direct symbol input with multi-market examples in placeholder: "BTC, AAPL, EURUSD, GOLD"
+  - Perplexity validates and corrects symbols using web search, regardless of market type
+- **Benefits:**
+  - ✅ Eliminates user errors from wrong market selection
+  - ✅ Simpler UI - just symbol and duration fields (was 3 fields, now 2)
+  - ✅ Smarter analysis - AI determines correct market context automatically
+  - ✅ Works for ANY financial instrument across all markets
+  - ✅ No market-specific limitations
+- **Implementation:**
+  - Backend: Removed `market` parameter from `/api/analyze` endpoint; Perplexity returns auto-detected `marketType`
+  - Frontend: Removed market dropdown, symbol autocomplete dropdown, and all market-related validation
+  - Database: Still stores `market` field (now AI-populated instead of user-selected)
+  - Perplexity prompt: Enhanced to explicitly detect and return market type in JSON response
