@@ -116,3 +116,31 @@ The application supports 12 languages, a token-based usage model, and provides a
   - Market selection dropdown visible on both Dashboard and Analyzer
   - Validation prevents submission without market selection
   - Error messages guide users to select market type
+
+### Professional Trading Features Enhancement (October 24, 2025)
+- **Enhanced Trading Analysis Display**
+  - Added minimum 1:2 or 1:3 risk-reward ratios (no more 1:1 basic ratios)
+  - Multiple take-profit targets: TP1, TP2, TP3 with booking strategies
+  - Support & resistance levels: S1-S3 and R1-R3 for key price levels
+  - Probability meter (0-100%) using visual circular gauge
+  - Trailing stop strategy recommendations
+  - Comprehensive explanatory notes and disclaimers
+- **Complete Multilingual Support**
+  - 27 new translation keys added across all 12 languages
+  - Full localization of all UI elements, error messages, and button labels
+  - Probability meter, support/resistance, and professional trading terms translated
+  - No hardcoded English strings remaining
+
+### Trading Pair Symbol Parsing (October 24, 2025)
+- **Fixed cryptocurrency symbol recognition and display**
+  - **Problem:** Users entering "ETHUSDT" or "BTCUSDT" resulted in "Price data unavailable"
+  - **Root Cause:** CoinGecko API doesn't recognize trading pairs, only base symbols
+  - **Solution:** Implemented `parseBaseSymbol()` function to extract base currency
+    - Parses ETHUSDT → ETH, BTCUSDT → BTC, ETH-USD → ETH
+    - Supports multiple quote currencies: USDT, USD, USDC, BUSD, EUR, GBP, JPY, INR
+    - Removes separators like - or /
+  - **Display Format Enhancement:** Shows "Ethereum (ETHUSDT)" instead of just "ETHUSDT"
+    - Format: `{CryptoName} ({TradingPair})` when trading pair detected
+    - Example: "Bitcoin (BTCUSDT)", "Ethereum (ETHUSDT)"
+    - Falls back to crypto name only for simple symbols like "BTC" or "ETH"
+  - **Status:** Trading pairs now work correctly, price data displays properly

@@ -15,11 +15,34 @@ interface MarketData {
 }
 
 /**
+ * Parse trading pair symbols to extract base currency
+ * Examples: BTCUSDT → BTC, ETHUSDT → ETH, BTCUSD → BTC, ETH-USD → ETH
+ */
+function parseBaseSymbol(symbol: string): string {
+  const upperSymbol = symbol.toUpperCase();
+  
+  // Remove common quote currencies (USDT, USD, USDC, EUR, GBP, etc.)
+  const quoteCurrencies = ['USDT', 'USD', 'USDC', 'BUSD', 'EUR', 'GBP', 'JPY', 'INR'];
+  
+  for (const quote of quoteCurrencies) {
+    if (upperSymbol.endsWith(quote)) {
+      return upperSymbol.slice(0, -quote.length);
+    }
+  }
+  
+  // Remove separators like - or /
+  return upperSymbol.replace(/[-\/]/g, '').split(/[^A-Z]/)[0];
+}
+
+/**
  * Fetch cryptocurrency data from CoinGecko API (free, no API key required)
- * @param symbol - The crypto symbol (e.g., "BTC", "ETH", "DOGE")
+ * @param symbol - The crypto symbol (e.g., "BTC", "ETH", "DOGE", "BTCUSDT", "ETHUSDT")
  */
 export async function fetchCryptoData(symbol: string): Promise<MarketData> {
   try {
+    // Parse trading pair to extract base currency
+    const baseSymbol = parseBaseSymbol(symbol);
+    
     // CoinGecko uses coin IDs, not symbols. Map common symbols to IDs
     const symbolToId: Record<string, string> = {
       'BTC': 'bitcoin',
@@ -47,7 +70,7 @@ export async function fetchCryptoData(symbol: string): Promise<MarketData> {
       'OP': 'optimism',
     };
 
-    const coinId = symbolToId[symbol.toUpperCase()] || symbol.toLowerCase();
+    const coinId = symbolToId[baseSymbol] || baseSymbol.toLowerCase();
     
     const response = await fetch(
       `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
@@ -64,9 +87,15 @@ export async function fetchCryptoData(symbol: string): Promise<MarketData> {
 
     const data = await response.json();
     
+    // Format instrument name with trading pair if different from base
+    const cryptoName = data.name || baseSymbol;
+    const formattedName = baseSymbol !== symbol.toUpperCase() 
+      ? `${cryptoName} (${symbol.toUpperCase()})`
+      : cryptoName;
+    
     return {
       symbol: symbol.toUpperCase(),
-      instrumentName: data.name || symbol.toUpperCase(),
+      instrumentName: formattedName,
       currentPrice: data.market_data.current_price.usd,
       priceChange24h: data.market_data.price_change_24h,
       priceChangePercentage24h: data.market_data.price_change_percentage_24h,

@@ -124,11 +124,6 @@ export default function Analyzer() {
                 <h2 className="text-white text-3xl font-bold tracking-tight" data-testid="text-instrument-name">
                   {analysis.instrumentName || analysis.symbol}
                 </h2>
-                {analysis.instrumentName && analysis.instrumentName !== analysis.symbol && (
-                  <p className="text-[#9eb7a8] text-lg mt-1" data-testid="text-symbol">
-                    {analysis.symbol}
-                  </p>
-                )}
               </div>
               <div className="mt-4">
                 <p className="text-[#9eb7a8] text-sm mb-1">{t.currentPrice}</p>
