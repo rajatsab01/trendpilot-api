@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeMarket } from "./gemini";
 import { analyzeMarketWithPerplexity } from "./perplexity";
+import { searchCryptoSymbols } from "./marketData";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 import Razorpay from "razorpay";
@@ -420,6 +421,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Watch ad error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  // Search/validate symbols for a given market
+  app.get("/api/symbols/search", async (req, res) => {
+    try {
+      const { query, market } = req.query;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "Query parameter required" });
+      }
+      
+      if (!market || typeof market !== 'string') {
+        return res.status(400).json({ error: "Market parameter required" });
+      }
+
+      // Currently only supporting cryptocurrency market symbol search
+      if (market === 'cryptocurrency') {
+        const suggestions = await searchCryptoSymbols(query);
+        return res.json({ suggestions });
+      }
+
+      // For other markets, return empty suggestions for now
+      res.json({ suggestions: [] });
+    } catch (error: any) {
+      console.error("Symbol search error:", error);
+      res.status(500).json({ error: "Failed to search symbols" });
     }
   });
 

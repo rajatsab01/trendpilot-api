@@ -253,6 +253,43 @@ export async function fetchCurrencyData(symbol: string): Promise<MarketData> {
 }
 
 /**
+ * Search for cryptocurrency symbols using CoinGecko search API
+ * Returns suggested coins matching the query
+ */
+export async function searchCryptoSymbols(query: string): Promise<Array<{
+  id: string;
+  symbol: string;
+  name: string;
+}>> {
+  try {
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`CoinGecko API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Return top 5 coin matches
+    return (data.coins || []).slice(0, 5).map((coin: any) => ({
+      id: coin.id,
+      symbol: coin.symbol.toUpperCase(),
+      name: coin.name,
+    }));
+  } catch (error: any) {
+    console.error('Error searching crypto symbols:', error);
+    return [];
+  }
+}
+
+/**
  * Main function to fetch market data based on market type
  */
 export async function fetchMarketData(
