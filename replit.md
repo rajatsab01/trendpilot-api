@@ -41,6 +41,20 @@ The application supports 12 languages, a token-based usage model, and provides a
 *   **Payment:** Razorpay for token purchases
 ## Recent Changes (October 24, 2025)
 
+### New Features: Analyse More & Charity Donation (October 24, 2025)
+- **"Analyse More" button on Analyzer results screen**
+  - Green button at bottom of results navigates back to Dashboard
+  - Allows users to perform another analysis immediately
+  - Translated across all 12 languages
+- **"Charity brings luck" donation feature**
+  - Gradient heart-icon button on Dashboard and dedicated /charity page
+  - Flexible donation amounts (₹10 minimum)
+  - Quick amount buttons: ₹50, ₹100, ₹500
+  - Razorpay integration for secure payments
+  - Receipt format: `char_${shortUserId}_${timestamp}` (~22 chars)
+  - Payment verification via HMAC SHA256 signature
+  - **Note:** Donations not currently persisted to database (enhancement opportunity)
+
 ### Critical Razorpay Fix (October 24, 2025)
 - **Fixed token purchase error - Razorpay receipt length issue**
   - **Problem:** Receipt field exceeded Razorpay's 40-character limit, causing 400 errors
