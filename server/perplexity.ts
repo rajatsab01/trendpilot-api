@@ -10,6 +10,7 @@ interface MarketAnalysisResult {
   // Perplexity-validated symbol metadata
   correctedSymbol: string;
   assetName: string;
+  marketType: string; // Auto-detected market type from Perplexity
   currentPrice: string;
   priceSource: string;
   instrumentName: string | null; // For backward compatibility
@@ -60,19 +61,9 @@ const languageMap: Record<string, string> = {
   it: "Italian (Italiano)",
 };
 
-const marketTypeMap: Record<string, string> = {
-  stock_equities: "Stock Market (Equities)",
-  commodity: "Commodity Market",
-  forex: "Foreign Exchange (Forex) Market",
-  derivatives_futures: "Derivatives Market (Futures)",
-  bond: "Bond Market",
-  cryptocurrency: "Cryptocurrency Market",
-};
-
 export async function analyzeMarketWithPerplexity(
   symbol: string,
   duration: string,
-  market: "stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency",
   language: string = "en"
 ): Promise<MarketAnalysisResult> {
   if (!process.env.PERPLEXITY_API_KEY) {
@@ -87,11 +78,12 @@ export async function analyzeMarketWithPerplexity(
     }[duration] || "short-term trading";
 
     const languageName = languageMap[language] || "English";
-    const marketTypeName = marketTypeMap[market] || market;
 
-    const prompt = `You are an expert financial analyst with real-time market access. Analyze the trading symbol "${symbol}" in the ${marketTypeName} for ${durationContext}.
+    const prompt = `You are an expert financial analyst with real-time market access. Analyze the trading symbol "${symbol}" for ${durationContext}.
 
-**IMPORTANT**: Use your real-time web search to find ALL market data for this symbol. Do not rely on external inputs.
+**IMPORTANT**: Use your real-time web search to:
+1. AUTO-DETECT what market this symbol belongs to (cryptocurrency, stocks, forex, commodities, bonds, or derivatives)
+2. Find ALL market data for this symbol
 
 CRITICAL REQUIREMENTS:
 1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
@@ -123,6 +115,7 @@ Respond with JSON in this exact format:
 {
   "correctedSymbol": "CORRECTED standard ticker symbol (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
   "assetName": "Full official name of the asset (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
+  "marketType": "AUTO-DETECTED market type - one of: 'cryptocurrency', 'stock_equities', 'commodity', 'forex', 'derivatives_futures', or 'bond'",
   "currentPrice": "EXACT current market price as found via web search (just the number, e.g., '111140.50' for $111,140.50)",
   "priceSource": "Where you found this price (e.g., 'CoinMarketCap', 'Bloomberg', 'Yahoo Finance', 'Binance')",
   "recommendation": "BUY" or "SELL",
@@ -152,7 +145,7 @@ Respond with JSON in this exact format:
   "explanatoryNotes": "Detailed explanatory notes in ${languageName} about the trade setup, key levels, market context, and risk disclaimers (3-5 sentences, like: 'This ${durationContext} setup is based on current price action at [price] with tight risk control. Key support at [level] and resistance at [level]. Market conditions favor [direction] momentum. Trade with strict discipline and manage position size according to your risk tolerance. Past performance does not guarantee future results.')"
 }
 
-IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol, assetName, currentPrice, and priceSource fields are MANDATORY and must be accurate based on your web research.`;
+IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol, assetName, marketType, currentPrice, and priceSource fields are MANDATORY and must be accurate based on your web research.`;
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -201,12 +194,15 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     const data = JSON.parse(jsonContent);
 
     // Validate required Perplexity fields
-    const requiredFields = ['correctedSymbol', 'assetName', 'currentPrice', 'priceSource'];
+    const requiredFields = ['correctedSymbol', 'assetName', 'marketType', 'currentPrice', 'priceSource'];
     const missingFields = requiredFields.filter(field => !data[field]);
     
     if (missingFields.length > 0) {
       throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
     }
+    
+    // Store auto-detected market type for database
+    const detectedMarket = data.marketType;
 
     // FIX: For SELL trades, AI often returns inverted bracket values
     // For SELL: take profit should be BELOW entry, stop loss should be ABOVE entry
@@ -235,6 +231,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       // Perplexity-validated symbol metadata (replaces external API data)
       correctedSymbol: data.correctedSymbol,
       assetName: data.assetName,
+      marketType: detectedMarket, // Auto-detected market type from Perplexity
       currentPrice: data.currentPrice,
       priceSource: data.priceSource,
       instrumentName: data.assetName, // For backward compatibility
