@@ -35,6 +35,19 @@ export const analyses = pgTable("analyses", {
   entry: text("entry"),
   takeProfit: text("take_profit"),
   stopLoss: text("stop_loss"),
+  // Enhanced risk-reward analysis fields
+  tp1: text("tp1"), // Take Profit 1
+  tp2: text("tp2"), // Take Profit 2
+  tp3: text("tp3"), // Take Profit 3
+  r1: text("r1"), // Resistance 1
+  r2: text("r2"), // Resistance 2
+  r3: text("r3"), // Resistance 3
+  s1: text("s1"), // Support 1
+  s2: text("s2"), // Support 2
+  s3: text("s3"), // Support 3
+  trailingStopStrategy: text("trailing_stop_strategy"), // e.g., "Book 50% at TP1, trail remainder to TP2"
+  probabilityScore: integer("probability_score"), // 0-100 confidence probability
+  explanatoryNotes: text("explanatory_notes"), // Detailed notes and disclaimers from Perplexity
   createdAt: timestamp("created_at").defaultNow(),
 });
 

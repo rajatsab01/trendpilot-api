@@ -20,6 +20,25 @@ interface MarketAnalysisResult {
     takeProfit: string;
     stopLoss: string;
   };
+  // Enhanced risk-reward analysis
+  takeProfitLevels: {
+    tp1: string;
+    tp2: string;
+    tp3: string;
+  };
+  supportLevels: {
+    s1: string;
+    s2: string;
+    s3: string;
+  };
+  resistanceLevels: {
+    r1: string;
+    r2: string;
+    r3: string;
+  };
+  trailingStopStrategy: string;
+  probabilityScore: number;
+  explanatoryNotes: string;
 }
 
 const languageMap: Record<string, string> = {
@@ -116,12 +135,15 @@ CRITICAL REQUIREMENTS:
 1. Research the LATEST news, trends, and price action for ${symbol} in ${marketTypeName}
 2. Use your real-time web search to find current market price if not provided above
 3. Calculate REALISTIC technical indicator values based on current market data and recent price action
-4. Generate bracket order prices (entry, take profit, stop loss) based on ACTUAL current market price
+4. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
 5. Provide your ENTIRE analysis in ${languageName}
-6. Calculate take profit and stop loss as realistic percentages from current price:
-   - For scalping: 0.5-1.5% moves
-   - For short-term: 2-5% moves
-   - For long-term: 8-15% moves
+6. Calculate MULTIPLE take profit targets (TP1, TP2, TP3) with INCREASING risk-reward:
+   - TP1: Conservative target (1:1 risk-reward) - book 50% profit here
+   - TP2: Medium target (1:2 risk-reward) - trail stop to breakeven
+   - TP3: Aggressive target (1:3 risk-reward) - maximize remaining position
+7. Calculate 3 support levels (S1, S2, S3) and 3 resistance levels (R1, R2, R3) based on current price action
+8. Provide a probability score (0-100) for this trade setup based on confluence of indicators
+9. Include detailed explanatory notes with disclaimers about market risks
 
 Provide a comprehensive 3-layer analysis:
 
@@ -147,8 +169,20 @@ Respond with JSON in this exact format:
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
   "entry": "ACTUAL CURRENT MARKET PRICE as a number (e.g., for BTC at $111,140 use '111140.00')",
-  "takeProfit": "realistic take profit price based on current market price and ${durationContext}",
-  "stopLoss": "realistic stop loss price based on current market price and ${durationContext}"
+  "takeProfit": "final take profit price (same as tp3)",
+  "stopLoss": "realistic stop loss price with tight risk control",
+  "tp1": "Take Profit 1 - Conservative 1:1 RR (book 50% profit here)",
+  "tp2": "Take Profit 2 - Medium 1:2 RR (trail stop to breakeven)",
+  "tp3": "Take Profit 3 - Aggressive 1:3 RR (maximize remaining position)",
+  "s1": "Support Level 1 - Nearest support below current price",
+  "s2": "Support Level 2 - Medium support below current price",
+  "s3": "Support Level 3 - Strong support below current price",
+  "r1": "Resistance Level 1 - Nearest resistance above current price",
+  "r2": "Resistance Level 2 - Medium resistance above current price",
+  "r3": "Resistance Level 3 - Strong resistance above current price",
+  "trailingStopStrategy": "Detailed trailing stop strategy in ${languageName} (e.g., 'Book 50% profit at TP1 (1:1 RR), move stop-loss to breakeven. Trail remaining 50% with TP2 (1:2 RR) as final target.')",
+  "probabilityScore": number between 1-100 (probability of success based on indicator confluence, trend strength, and market conditions),
+  "explanatoryNotes": "Detailed explanatory notes in ${languageName} about the trade setup, key levels, market context, and risk disclaimers (3-5 sentences, like: 'This ${durationContext} setup is based on current price action at [price] with tight risk control. Key support at [level] and resistance at [level]. Market conditions favor [direction] momentum. Trade with strict discipline and manage position size according to your risk tolerance. Past performance does not guarantee future results.')"
 }
 
 IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
@@ -236,6 +270,24 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
         takeProfit: takeProfit,
         stopLoss: stopLoss,
       },
+      takeProfitLevels: {
+        tp1: data.tp1,
+        tp2: data.tp2,
+        tp3: data.tp3,
+      },
+      supportLevels: {
+        s1: data.s1,
+        s2: data.s2,
+        s3: data.s3,
+      },
+      resistanceLevels: {
+        r1: data.r1,
+        r2: data.r2,
+        r3: data.r3,
+      },
+      trailingStopStrategy: data.trailingStopStrategy,
+      probabilityScore: data.probabilityScore,
+      explanatoryNotes: data.explanatoryNotes,
     };
   } catch (error: any) {
     console.error("Perplexity API error:", error);

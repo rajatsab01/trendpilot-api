@@ -475,6 +475,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entry: analysisResult.bracketOrder.entry,
         takeProfit: analysisResult.bracketOrder.takeProfit,
         stopLoss: analysisResult.bracketOrder.stopLoss,
+        // Enhanced risk-reward fields
+        tp1: analysisResult.takeProfitLevels.tp1,
+        tp2: analysisResult.takeProfitLevels.tp2,
+        tp3: analysisResult.takeProfitLevels.tp3,
+        s1: analysisResult.supportLevels.s1,
+        s2: analysisResult.supportLevels.s2,
+        s3: analysisResult.supportLevels.s3,
+        r1: analysisResult.resistanceLevels.r1,
+        r2: analysisResult.resistanceLevels.r2,
+        r3: analysisResult.resistanceLevels.r3,
+        trailingStopStrategy: analysisResult.trailingStopStrategy,
+        probabilityScore: analysisResult.probabilityScore,
+        explanatoryNotes: analysisResult.explanatoryNotes,
       });
 
       // Only deduct tokens after successful analysis (atomic operation to prevent race conditions)
