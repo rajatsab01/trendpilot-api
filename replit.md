@@ -2,7 +2,7 @@
 
 ## Overview
 
-Trend Pilot is an AI-powered financial advisory tool for comprehensive financial markets. It delivers intelligent buy/sell recommendations and bracket order analysis by examining financial symbols across multiple timeframes (long-term, short-term, scalping). It utilizes real-time market data from CoinGecko (crypto) and Yahoo Finance (stocks/forex) and leverages Perplexity AI with real-time web search for analysis. The system supports 12 languages and operates on a token-based usage model. It is an ADVISORY-ONLY tool and does NOT execute trades automatically.
+Trend Pilot is an AI-powered financial advisory tool for comprehensive financial markets. It delivers intelligent buy/sell recommendations and bracket order analysis by examining financial symbols across multiple timeframes (long-term, short-term, scalping). It uses Perplexity AI with real-time web search as the **exclusive source** for all market data validation, symbol correction, and price discovery. The system supports 12 languages and operates on a token-based usage model. It is an ADVISORY-ONLY tool and does NOT execute trades automatically.
 
 ## User Preferences
 
@@ -28,12 +28,11 @@ Authentication uses Phone.Email for phone number verification, allowing login/re
 
 ### System Design Choices
 
-The application supports 12 languages, a token-based usage model, and provides advisory-only recommendations. Real market data is fetched from CoinGecko (crypto) and Yahoo Finance (stocks/forex). AI analysis uses Perplexity AI (sonar-pro model) with real-time web search capabilities to access latest news, market trends, and price data. This generates structured analysis including technical indicators and bracket order calculations based on actual market prices. The system calculates and displays a risk-reward ratio for trade evaluation. Market types include: Stock Market (Equities), Commodity Market, Forex, Derivatives (Futures), Bond Market, and Cryptocurrency Market.
+The application supports 12 languages, a token-based usage model, and provides advisory-only recommendations. **Perplexity AI (sonar-pro model) is the single source of truth for ALL market data** - it validates symbols, corrects misspellings, discovers current prices, and performs analysis using real-time web search. There are no external market data API dependencies (CoinGecko, Yahoo Finance). This generates structured analysis including technical indicators and bracket order calculations based on actual market prices sourced by Perplexity. The system calculates and displays a risk-reward ratio for trade evaluation. Market types include: Stock Market (Equities), Commodity Market, Forex, Derivatives (Futures), Bond Market, and Cryptocurrency Market.
 
 ## External Dependencies
 
-*   **AI Service:** Perplexity AI for market analysis using sonar-pro model with real-time web search
-*   **Market Data:** CoinGecko API (crypto, free), Yahoo Finance API (stocks/forex, free)
+*   **AI Service & Market Data:** Perplexity AI (sonar-pro model) - **single source of truth** for symbol validation, price discovery, and market analysis via real-time web search
 *   **Database Service:** Neon PostgreSQL (`@neondatabase/serverless`)
 *   **Authentication:** Phone.Email
 *   **UI Libraries:** Radix UI, shadcn/ui, Tailwind CSS, Lucide React
@@ -106,16 +105,49 @@ The application supports 12 languages, a token-based usage model, and provides a
   - No default market selection - users must explicitly choose category
   - Market selection now required before analysis (validation added)
   - Database schema updated with new market enum values
-- **Real Market Data Strategy**
-  - Cryptocurrency: CoinGecko API provides real-time price, volume, market cap
-  - Forex: Yahoo Finance API provides real-time exchange rates
-  - Stock Equities: Yahoo Finance API (defaults to US market)
-  - Commodities, Derivatives, Bonds: Perplexity researches current prices via web search
+- **Perplexity-First Architecture (DEPRECATED external APIs)**
+  - **All market data now sourced exclusively from Perplexity AI**
+  - No dependencies on CoinGecko or Yahoo Finance APIs
+  - Perplexity validates symbols, corrects misspellings, discovers current prices
+  - Single API call for complete analysis (simpler, more reliable)
 - **UI/UX Improvements**
   - Removed Settings wheel icon from Dashboard header (cleaner design)
   - Market selection dropdown visible on both Dashboard and Analyzer
   - Validation prevents submission without market selection
   - Error messages guide users to select market type
+
+### Perplexity-First Complete Implementation (October 24, 2025)
+- **Removed all external market data API dependencies**
+  - **Problem:** Previous implementation still called CoinGecko/Yahoo Finance before Perplexity
+  - **Solution:** Completely removed fetchMarketData imports and calls from server/perplexity.ts
+  - **Architecture Change:** Perplexity now 100% responsible for ALL market data
+- **Single Source of Truth Implementation**
+  - Perplexity prompt instructs AI to use real-time web search for ALL data
+  - No coordination between multiple APIs needed
+  - Symbol validation, price discovery, and analysis all in one API call
+  - Entry price matches currentPrice (both from Perplexity)
+- **Required Field Validation**
+  - Added post-parse validation for: correctedSymbol, assetName, currentPrice, priceSource
+  - Throws descriptive error if any required field missing
+  - Error message: "Perplexity response missing required fields: [list]. This indicates Perplexity could not validate the symbol or find market data."
+  - Ensures data integrity before persisting to database
+- **Benefits Realized**
+  - ✅ No CoinGecko/Yahoo Finance downtime/rate limit issues
+  - ✅ Simpler codebase with fewer dependencies
+  - ✅ Price displayed always matches price analyzed
+  - ✅ Symbol correction happens automatically via web search
+  - ✅ Single API call reduces latency and complexity
+- **Database Schema Support**
+  - correctedSymbol: Perplexity-validated ticker symbol
+  - assetName: Perplexity-validated full asset name
+  - priceSource: Attribution for where Perplexity found the price
+  - instrumentName: Maintained for backward compatibility (populated from assetName)
+- **UI Display**
+  - Shows "Searched: [input] → Found: [corrected]" when symbol corrected
+  - Asset name as main heading (e.g., "Bitcoin")
+  - Corrected symbol below name (e.g., "BTC")
+  - Price source attribution (e.g., "via CoinMarketCap")
+- **Status:** Architecture now truly Perplexity-first with zero external API dependencies
 
 ### Professional Trading Features Enhancement (October 24, 2025)
 - **Enhanced Trading Analysis Display**
