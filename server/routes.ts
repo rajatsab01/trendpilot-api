@@ -274,6 +274,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Razorpay: Create charity donation order
+  app.post("/api/charity/create-order", async (req, res) => {
+    try {
+      const { userId, amount } = req.body;
+
+      if (!userId || !amount || amount < 10) {
+        return res.status(400).json({ error: "Invalid donation amount. Minimum ₹10 required." });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log("Initializing Razorpay for charity donation...");
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+      });
+
+      console.log("Creating Razorpay charity order...");
+      const shortUserId = userId.split('-')[0];
+      const timestamp = Date.now().toString().slice(-8);
+      const receipt = `char_${shortUserId}_${timestamp}`;
+      
+      const order = await razorpay.orders.create({
+        amount: amount * 100, // amount in paise
+        currency: "INR",
+        receipt: receipt,
+        notes: {
+          userId,
+          type: "charity",
+          amount: amount,
+        },
+      });
+      console.log("Razorpay charity order created successfully:", order.id);
+
+      res.json({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      });
+    } catch (error: any) {
+      console.error("Create charity order error:", error);
+      console.error("Error stack:", error.stack);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
+  // Razorpay: Verify charity donation payment
+  app.post("/api/charity/verify", async (req, res) => {
+    try {
+      const { userId, orderId, paymentId, signature, amount } = req.body;
+
+      if (!userId || !amount) {
+        return res.status(400).json({ error: "User ID and amount required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Real Razorpay verification
+      if (!paymentId || !signature) {
+        return res.status(400).json({ error: "Payment ID and signature required" });
+      }
+
+      const body = orderId + "|" + paymentId;
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+        .update(body.toString())
+        .digest("hex");
+
+      if (expectedSignature !== signature) {
+        return res.status(400).json({ error: "Invalid payment signature" });
+      }
+
+      // Payment verified successfully
+      console.log(`Charity donation verified: User ${userId} donated ₹${amount}`);
+
+      res.json({ 
+        success: true, 
+        message: "Thank you for your generous donation!" 
+      });
+    } catch (error: any) {
+      console.error("Verify charity payment error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
   // In-memory store for tracking last ad watch time per user (prevents spam)
   const lastAdWatchTime = new Map<string, number>();
 

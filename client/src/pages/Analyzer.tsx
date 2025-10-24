@@ -312,6 +312,17 @@ export default function Analyzer() {
                 </div>
               </div>
             </div>
+
+            {/* Analyse More Button */}
+            <div className="mt-8">
+              <button
+                onClick={() => setLocation("/dashboard")}
+                className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
+                data-testid="button-analyse-more"
+              >
+                {t.analyseMore}
+              </button>
+            </div>
           </main>
         </div>
 

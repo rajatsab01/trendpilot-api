@@ -278,6 +278,16 @@ export default function Dashboard() {
               <span className="material-symbols-outlined mr-2">smart_display</span>
               <span className="truncate">{t.watchAd}</span>
             </button>
+            
+            {/* Charity Button */}
+            <button
+              onClick={() => setLocation("/charity")}
+              className="flex items-center justify-center rounded-full h-12 px-6 bg-gradient-to-r from-[#38e07b] to-[#2ac96c] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity shadow-lg"
+              data-testid="button-charity"
+            >
+              <span className="material-symbols-outlined mr-2">favorite</span>
+              <span className="truncate">{t.charityBringsLuck}</span>
+            </button>
           </div>
         </main>
       </div>

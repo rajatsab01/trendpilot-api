@@ -11,6 +11,7 @@ import Welcome from "@/pages/Welcome";
 import Dashboard from "@/pages/Dashboard";
 import Analyzer from "@/pages/Analyzer";
 import BuyTokens from "@/pages/BuyTokens";
+import Charity from "@/pages/Charity";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/analyzer" component={Analyzer} />
       <Route path="/buy-tokens" component={BuyTokens} />
+      <Route path="/charity" component={Charity} />
       <Route component={NotFound} />
     </Switch>
   );
