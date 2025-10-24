@@ -7,7 +7,8 @@ Trend Pilot is an AI-powered financial trading assistant that provides intellige
 **Core Features:**
 - AI-driven market analysis using Google Gemini
 - Multi-timeframe trading strategies (long-term, short-term, scalping)
-- Token-based usage system
+- Token-based usage system (starting with 20 tokens)
+- Phone.Email authentication (FREE for 6 months, no app download required)
 - Broker integration capabilities
 - Multi-language support (12 languages: English, Spanish, Chinese, Hindi, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian)
 - Analysis history tracking
@@ -67,7 +68,8 @@ Preferred communication style: Simple, everyday language.
 - Session-based architecture (userId stored client-side)
 
 **API Endpoints:**
-- `POST /api/auth/login` - User authentication/creation
+- `POST /api/auth/login` - User authentication/creation with phone number migration support
+- `POST /api/auth/verify-phone` - Phone.Email verification endpoint (SSRF-protected)
 - `GET /api/user/:userId` - Fetch user details
 - `POST /api/analyze` - Market analysis via Gemini AI
 - `GET /api/analysis/:analysisId` - Retrieve specific analysis
@@ -119,12 +121,24 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 
-**Authentication Flow:**
+**Authentication Flow (Phone.Email Integration):**
 1. User selects language preference
-2. User enters name and mobile number
-3. Server creates new user or retrieves existing by mobile
-4. UserId stored in localStorage for subsequent requests
-5. No traditional session management - stateless API with client-side userId
+2. User enters name on Login page
+3. Phone.Email widget displays for phone verification
+4. User enters phone number and receives OTP via SMS (handled by Phone.Email)
+5. Upon successful verification, frontend fetches verified phone number from Phone.Email JSON URL
+6. Backend validates and normalizes phone number (handles legacy 10-digit format)
+7. Server creates new user or retrieves existing user (with automatic migration to +country format)
+8. UserId stored in localStorage for subsequent requests
+
+**Phone Number Migration Strategy:**
+- New users: stored with international format (+country code)
+- Legacy users (10-digit): automatically migrated during first Phone.Email login
+- Lookup attempts three formats:
+  1. Direct match with +country code
+  2. Without + prefix
+  3. Last 10 digits (for legacy accounts)
+- Once found, legacy numbers are automatically updated to +country format
 
 **Authorization:**
 - Simple userId-based access control
@@ -132,8 +146,10 @@ Preferred communication style: Simple, everyday language.
 - API endpoints validate userId existence before operations
 
 **Security Considerations:**
-- No password-based authentication (mobile-based identification)
-- HTTPS enforced in production
+- Phone.Email verification (FREE for 6 months, no app download)
+- SSRF protection on verification endpoint (validates user.phone.email domain)
+- HTTPS-only enforcement for verification requests
+- No password-based authentication
 - Input validation via Zod schemas
 - SQL injection protection via Drizzle ORM parameterized queries
 
@@ -174,6 +190,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 24, 2025)
 
+### Phone.Email Authentication Integration (October 24, 2025)
+- **Replaced TOTP (Google Authenticator) with Phone.Email widget**
+  - Eliminated user friction: no app download required
+  - FREE for 6 months of usage
+  - Phone.Email Client ID: 16614316303161384204
+- **Security Implementation:**
+  - SSRF protection: validates requests are from user.phone.email domain only
+  - HTTPS-only enforcement on verification endpoint
+  - Domain whitelist validation before fetching user data
+- **Backwards Compatibility:**
+  - Automatic migration of legacy 10-digit phone numbers to +country code format
+  - Multi-format lookup: tries +country, country code only, and last-10-digits
+  - Seamless upgrade path for existing users
+- **Database Schema Updates:**
+  - Removed `otpSecret` and `otpEnabled` columns from users table
+  - Added `updateUserMobile` method to storage interface for migration support
+  - Successfully pushed schema changes with zero data loss
+- **Translation Updates:**
+  - Added Phone.Email-specific translations across all 12 languages
+  - Localized verification flow messages (verifying, loading, errors)
+
 ### Multi-Language Support Enhancement
 - Expanded from 2 languages to 12 languages: English (default), Spanish, Chinese, Hindi, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian
 - Updated language selection screen with 2-column grid layout displaying all supported languages with flag emojis
@@ -199,16 +236,10 @@ Preferred communication style: Simple, everyday language.
 - All user data, analyses, and broker configurations now persist across sessions
 - Successfully tested end-to-end with E2E verification
 
-### Pending Integrations
-- **OTP Authentication**: User dismissed Twilio connector setup. To implement real OTP, user needs to:
-  1. Set up Twilio connector using the integration system, OR
-  2. Provide Twilio credentials (Account SID, Auth Token, Phone Number) as secrets for manual integration
-  - Current login flow: simplified mobile-based identification without OTP verification (MVP)
-
 ## Next Phase Features (Priority Order)
 
 1. **Stripe Payment Integration** - Token purchase with INR pricing
 2. **Real-time Market Data** - Live price feeds using CoinGecko or Alpha Vantage
 3. **Broker API Integration** - Zerodha Kite Connect for live trade execution
 4. **Trade History & Analytics** - Performance dashboard with charts
-5. **OTP Authentication** - Once Twilio or similar SMS service is configured
+5. **Advanced Analysis Features** - Portfolio tracking and risk management
