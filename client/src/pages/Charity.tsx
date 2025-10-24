@@ -25,7 +25,7 @@ export default function Charity() {
     
     if (!donationAmount || donationAmount < 10) {
       toast({
-        title: "Invalid Amount",
+        title: t.invalidAmount,
         description: t.minimumDonation,
         variant: "destructive",
       });
@@ -34,8 +34,8 @@ export default function Charity() {
 
     if (!userId) {
       toast({
-        title: "Error",
-        description: "Please login first",
+        title: t.error,
+        description: t.pleaseLoginFirst,
         variant: "destructive",
       });
       return;
@@ -53,7 +53,7 @@ export default function Charity() {
       const orderData = await orderResponse.json();
 
       if (!orderData.orderId) {
-        throw new Error("Failed to create donation order");
+        throw new Error(t.failedToCreateDonationOrder);
       }
 
       // Initialize Razorpay payment
@@ -61,8 +61,8 @@ export default function Charity() {
         key: orderData.razorpayKeyId,
         amount: orderData.amount,
         currency: "INR",
-        name: "Trend Pilot Charity",
-        description: "Thank you for your generous donation!",
+        name: t.trendPilotCharity,
+        description: t.thankYouForDonation,
         order_id: orderData.orderId,
         handler: async function (response: any) {
           try {
@@ -79,18 +79,18 @@ export default function Charity() {
 
             if (verifyData.success) {
               toast({
-                title: "Thank You! 🙏",
-                description: "Your generous donation has been received. May good fortune find you!",
+                title: t.thankYou,
+                description: t.donationReceived,
               });
               setAmount("");
               setTimeout(() => setLocation("/dashboard"), 2000);
             } else {
-              throw new Error("Payment verification failed");
+              throw new Error(t.paymentVerificationFailed);
             }
           } catch (error: any) {
             toast({
-              title: "Verification Error",
-              description: error.message || "Failed to verify donation",
+              title: t.verificationError,
+              description: error.message || t.failedToVerifyDonation,
               variant: "destructive",
             });
           } finally {
@@ -101,8 +101,8 @@ export default function Charity() {
           ondismiss: function () {
             setIsProcessing(false);
             toast({
-              title: "Donation Cancelled",
-              description: "You can donate anytime!",
+              title: t.donationCancelled,
+              description: t.youCanDonateAnytime,
             });
           },
         },
@@ -116,8 +116,8 @@ export default function Charity() {
     } catch (error: any) {
       console.error("Donation error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to process donation",
+        title: t.error,
+        description: error.message || t.failedToProcessDonation,
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -150,7 +150,7 @@ export default function Charity() {
               {t.charityBringsLuck}
             </h2>
             <p className="text-[#111714] text-sm opacity-80">
-              Your generosity creates positive karma and brings good fortune
+              {t.charitySubtitle}
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export default function Charity() {
               className="w-full bg-gradient-to-r from-[#38e07b] to-[#2ac96c] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg"
               data-testid="button-donate"
             >
-              {isProcessing ? "Processing..." : t.donateNow}
+              {isProcessing ? t.processing : t.donateNow}
             </button>
           </div>
 
@@ -210,9 +210,9 @@ export default function Charity() {
                 verified
               </span>
               <div>
-                <h4 className="text-white font-bold mb-1">Secure Payment</h4>
+                <h4 className="text-white font-bold mb-1">{t.securePayment}</h4>
                 <p className="text-[#9eb7a8] text-sm">
-                  All donations are processed securely through Razorpay
+                  {t.securePaymentDescription}
                 </p>
               </div>
             </div>
@@ -222,9 +222,9 @@ export default function Charity() {
                 auto_awesome
               </span>
               <div>
-                <h4 className="text-white font-bold mb-1">Good Karma</h4>
+                <h4 className="text-white font-bold mb-1">{t.goodKarma}</h4>
                 <p className="text-[#9eb7a8] text-sm">
-                  Your generosity creates positive energy and attracts prosperity
+                  {t.goodKarmaDescription}
                 </p>
               </div>
             </div>

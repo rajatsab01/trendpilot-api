@@ -204,7 +204,7 @@ export default function Dashboard() {
 
             <label className="flex flex-col">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">
-                Market Selection
+                {t.marketSelection}
               </span>
               <select
                 className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-4 text-base font-normal leading-normal appearance-none"
