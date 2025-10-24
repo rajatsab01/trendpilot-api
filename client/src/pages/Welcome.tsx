@@ -1,19 +1,61 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
+import type { Language } from "@/lib/translations";
 import logoImage from "@assets/logo 3_1761320611938.png";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Welcome() {
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleAgree = () => {
     setLocation("/dashboard");
   };
 
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+    // Clear onboarding flags to restart flow from language screen
+    localStorage.removeItem("languageCompleted");
+    localStorage.removeItem("loginCompleted");
+    setShowSettings(false);
+    // Redirect to language screen to restart onboarding
+    setLocation("/");
+  };
+
+  const languages = [
+    { code: "en" as Language, name: "English", flag: "🇬🇧" },
+    { code: "es" as Language, name: "Español", flag: "🇪🇸" },
+    { code: "zh" as Language, name: "中文", flag: "🇨🇳" },
+    { code: "hi" as Language, name: "हिन्दी", flag: "🇮🇳" },
+    { code: "ar" as Language, name: "العربية", flag: "🇸🇦" },
+    { code: "fr" as Language, name: "Français", flag: "🇫🇷" },
+    { code: "de" as Language, name: "Deutsch", flag: "🇩🇪" },
+    { code: "pt" as Language, name: "Português", flag: "🇧🇷" },
+    { code: "ru" as Language, name: "Русский", flag: "🇷🇺" },
+    { code: "ja" as Language, name: "日本語", flag: "🇯🇵" },
+    { code: "ko" as Language, name: "한국어", flag: "🇰🇷" },
+    { code: "it" as Language, name: "Italiano", flag: "🇮🇹" },
+  ];
+
   return (
     <div className="relative flex min-h-screen flex-col bg-[#111714]">
-      <header className="flex items-center justify-end p-4">
-        <button className="text-white" data-testid="button-help">
+      <header className="flex items-center justify-end p-4 gap-2">
+        <button 
+          onClick={() => setShowSettings(true)}
+          className="text-white hover-elevate active-elevate-2 p-2 rounded-full" 
+          data-testid="button-settings"
+        >
+          <span className="material-symbols-outlined">settings</span>
+        </button>
+        <button className="text-white hover-elevate active-elevate-2 p-2 rounded-full" data-testid="button-help">
           <span className="material-symbols-outlined">help</span>
         </button>
       </header>
@@ -55,6 +97,37 @@ export default function Welcome() {
           {t.iAgree}
         </button>
       </footer>
+
+      {/* Settings Dialog for Language Change */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="bg-[#1c2620] border-[#38e07b]/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#38e07b]">
+              {t.settings || "Settings"}
+            </DialogTitle>
+            <DialogDescription className="text-[#9eb7a8]">
+              {t.selectLanguage || "Select your preferred language"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className={`flex items-center justify-between py-3 px-4 rounded-xl font-medium text-sm transition-colors ${
+                  lang.code === language
+                    ? "bg-[#38e07b] text-[#111714]"
+                    : "bg-[#29382f] text-white hover-elevate active-elevate-2"
+                }`}
+                data-testid={`button-change-language-${lang.code}`}
+              >
+                <span className="text-2xl mr-2">{lang.flag}</span>
+                <span className="flex-1 text-left">{lang.name}</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
