@@ -142,6 +142,7 @@ export class MemStorage implements IStorage {
       ...insertBroker,
       apiKey: insertBroker.apiKey ?? null,
       webhookUrl: insertBroker.webhookUrl ?? null,
+      webhookMessage: insertBroker.webhookMessage ?? null,
       id,
       isConnected: 1,
       createdAt: new Date(),

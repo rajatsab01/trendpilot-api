@@ -17,14 +17,20 @@ export default function Analyzer() {
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
   const [quantity, setQuantity] = useState(100);
-  const [broker, setBroker] = useState("Broker A");
+  const [selectedBrokerId, setSelectedBrokerId] = useState("");
 
   const userId = localStorage.getItem("userId");
 
   // Fetch user data for token check
-  const { data: user } = useQuery({
+  const { data: user } = useQuery<{ id: string; tokens: number; name: string; mobile: string; language: string }>({
     queryKey: ["/api/user", userId],
     enabled: !!userId && !analysisId,
+  });
+
+  // Fetch user's brokers
+  const { data: brokers } = useQuery<Array<{ id: string; name: string; userId: string; apiKey: string | null; webhookUrl: string | null; webhookMessage: string | null }>>({
+    queryKey: [`/api/brokers/${userId}`],
+    enabled: !!userId,
   });
 
   // Fetch analysis results
@@ -293,13 +299,16 @@ export default function Analyzer() {
                   <select
                     className="bg-[#334139] text-white rounded-md border-none focus:ring-2 focus:ring-[#38e07b] px-3 py-1 min-w-[120px]"
                     id="broker"
-                    value={broker}
-                    onChange={(e) => setBroker(e.target.value)}
+                    value={selectedBrokerId}
+                    onChange={(e) => setSelectedBrokerId(e.target.value)}
                     data-testid="select-broker"
                   >
-                    <option>Broker A</option>
-                    <option>Broker B</option>
-                    <option>Broker C</option>
+                    <option value="">{brokers && brokers.length > 0 ? "Select Broker" : "No Brokers"}</option>
+                    {brokers && brokers.map((broker) => (
+                      <option key={broker.id} value={broker.id}>
+                        {broker.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

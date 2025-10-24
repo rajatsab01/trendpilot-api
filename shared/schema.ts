@@ -42,6 +42,7 @@ export const brokers = pgTable("brokers", {
   name: text("name").notNull(),
   apiKey: text("api_key"),
   webhookUrl: text("webhook_url"),
+  webhookMessage: text("webhook_message"), // JSON template with placeholders like {{ticker}}, {{strategy.order.action}}
   isConnected: integer("is_connected").notNull().default(1), // 1 for true, 0 for false
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -79,6 +80,7 @@ export const insertBrokerSchema = createInsertSchema(brokers).omit({
   name: z.string().min(1, "Broker name is required"),
   apiKey: z.string().nullable().optional(),
   webhookUrl: z.string().url().nullable().optional(),
+  webhookMessage: z.string().nullable().optional(),
 }).refine(
   (data) => data.apiKey || data.webhookUrl,
   { message: "Either API key or webhook URL is required" }

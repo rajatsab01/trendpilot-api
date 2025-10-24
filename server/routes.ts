@@ -373,13 +373,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { userId, name, apiKey, webhookUrl } = validationResult.data;
+      const { userId, name, apiKey, webhookUrl, webhookMessage } = validationResult.data;
 
       const broker = await storage.createBroker({
         userId,
         name,
         apiKey: apiKey || null,
         webhookUrl: webhookUrl || null,
+        webhookMessage: webhookMessage || null,
       });
 
       res.json(broker);
@@ -399,6 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: z.string().min(1).optional(),
         apiKey: z.string().nullable().optional(),
         webhookUrl: z.string().url().nullable().optional(),
+        webhookMessage: z.string().nullable().optional(),
         isConnected: z.number().int().min(0).max(1).optional(),
       }).refine(
         (data) => Object.keys(data).length > 0,

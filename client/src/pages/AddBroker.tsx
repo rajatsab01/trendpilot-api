@@ -12,6 +12,7 @@ export default function AddBroker() {
   const [brokerName, setBrokerName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookMessage, setWebhookMessage] = useState("");
 
   const userId = localStorage.getItem("userId");
 
@@ -22,11 +23,12 @@ export default function AddBroker() {
         name: brokerName,
         apiKey: apiKey || undefined,
         webhookUrl: webhookUrl || undefined,
+        webhookMessage: webhookMessage || undefined,
       });
       return await result.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/brokers", userId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/brokers/${userId}`] });
       toast({
         title: "Success",
         description: "Broker added successfully",
@@ -132,6 +134,25 @@ export default function AddBroker() {
                   data-testid="input-webhook"
                 />
               </div>
+
+              {webhookUrl && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-[#9eb7a8]" htmlFor="webhook-message">
+                    Webhook Message Template
+                  </label>
+                  <textarea
+                    className="w-full rounded-xl border-[#29382f] bg-[#29382f] p-3 text-white placeholder-[#6a7f72] focus:border-[#38e07b] focus:ring-2 focus:ring-[#38e07b] font-mono text-sm min-h-[120px]"
+                    id="webhook-message"
+                    placeholder={'Enter webhook JSON template\nExample:\n{"symbol":"{{ticker}}","side":"{{strategy.order.action}}","qty":"{{strategy.order.contracts}}"}'}
+                    value={webhookMessage}
+                    onChange={(e) => setWebhookMessage(e.target.value)}
+                    data-testid="input-webhook-message"
+                  />
+                  <p className="text-xs text-[#6a7f72]">
+                    Use placeholders like {`{{ticker}}`}, {`{{strategy.order.action}}`}, {`{{strategy.order.contracts}}`}, {`{{timenow}}`}
+                  </p>
+                </div>
+              )}
             </div>
           </form>
         </main>
