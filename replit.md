@@ -111,8 +111,9 @@ Preferred communication style: Simple, everyday language.
 
 3. **Brokers Table:**
    - Broker integration configurations
-   - Fields: id, userId, name, apiKey, webhookUrl, isConnected (boolean as integer), createdAt
+   - Fields: id, userId, name, apiKey, webhookUrl, webhookMessage (JSON template with placeholders), isConnected (boolean as integer), createdAt
    - Supports multiple brokers per user
+   - Webhook message templates support dynamic placeholders: {{ticker}}, {{strategy.order.action}}, {{strategy.order.contracts}}, {{timenow}}
 
 **Storage Strategy:**
 - In-memory storage implementation (`MemStorage`) for development
@@ -189,6 +190,25 @@ Preferred communication style: Simple, everyday language.
 - Token-based consumption model (2 tokens per analysis)
 
 ## Recent Changes (October 24, 2025)
+
+### Broker Management Improvements (October 24, 2025)
+- **Fixed broker name display on Analyzer screen**
+  - Changed from hardcoded dropdown options ("Broker A", "Broker B", "Broker C") to dynamic fetching
+  - Analyzer now queries `/api/brokers/:userId` and displays actual broker names from database
+  - Query key updated to single-segment format `[\`/api/brokers/${userId}\`]` for proper TanStack Query compatibility
+  - Cache invalidation fixed to use correct query key pattern
+- **Added webhook message template field to brokers**
+  - Database schema: added `webhookMessage` text field to brokers table
+  - Successfully pushed schema changes with `npm run db:push` (zero data loss)
+  - UI: Added textarea for webhook message template in AddBroker form
+  - Field conditionally displays only when webhook URL is provided
+  - Monospace font for better JSON readability
+  - Placeholder example shows JSON template with dynamic placeholders
+  - Backend: Updated POST /api/brokers and PATCH /api/brokers/:id to handle webhookMessage field
+  - Storage: Updated both MemStorage and insertBrokerSchema validation
+- **Webhook placeholder support**
+  - Templates can use dynamic placeholders: {{ticker}}, {{strategy.order.action}}, {{strategy.order.contracts}}, {{timenow}}
+  - Designed for future webhook automation when trades are executed
 
 ### Complete Localization Implementation (October 24, 2025)
 - **Fully translated all trading terms across all 12 languages:**
