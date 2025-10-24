@@ -217,14 +217,57 @@ export default function Charity() {
               </div>
             </div>
 
-            <div className="bg-[#1c2620] p-4 rounded-2xl flex items-start gap-3">
-              <span className="material-symbols-outlined text-[#38e07b] text-2xl">
-                auto_awesome
+            <div className="bg-[#1c2620] p-6 rounded-2xl">
+              <div className="flex items-start gap-3 mb-4">
+                <span className="material-symbols-outlined text-[#38e07b] text-2xl">
+                  auto_awesome
+                </span>
+                <h4 className="text-white font-bold text-lg">{t.goodKarma}</h4>
+              </div>
+              <div className="space-y-3 text-[#9eb7a8] text-sm leading-relaxed">
+                <p>{t.goodKarmaDescription}</p>
+                
+                <p className="pt-2">
+                  <span className="font-semibold text-white">{t.moneyHasEnergy}</span><br />
+                  {t.moneyEnergyDescription}
+                </p>
+                
+                <p>{t.everyTimeYouShare}</p>
+                
+                <p>{t.tradingFlowParagraph}</p>
+                
+                <p className="italic">{t.donationIsMore}</p>
+                
+                <p className="font-medium text-[#38e07b]">{t.letYourProfits}</p>
+                
+                <p className="text-center font-semibold text-white pt-2">{t.realWealthQuote}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Stories Section */}
+          <div className="bg-[#1c2620] p-6 rounded-2xl">
+            <h3 className="text-white text-xl font-bold mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#38e07b]">
+                auto_stories
               </span>
-              <div>
-                <h4 className="text-white font-bold mb-1">{t.goodKarma}</h4>
-                <p className="text-[#9eb7a8] text-sm">
-                  {t.goodKarmaDescription}
+              {t.storiesHeading}
+            </h3>
+            
+            <div className="space-y-6">
+              {/* Story 1 */}
+              <div className="border-l-4 border-[#38e07b] pl-4">
+                <h4 className="text-white font-bold mb-2">{t.story1Title}</h4>
+                <p className="text-[#9eb7a8] text-sm leading-relaxed">
+                  {t.story1Content}
+                </p>
+              </div>
+
+              {/* Story 2 */}
+              <div className="border-l-4 border-[#38e07b] pl-4">
+                <h4 className="text-white font-bold mb-2">{t.story2Title}</h4>
+                <p className="text-[#9eb7a8] text-sm leading-relaxed">
+                  {t.story2Content}
                 </p>
               </div>
             </div>

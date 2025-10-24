@@ -53,6 +53,8 @@ The application supports 12 languages, a token-based usage model, and provides a
   - Razorpay integration for secure payments
   - Receipt format: `char_${shortUserId}_${timestamp}` (~22 chars)
   - Payment verification via HMAC SHA256 signature
+  - **Enhanced Good Karma section** with inspirational content about money's energy and trading philosophy
+  - **Stories section** featuring "The Trader's Pause" and "The Missed Trade" - real-world examples of karma in trading
   - **Note:** Donations not currently persisted to database (enhancement opportunity)
 
 ### Critical Razorpay Fix (October 24, 2025)
