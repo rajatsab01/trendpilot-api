@@ -512,71 +512,121 @@ export default function Analyzer() {
               </div>
             )}
 
-            {/* Support & Resistance Levels */}
+            {/* Support & Resistance Chart */}
             {((analysis.s1 || analysis.s2 || analysis.s3) || (analysis.r1 || analysis.r2 || analysis.r3)) && (
               <div>
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">multiline_chart</span>
                   {t.supportResistanceLevels}
                 </h2>
-                <div className="space-y-4">
-                  {/* Resistance Levels */}
-                  {(analysis.r1 || analysis.r2 || analysis.r3) && (
-                    <div className="bg-[#1c2620] p-4 rounded-2xl">
-                      <p className="text-white text-base font-bold mb-3 flex items-center gap-2">
-                        <span className="text-red-500">▲</span> {t.resistance}
-                      </p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {analysis.r3 && (
-                          <div className="text-center">
-                            <p className="text-[#9eb7a8] text-xs">R3</p>
-                            <p className="text-red-500 text-base font-bold mt-1" data-testid="text-r3">{analysis.r3}</p>
+                <div className="bg-[#1c2620] p-6 rounded-2xl">
+                  <div className="flex gap-4">
+                    {/* Left Side: Price Levels Chart */}
+                    <div className="flex-1 space-y-3">
+                      {/* Resistance R3 */}
+                      {analysis.r3 && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/10 border-l-4 border-red-500" data-testid="text-r3">
+                          <div className="flex-1">
+                            <p className="text-red-400 text-xs font-medium">R3</p>
+                            <p className="text-red-500 text-lg font-bold">{analysis.r3}</p>
                           </div>
-                        )}
-                        {analysis.r2 && (
-                          <div className="text-center">
-                            <p className="text-[#9eb7a8] text-xs">R2</p>
-                            <p className="text-red-500 text-base font-bold mt-1" data-testid="text-r2">{analysis.r2}</p>
+                          <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
+                        </div>
+                      )}
+                      {/* Resistance R2 */}
+                      {analysis.r2 && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border-l-4 border-orange-500" data-testid="text-r2">
+                          <div className="flex-1">
+                            <p className="text-orange-400 text-xs font-medium">R2</p>
+                            <p className="text-orange-500 text-lg font-bold">{analysis.r2}</p>
                           </div>
-                        )}
-                        {analysis.r1 && (
-                          <div className="text-center">
-                            <p className="text-[#9eb7a8] text-xs">R1</p>
-                            <p className="text-red-500 text-base font-bold mt-1" data-testid="text-r1">{analysis.r1}</p>
+                          <div className="w-2 h-2 rounded-full bg-orange-500/50"></div>
+                        </div>
+                      )}
+                      {/* Resistance R1 */}
+                      {analysis.r1 && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-500/10 border-l-4 border-yellow-500" data-testid="text-r1">
+                          <div className="flex-1">
+                            <p className="text-yellow-400 text-xs font-medium">R1</p>
+                            <p className="text-yellow-500 text-lg font-bold">{analysis.r1}</p>
                           </div>
-                        )}
+                          <div className="w-2 h-2 rounded-full bg-yellow-500/50"></div>
+                        </div>
+                      )}
+                      
+                      {/* Entry Price - Center */}
+                      <div className="flex items-center gap-3 p-4 rounded-xl bg-[#38e07b]/20 border-2 border-[#38e07b]" data-testid="text-entry-price">
+                        <div className="flex-1 text-center">
+                          <p className="text-[#38e07b] text-xs font-bold uppercase tracking-wide">Entry Price</p>
+                          <p className="text-white text-2xl font-bold mt-1">{analysis.entry}</p>
+                        </div>
                       </div>
+                      
+                      {/* Support S1 */}
+                      {analysis.s1 && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-lime-500/10 border-l-4 border-lime-500" data-testid="text-s1">
+                          <div className="flex-1">
+                            <p className="text-lime-400 text-xs font-medium">S1</p>
+                            <p className="text-lime-500 text-lg font-bold">{analysis.s1}</p>
+                          </div>
+                          <div className="w-2 h-2 rounded-full bg-lime-500/50"></div>
+                        </div>
+                      )}
+                      {/* Support S2 */}
+                      {analysis.s2 && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border-l-4 border-emerald-500" data-testid="text-s2">
+                          <div className="flex-1">
+                            <p className="text-emerald-400 text-xs font-medium">S2</p>
+                            <p className="text-emerald-500 text-lg font-bold">{analysis.s2}</p>
+                          </div>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500/50"></div>
+                        </div>
+                      )}
+                      {/* Support S3 */}
+                      {analysis.s3 && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#38e07b]/10 border-l-4 border-[#38e07b]" data-testid="text-s3">
+                          <div className="flex-1">
+                            <p className="text-[#38e07b] text-xs font-medium">S3</p>
+                            <p className="text-[#38e07b] text-lg font-bold">{analysis.s3}</p>
+                          </div>
+                          <div className="w-2 h-2 rounded-full bg-[#38e07b]/50"></div>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  {/* Support Levels */}
-                  {(analysis.s1 || analysis.s2 || analysis.s3) && (
-                    <div className="bg-[#1c2620] p-4 rounded-2xl">
-                      <p className="text-white text-base font-bold mb-3 flex items-center gap-2">
-                        <span className="text-[#38e07b]">▼</span> {t.support}
-                      </p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {analysis.s1 && (
-                          <div className="text-center">
-                            <p className="text-[#9eb7a8] text-xs">S1</p>
-                            <p className="text-[#38e07b] text-base font-bold mt-1" data-testid="text-s1">{analysis.s1}</p>
-                          </div>
-                        )}
-                        {analysis.s2 && (
-                          <div className="text-center">
-                            <p className="text-[#9eb7a8] text-xs">S2</p>
-                            <p className="text-[#38e07b] text-base font-bold mt-1" data-testid="text-s2">{analysis.s2}</p>
-                          </div>
-                        )}
-                        {analysis.s3 && (
-                          <div className="text-center">
-                            <p className="text-[#9eb7a8] text-xs">S3</p>
-                            <p className="text-[#38e07b] text-base font-bold mt-1" data-testid="text-s3">{analysis.s3}</p>
-                          </div>
-                        )}
+                    {/* Right Side: Strength Thermometer */}
+                    <div className="w-12 flex flex-col items-center justify-between py-3">
+                      {/* Thermometer Visual */}
+                      <div className="relative w-8 flex-1 rounded-full bg-gradient-to-b from-red-500 via-yellow-500 to-[#38e07b] opacity-30">
+                        <div className="absolute inset-0 rounded-full border-2 border-white/10"></div>
+                      </div>
+                      
+                      {/* Labels */}
+                      <div className="flex flex-col items-center gap-8 absolute right-0 top-8 bottom-8 justify-between">
+                        <div className="text-right">
+                          <p className="text-red-500 text-[10px] font-bold">High</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-yellow-500 text-[10px] font-bold">Mid</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[#38e07b] text-[10px] font-bold">Strong</p>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-center gap-6 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-[#9eb7a8]">Strong Resistance</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#38e07b]"></div>
+                      <span className="text-[#9eb7a8]">Strong Support</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
