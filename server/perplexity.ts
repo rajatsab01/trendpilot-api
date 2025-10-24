@@ -1,4 +1,4 @@
-import { fetchMarketData } from "./marketData";
+// Removed fetchMarketData import - Perplexity now handles all market data validation via real-time web search
 
 interface MarketAnalysisResult {
   recommendation: "BUY" | "SELL";
@@ -80,32 +80,6 @@ export async function analyzeMarketWithPerplexity(
   }
 
   try {
-    // Fetch real market data for crypto and forex (others may not have real-time APIs)
-    let marketData = null;
-    let currentPrice = 0;
-    let instrumentName: string | null = null;
-    
-    if (market === "cryptocurrency") {
-      marketData = await fetchMarketData(symbol, "crypto");
-      if (!marketData.error) {
-        currentPrice = marketData.currentPrice;
-        instrumentName = marketData.instrumentName || null;
-      }
-    } else if (market === "forex") {
-      marketData = await fetchMarketData(symbol, "currency");
-      if (!marketData.error) {
-        currentPrice = marketData.currentPrice;
-        instrumentName = marketData.instrumentName || null;
-      }
-    } else if (market === "stock_equities") {
-      // Try to fetch stock data - assume US market by default
-      marketData = await fetchMarketData(symbol, "us");
-      if (!marketData.error) {
-        currentPrice = marketData.currentPrice;
-        instrumentName = marketData.instrumentName || null;
-      }
-    }
-
     const durationContext = {
       long_term: "long-term investment (months to years)",
       short_term: "short-term trading (days to weeks)",
@@ -115,25 +89,9 @@ export async function analyzeMarketWithPerplexity(
     const languageName = languageMap[language] || "English";
     const marketTypeName = marketTypeMap[market] || market;
 
-    // Build market context string with real data if available
-    const marketContext = marketData && !marketData.error
-      ? `
-REAL-TIME MARKET DATA FOR ${marketData.symbol}:
-- Current Price: ${marketData.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-${marketData.priceChange24h ? `- 24h Price Change: ${marketData.priceChange24h > 0 ? '+' : ''}${marketData.priceChange24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marketData.priceChangePercentage24h?.toFixed(2)}%)` : ''}
-${marketData.volume24h ? `- 24h Trading Volume: ${marketData.volume24h.toLocaleString('en-US')}` : ''}
-${marketData.high24h ? `- 24h High: ${marketData.high24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
-${marketData.low24h ? `- 24h Low: ${marketData.low24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
-${marketData.marketCap ? `- Market Cap: ${marketData.marketCap.toLocaleString('en-US')}` : ''}
-`
-      : `
-MARKET INFORMATION:
-Please research and provide the current market price for ${symbol} in ${marketTypeName}.
-`;
-
     const prompt = `You are an expert financial analyst with real-time market access. Analyze the trading symbol "${symbol}" in the ${marketTypeName} for ${durationContext}.
 
-${marketContext}
+**IMPORTANT**: Use your real-time web search to find ALL market data for this symbol. Do not rely on external inputs.
 
 CRITICAL REQUIREMENTS:
 1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
@@ -241,6 +199,14 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     }
 
     const data = JSON.parse(jsonContent);
+
+    // Validate required Perplexity fields
+    const requiredFields = ['correctedSymbol', 'assetName', 'currentPrice', 'priceSource'];
+    const missingFields = requiredFields.filter(field => !data[field]);
+    
+    if (missingFields.length > 0) {
+      throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
+    }
 
     // FIX: For SELL trades, AI often returns inverted bracket values
     // For SELL: take profit should be BELOW entry, stop loss should be ABOVE entry

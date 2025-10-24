@@ -208,20 +208,42 @@ export default function Analyzer() {
             </h1>
           </header>
 
-          {/* Symbol and Current Price Display */}
+          {/* Symbol and Current Price Display - Perplexity Validated */}
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl p-6 text-center">
+              {/* Show if symbol was corrected by Perplexity */}
+              {analysis.correctedSymbol && analysis.symbol !== analysis.correctedSymbol && (
+                <div className="mb-3 text-[#9eb7a8] text-sm">
+                  <span className="text-[#6a7f72]">Searched:</span> <span className="line-through">{analysis.symbol}</span>
+                  <span className="mx-2">→</span>
+                  <span className="text-[#38e07b]">Found: {analysis.correctedSymbol}</span>
+                </div>
+              )}
+              
               <div className="mb-2">
                 <h2 className="text-white text-3xl font-bold tracking-tight" data-testid="text-instrument-name">
-                  {analysis.instrumentName || analysis.symbol}
+                  {analysis.assetName || analysis.instrumentName || analysis.symbol}
                 </h2>
+                {analysis.correctedSymbol && (
+                  <p className="text-[#9eb7a8] text-lg mt-1" data-testid="text-corrected-symbol">
+                    {analysis.correctedSymbol}
+                  </p>
+                )}
               </div>
+              
               <div className="mt-4">
                 <p className="text-[#9eb7a8] text-sm mb-1">{t.currentPrice}</p>
                 {analysis.currentPrice && parseFloat(analysis.currentPrice) > 0 ? (
-                  <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
-                    ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+                  <>
+                    <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
+                      ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    {analysis.priceSource && (
+                      <p className="text-[#6a7f72] text-xs mt-2" data-testid="text-price-source">
+                        via {analysis.priceSource}
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-[#9eb7a8] text-2xl font-medium" data-testid="text-current-price-unavailable">
                     {t.priceDataUnavailable}
