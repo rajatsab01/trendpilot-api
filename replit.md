@@ -2,24 +2,7 @@
 
 ## Overview
 
-Trend Pilot is an AI-powered financial trading assistant that provides intelligent buy/sell recommendations and bracket order placement for crypto and stock markets. The application uses Google's Gemini AI to analyze financial symbols across different trading timeframes (long-term, short-term, and scalping) and delivers comprehensive technical analysis with trading recommendations.
-
-**Core Features:**
-- AI-driven market analysis using Google Gemini
-- Multi-timeframe trading strategies (long-term, short-term, scalping)
-- Token-based usage system (starting with 20 tokens)
-- Phone.Email authentication (FREE for 6 months, no app download required)
-- Broker integration capabilities
-- Multi-language support (12 languages: English, Spanish, Chinese, Hindi, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian)
-- Analysis history tracking
-
-**Tech Stack:**
-- Frontend: React with TypeScript, Vite
-- Backend: Express.js with TypeScript
-- Database: PostgreSQL via Drizzle ORM
-- AI: Google Gemini API
-- UI Framework: shadcn/ui with Radix UI primitives
-- Styling: Tailwind CSS
+Trend Pilot is an AI-powered financial trading assistant designed for crypto and stock markets. It leverages Google's Gemini AI to provide intelligent buy/sell recommendations and bracket order placement by analyzing financial symbols across long-term, short-term, and scalping timeframes. The project's ambition is to offer comprehensive technical analysis and trading recommendations, supported by a token-based usage system and multi-language capabilities.
 
 ## User Preferences
 
@@ -29,253 +12,29 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-**Framework & Build System:**
-- React 18 with TypeScript for type safety
-- Vite as the build tool and development server
-- Mobile-first responsive design approach
-- Dark mode primary UI theme with fintech-focused design system
-
-**State Management:**
-- TanStack Query (React Query) for server state management
-- React Context API for global state (Language, Theme)
-- Local storage for persistence (userId, language preference)
-
-**Routing:**
-- Wouter for lightweight client-side routing
-- Route structure: Language Selection → Login → Welcome → Dashboard → Analyzer/Settings
-- Protected routes require userId in localStorage
-
-**UI Component System:**
-- shadcn/ui component library with Radix UI primitives
-- Custom theme using CSS variables with HSL color space
-- Consistent design tokens defined in `tailwind.config.ts`
-- Material Symbols Outlined icons for visual elements
-- Typography: Spline Sans (primary) and Manrope (secondary)
-
-**Design Principles:**
-- Data clarity over decoration
-- High contrast ratios for accessibility
-- Fintech-focused color palette (dark green #38e07b as primary)
-- Hover and active state elevations for interactive elements
-- Mobile-optimized with bottom navigation
+The frontend is built with React 18 and TypeScript, using Vite for development and bundling. It follows a mobile-first, responsive design approach with a primary dark mode UI theme. State management is handled by TanStack Query for server state and React Context API for global state. Wouter is used for lightweight client-side routing, with protected routes requiring user authentication. The UI is constructed using `shadcn/ui` components based on Radix UI primitives, styled with Tailwind CSS, and features a fintech-focused color palette (dark green #38e07b). Typography uses Spline Sans and Manrope fonts, complemented by Material Symbols Outlined icons.
 
 ### Backend Architecture
 
-**Server Framework:**
-- Express.js with TypeScript
-- ES modules (type: "module")
-- RESTful API design pattern
-- Session-based architecture (userId stored client-side)
-
-**API Endpoints:**
-- `POST /api/auth/login` - User authentication/creation with phone number migration support
-- `POST /api/auth/verify-phone` - Phone.Email verification endpoint (SSRF-protected)
-- `GET /api/user/:userId` - Fetch user details
-- `POST /api/analyze` - Market analysis via Gemini AI
-- `GET /api/analysis/:analysisId` - Retrieve specific analysis
-- `GET /api/analyses/:userId` - User's analysis history
-- `POST /api/brokers` - Add broker integration
-- `GET /api/brokers/:userId` - List user's brokers
-- `PATCH /api/brokers/:id` - Update broker details
-- `DELETE /api/brokers/:id` - Remove broker
-
-**Request/Response Pattern:**
-- JSON-based request/response format
-- Zod schema validation for input validation
-- Error handling with appropriate HTTP status codes
-- Request logging middleware for API routes
+The backend is an Express.js application written in TypeScript, implementing a RESTful API design pattern. It uses ES modules and a session-based architecture where the `userId` is stored client-side. Key API endpoints manage user authentication, market analysis via Gemini AI, analysis history, and broker integrations. Requests and responses are JSON-based, with Zod for schema validation and robust error handling.
 
 ### Data Storage Solutions
 
-**Database:**
-- PostgreSQL as the primary database
-- Neon serverless PostgreSQL client (`@neondatabase/serverless`)
-- Database connection via `DATABASE_URL` environment variable
-
-**ORM & Schema:**
-- Drizzle ORM for type-safe database operations
-- Schema-first approach with automatic TypeScript type inference
-- Drizzle Kit for migrations management
-
-**Data Models:**
-
-1. **Users Table:**
-   - Stores user authentication and profile data
-   - Fields: id (UUID), name, mobile (unique), language, tokens (balance), createdAt
-   - Mobile number used as unique identifier for login
-
-2. **Analyses Table:**
-   - Historical record of all market analyses
-   - Fields: id, userId, symbol, duration, recommendation (BUY/SELL), confidence, sentiment, technical indicators (RSI, MACD, Stochastic, Bollinger Bands), bracket order data (entry, takeProfit, stopLoss), createdAt
-   - Linked to users via userId
-
-3. **Brokers Table:**
-   - Broker integration configurations
-   - Fields: id, userId, name, apiKey, webhookUrl, webhookMessage (JSON template with placeholders), isConnected (boolean as integer), createdAt
-   - Supports multiple brokers per user
-   - Webhook message templates support dynamic placeholders: {{ticker}}, {{strategy.order.action}}, {{strategy.order.contracts}}, {{timenow}}
-
-**Storage Strategy:**
-- In-memory storage implementation (`MemStorage`) for development
-- Production-ready with PostgreSQL migration path
-- UUID-based primary keys for distributed system compatibility
+PostgreSQL is the primary database, utilizing Neon serverless PostgreSQL for scalability. Drizzle ORM is employed for type-safe database operations and schema management. The data model includes `Users` (for authentication and tokens), `Analyses` (historical market analysis records), and `Brokers` (for integration configurations, including webhook message templates). UUIDs are used for primary keys.
 
 ### Authentication & Authorization
 
-**Authentication Flow (Phone.Email Integration):**
-1. User selects language preference
-2. User enters name on Login page
-3. Phone.Email widget displays for phone verification
-4. User enters phone number and receives OTP via SMS (handled by Phone.Email)
-5. Upon successful verification, frontend fetches verified phone number from Phone.Email JSON URL
-6. Backend validates and normalizes phone number (handles legacy 10-digit format)
-7. Server creates new user or retrieves existing user (with automatic migration to +country format)
-8. UserId stored in localStorage for subsequent requests
+Authentication uses Phone.Email for phone number verification, allowing users to log in or register without app downloads. The system supports automatic migration of legacy phone numbers to an international format. Authorization is userId-based, with API endpoints validating user existence. Security considerations include SSRF protection, HTTPS enforcement, input validation via Zod, and SQL injection protection through Drizzle ORM.
 
-**Phone Number Migration Strategy:**
-- New users: stored with international format (+country code)
-- Legacy users (10-digit): automatically migrated during first Phone.Email login
-- Lookup attempts three formats:
-  1. Direct match with +country code
-  2. Without + prefix
-  3. Last 10 digits (for legacy accounts)
-- Once found, legacy numbers are automatically updated to +country format
+### System Design Choices
 
-**Authorization:**
-- Simple userId-based access control
-- No JWT or OAuth implementation (simplified MVP approach)
-- API endpoints validate userId existence before operations
+The application is designed for multi-language support (12 languages), token-based usage, and future integration with payment gateways and real-time market data providers. The AI analysis uses structured prompt engineering for consistent output and includes technical indicators and bracket order calculations.
 
-**Security Considerations:**
-- Phone.Email verification (FREE for 6 months, no app download)
-- SSRF protection on verification endpoint (validates user.phone.email domain)
-- HTTPS-only enforcement for verification requests
-- No password-based authentication
-- Input validation via Zod schemas
-- SQL injection protection via Drizzle ORM parameterized queries
+## External Dependencies
 
-### External Dependencies
-
-**AI Service Integration:**
-- **Google Gemini AI** (`@google/genai`)
-  - Model: gemini-2.5-flash or gemini-2.5-pro
-  - API Key authentication via `GEMINI_API_KEY` environment variable
-  - Used for financial market analysis and trading recommendations
-  - Provides technical indicators and bracket order calculations
-  - Structured prompt engineering for consistent analysis output
-
-**Database Service:**
-- **Neon PostgreSQL** (`@neondatabase/serverless`)
-  - Serverless PostgreSQL hosting
-  - Connection pooling and automatic scaling
-  - Accessed via DATABASE_URL environment variable
-
-**Third-Party UI Libraries:**
-- **Radix UI**: Accessible, unstyled component primitives
-- **shadcn/ui**: Pre-built component library based on Radix
-- **Tailwind CSS**: Utility-first CSS framework
-- **Lucide React**: Icon library
-
-**Font Services:**
-- Google Fonts: Spline Sans and Manrope font families
-- Material Symbols: Outlined icon font
-
-**Development Tools:**
-- Replit-specific plugins for development environment
-- Vite plugins: runtime error overlay, cartographer, dev banner
-
-**Payment/Token System:**
-- Currently implemented as mock (no actual payment gateway)
-- Designed for future integration with payment providers
-- Token-based consumption model (2 tokens per analysis)
-
-## Recent Changes (October 24, 2025)
-
-### Broker Management Improvements (October 24, 2025)
-- **Fixed broker name display on Analyzer screen**
-  - Changed from hardcoded dropdown options ("Broker A", "Broker B", "Broker C") to dynamic fetching
-  - Analyzer now queries `/api/brokers/:userId` and displays actual broker names from database
-  - Query key updated to single-segment format `[\`/api/brokers/${userId}\`]` for proper TanStack Query compatibility
-  - Cache invalidation fixed to use correct query key pattern
-- **Added webhook message template field to brokers**
-  - Database schema: added `webhookMessage` text field to brokers table
-  - Successfully pushed schema changes with `npm run db:push` (zero data loss)
-  - UI: Added textarea for webhook message template in AddBroker form
-  - Field conditionally displays only when webhook URL is provided
-  - Monospace font for better JSON readability
-  - Placeholder example shows JSON template with dynamic placeholders
-  - Backend: Updated POST /api/brokers and PATCH /api/brokers/:id to handle webhookMessage field
-  - Storage: Updated both MemStorage and insertBrokerSchema validation
-- **Webhook placeholder support**
-  - Templates can use dynamic placeholders: {{ticker}}, {{strategy.order.action}}, {{strategy.order.contracts}}, {{timenow}}
-  - Designed for future webhook automation when trades are executed
-
-### Complete Localization Implementation (October 24, 2025)
-- **Fully translated all trading terms across all 12 languages:**
-  - "Bullish/Bearish" sentiment labels now display in user's language (e.g., "तेजी/मंदी" in Hindi)
-  - "BUY/SELL" recommendation labels now display in user's language (e.g., "खरीदें/बेचें" in Hindi)
-  - Duration terms (long_term, short_term, scalping) fully localized in AI-generated analysis text
-- **Implementation details:**
-  - Analyzer page translates sentiment/recommendation by mapping backend's canonical strings
-  - Mock Gemini analysis uses per-language duration lookup (e.g., "अल्पकालिक" for short_term in Hindi)
-  - Real Gemini prompt includes explicit language instructions for all text fields
-  - Graceful fallback to English for unsupported languages
-- **Translation coverage:**
-  - All UI elements: 100% translated
-  - All AI-generated content: 100% translated
-  - All trading terminology: 100% translated
-  - Brand name "Trend Pilot" remains in English across all languages
-
-### Phone.Email Authentication Integration (October 24, 2025)
-- **Replaced TOTP (Google Authenticator) with Phone.Email widget**
-  - Eliminated user friction: no app download required
-  - FREE for 6 months of usage
-  - Phone.Email Client ID: 16614316303161384204
-- **Security Implementation:**
-  - SSRF protection: validates requests are from user.phone.email domain only
-  - HTTPS-only enforcement on verification endpoint
-  - Domain whitelist validation before fetching user data
-- **Backwards Compatibility:**
-  - Automatic migration of legacy 10-digit phone numbers to +country code format
-  - Multi-format lookup: tries +country, country code only, and last-10-digits
-  - Seamless upgrade path for existing users
-- **Database Schema Updates:**
-  - Removed `otpSecret` and `otpEnabled` columns from users table
-  - Added `updateUserMobile` method to storage interface for migration support
-  - Successfully pushed schema changes with zero data loss
-- **Translation Updates:**
-  - Added Phone.Email-specific translations across all 12 languages
-  - Localized verification flow messages (verifying, loading, errors)
-
-### Multi-Language Support Enhancement
-- Expanded from 2 languages to 12 languages: English (default), Spanish, Chinese, Hindi, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian
-- Updated language selection screen with 2-column grid layout displaying all supported languages with flag emojis
-- All UI components now support comprehensive translations
-- Language preference persists in localStorage
-- Default language set to English (en) for new users
-
-### Payment Gateway Recommendations
-**Recommended Dual-Gateway Strategy for Global Coverage:**
-- **Razorpay** (already integrated) - Primary for India market (UPI, cards, wallets, net banking)
-- **Stripe** - Primary for rest of world (200+ countries)
-- Smart detection to show appropriate gateway based on user location
-
-**Alternative Options:**
-- PayPal - Global coverage including India
-- Razorpay International - Now supports international payments
-- PayU - Strong in India, Latin America, Eastern Europe
-- 2Checkout/Verifone - True global solution
-
-### Database Migration (October 22, 2025)
-- Migrated from in-memory storage to PostgreSQL database
-- Implemented `PgStorage` class using Drizzle ORM with Neon HTTP driver
-- All user data, analyses, and broker configurations now persist across sessions
-- Successfully tested end-to-end with E2E verification
-
-## Next Phase Features (Priority Order)
-
-1. **Stripe Payment Integration** - Token purchase with INR pricing
-2. **Real-time Market Data** - Live price feeds using CoinGecko or Alpha Vantage
-3. **Broker API Integration** - Zerodha Kite Connect for live trade execution
-4. **Trade History & Analytics** - Performance dashboard with charts
-5. **Advanced Analysis Features** - Portfolio tracking and risk management
+*   **AI Service:** Google Gemini AI (`@google/genai`) for market analysis.
+*   **Database Service:** Neon PostgreSQL (`@neondatabase/serverless`) for cloud database hosting.
+*   **Authentication:** Phone.Email for phone number verification.
+*   **UI Libraries:** Radix UI, shadcn/ui, Tailwind CSS, Lucide React (icons).
+*   **Fonts:** Google Fonts (Spline Sans, Manrope), Material Symbols.
+*   **Payment (Planned):** Stripe and Razorpay for future payment gateway integration.
