@@ -16,22 +16,31 @@ interface MarketData {
 
 /**
  * Parse trading pair symbols to extract base currency
- * Examples: BTCUSDT → BTC, ETHUSDT → ETH, BTCUSD → BTC, ETH-USD → ETH
+ * Examples: BTCUSDT → BTC, ETHUSDT → ETH, BTCUSD → BTC, ETH-USD → ETH, ETH/USD → ETH
  */
 function parseBaseSymbol(symbol: string): string {
-  const upperSymbol = symbol.toUpperCase();
+  let upperSymbol = symbol.toUpperCase().trim();
   
-  // Remove common quote currencies (USDT, USD, USDC, EUR, GBP, etc.)
-  const quoteCurrencies = ['USDT', 'USD', 'USDC', 'BUSD', 'EUR', 'GBP', 'JPY', 'INR'];
+  // First normalize separators (-, /, _) by removing them
+  const normalizedSymbol = upperSymbol.replace(/[-\/_ ]/g, '');
   
+  // List of common quote currencies to remove (from longest to shortest to avoid partial matches)
+  const quoteCurrencies = ['USDT', 'USDC', 'BUSD', 'USD', 'EUR', 'GBP', 'JPY', 'INR', 'AUD', 'CAD'];
+  
+  // Try to remove quote currency from the end
   for (const quote of quoteCurrencies) {
-    if (upperSymbol.endsWith(quote)) {
-      return upperSymbol.slice(0, -quote.length);
+    if (normalizedSymbol.endsWith(quote)) {
+      const baseSymbol = normalizedSymbol.slice(0, -quote.length);
+      // Only return if we have a non-empty base symbol
+      if (baseSymbol.length > 0) {
+        return baseSymbol;
+      }
     }
   }
   
-  // Remove separators like - or /
-  return upperSymbol.replace(/[-\/]/g, '').split(/[^A-Z]/)[0];
+  // If no quote currency found or result is empty, return normalized symbol
+  // This handles cases like "BTC", "ETH", or pure quote currencies like "USDT"
+  return normalizedSymbol || upperSymbol;
 }
 
 /**
