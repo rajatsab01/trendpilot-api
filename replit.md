@@ -146,7 +146,8 @@ The application supports 12 languages, a token-based usage model, and provides a
   - Shows "Searched: [input] → Found: [corrected]" when symbol corrected
   - Asset name as main heading (e.g., "Bitcoin")
   - Corrected symbol below name (e.g., "BTC")
-  - Price source attribution (e.g., "via CoinMarketCap")
+  - Current price displayed prominently
+  - Price source stored in database but NOT displayed to users (per user preference)
 - **Status:** Architecture now truly Perplexity-first with zero external API dependencies
 
 ### Professional Trading Features Enhancement (October 24, 2025)
