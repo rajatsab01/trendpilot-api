@@ -1,20 +1,46 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { Broker } from "@shared/schema";
 
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [directTradeEnabled, setDirectTradeEnabled] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const userId = localStorage.getItem("userId");
 
   const { data: brokers } = useQuery<Broker[]>({
-    queryKey: ["/api/brokers", userId],
+    queryKey: [`/api/brokers/${userId}`],
     enabled: !!userId,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (brokerId: string) => {
+      const result = await apiRequest("DELETE", `/api/brokers/${brokerId}`);
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/brokers/${userId}`] });
+      toast({
+        title: "Success",
+        description: "Broker deleted successfully",
+      });
+      setDeleteConfirmId(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete broker. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   return (
@@ -56,9 +82,22 @@ export default function Settings() {
                           {broker.isConnected ? t.connected : "Disconnected"}
                         </p>
                       </div>
-                      <button className="text-white hover-elevate active-elevate-2 rounded-full p-2">
-                        <span className="material-symbols-outlined">edit</span>
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setLocation(`/edit-broker/${broker.id}`)}
+                          className="text-[#38e07b] hover-elevate active-elevate-2 rounded-full p-2"
+                          data-testid={`button-edit-${broker.id}`}
+                        >
+                          <span className="material-symbols-outlined">edit</span>
+                        </button>
+                        <button 
+                          onClick={() => setDeleteConfirmId(broker.id)}
+                          className="text-red-500 hover-elevate active-elevate-2 rounded-full p-2"
+                          data-testid={`button-delete-${broker.id}`}
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -109,6 +148,34 @@ export default function Settings() {
       </div>
 
       <BottomNav />
+
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1c2620] rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="text-white text-xl font-bold mb-2">Delete Broker</h3>
+            <p className="text-[#9eb7a8] text-sm mb-6">
+              Are you sure you want to delete this broker? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 bg-[#29382f] text-white py-3 rounded-full font-medium hover-elevate active-elevate-2"
+                data-testid="button-cancel-delete"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteConfirmId)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 bg-red-500 text-white py-3 rounded-full font-medium hover:bg-red-600 disabled:opacity-50"
+                data-testid="button-confirm-delete"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
