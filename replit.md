@@ -41,6 +41,36 @@ The application supports 12 languages, a token-based usage model, and provides a
 *   **Payment:** Razorpay for token purchases
 ## Recent Changes (October 24, 2025)
 
+### Critical Razorpay Fix (October 24, 2025)
+- **Fixed token purchase error - Razorpay receipt length issue**
+  - **Problem:** Receipt field exceeded Razorpay's 40-character limit, causing 400 errors
+  - **Root Cause:** `receipt_${userId}_${Date.now()}` generated 57+ character strings
+  - **Solution:** Shortened to `rcpt_${shortUserId}_${timestamp}` format (~22 chars)
+    - Uses first 8 chars of UUID + last 8 digits of timestamp
+    - Full userId preserved in order `notes` field for tracking
+  - **Status:** Token purchases now working correctly
+
+### Logo & Branding (October 24, 2025)
+- **Integrated custom TP rocket logo across application**
+  - Logo file: `attached_assets/logo 3_1761320611938.png`
+  - Added to: Language Selection, Welcome screen, Dashboard header
+  - Set as app favicon and icon
+  - **Layout changed to vertical:** Logo on top, "Trend Pilot" text below
+  - Consistent branding across all screens
+
+### Watch Ad Feature (October 24, 2025)
+- **Implemented free token earning via ad watching**
+  - **Frontend:** 60-second countdown modal with progress bar
+  - **Reward:** +2 tokens per ad completion
+  - **UX Features:**
+    - Animated token count update (scale 1.5x + green color)
+    - Skip button (visible after 5 seconds, but user loses reward)
+    - Toast notifications for success/skip
+  - **Security:** 60-second rate limiting per user (in-memory)
+    - Returns 429 status if user tries too quickly
+    - Demo mode implementation (production requires real Google AdSense)
+  - **Location:** Watch Ad button on Dashboard and Analyzer screens
+
 ### Perplexity AI Integration (October 24, 2025)
 - **Replaced OpenAI with Perplexity AI for superior real-time analysis**
   - Perplexity has real-time web search built-in for latest market news and trends
