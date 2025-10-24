@@ -13,6 +13,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState("short_term");
+  const [market, setMarket] = useState<"crypto" | "indian_nse" | "indian_bse" | "us" | "japan" | "singapore" | "currency">("crypto");
 
   const userId = localStorage.getItem("userId");
 
@@ -27,6 +28,7 @@ export default function Dashboard() {
         userId,
         symbol,
         duration,
+        market,
       });
       return await result.json();
     },
@@ -77,20 +79,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#111714] flex flex-col">
       <div className="flex flex-col flex-1">
         <header className="flex flex-col p-4 pb-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="w-12"></div>
-            <h1 className="text-[#38e07b] text-2xl font-bold leading-tight tracking-tight flex-1 text-center">
+          <div className="flex items-center justify-center mb-2">
+            <h1 className="text-[#38e07b] text-2xl font-bold leading-tight tracking-tight">
               Trend Pilot
             </h1>
-            <div className="flex w-12 items-center justify-end">
-              <button
-                onClick={() => setLocation("/settings")}
-                className="flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-white hover-elevate active-elevate-2"
-                data-testid="button-settings"
-              >
-                <span className="material-symbols-outlined text-white">settings</span>
-              </button>
-            </div>
           </div>
           <p className="text-center text-xs text-[#9eb7a8]">{t.home}</p>
         </header>
@@ -130,6 +122,33 @@ export default function Dashboard() {
                 <option value="scalping">{t.scalping}</option>
                 <option value="short_term">{t.shortTerm}</option>
                 <option value="long_term">{t.longTerm}</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col">
+              <span className="text-sm font-medium text-[#9eb7a8] mb-2">
+                Market Selection
+              </span>
+              <select
+                className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-4 text-base font-normal leading-normal appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239eb7a8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: "right 0.5rem center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "1.5em 1.5em",
+                  paddingRight: "2.5rem",
+                }}
+                value={market}
+                onChange={(e) => setMarket(e.target.value as any)}
+                data-testid="select-market"
+              >
+                <option value="crypto">Cryptocurrency</option>
+                <option value="indian_nse">Indian NSE</option>
+                <option value="indian_bse">Indian BSE</option>
+                <option value="us">US Stocks</option>
+                <option value="japan">Japan Stocks</option>
+                <option value="singapore">Singapore Stocks</option>
+                <option value="currency">Currency/Forex</option>
               </select>
             </label>
           </div>
