@@ -1,0 +1,52 @@
+Step 1. Get Sign in button code
+You can copy the HTML/JS button code and paste it onto your website to show phone verification button.
+
+This button code has a phoneEmailListener() JavaScript function which we call after successful phone number verification. Please send < user_json_url> to your backend to fetch authenticated country code and phone number from this JSON file URL.
+
+Use ChatGPT to generate equivalent button code for ReactJS/Angular/NodeJS/Similar Framework
+
+HTML/JS
+PHP
+React JS
+Django (Python)
+Node JS
+Copy and paste this HTML in your website code
+
+<div class="pe_signin_button" data-client-id="16614316303161384204"><script src="https://www.phone.email/sign_in_button_v1.js" async></script></div>
+
+<script>
+function phoneEmailListener(userObj){
+    var user_json_url = userObj.user_json_url;
+    // Send user_json_url to your backend to retrieve user info (i.e. country code and phone number) from this URL.
+
+    // Delete following code once you complete integration step 2.
+    document.querySelector('.pe_signin_button').insertAdjacentHTML('beforeend', '<span>Phone Verification Successfull !! <br />Read following user_json_url from backend to get verified phone number - '+user_json_url+' <br /> Please delete this debug message code from phoneEmailListener function once you implement integration step 2.</span>');
+}
+</script>
+phone email Customize button : You can customize the sign-in button text and color etc by visiting Button Settings menu in Admin Dashboard.
+Step 2. Get verified phone number (Backend)
+For enhanced security you must implement this step in your application backend.
+
+ We have supplied user_json_url (Example - https://user.phone.email/user_abcxd123fgbfg43454.json) in phoneEmailListener JS function as explained in step 1.
+
+ Please read authenticated phone number from JSON URL using PHP, Python, Node JS, JAVA etc as explained below.
+
+
+PHP
+Node JS
+Python
+Java
+Code for login_success.php
+ <?php
+// Assuming $user_json_url contains the URL path
+$user_json_url = $_GET['user_json_url'];
+$json_data = file_get_contents($user_json_url);
+$data = json_decode($json_data, true);
+
+$user_country_code = $data['user_country_code'];
+$user_phone_number = $data['user_phone_number'];
+$user_first_name= $data['user_first_name'];
+$user_last_name= $data['user_last_name'];
+// Now you can use $user_country_code, $user_phone_number, user_first_name and user_last_name as needed
+?> 
+Should you encounter any technical challenges during the integration process, please don't hesitate to reach out to us for assistance.

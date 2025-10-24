@@ -205,7 +205,7 @@ export default function Analyzer() {
                       {analysis.confidence}%
                     </span>
                     <span className={`text-lg font-medium ${sentimentColor}`} data-testid="text-sentiment">
-                      {analysis.sentiment}
+                      {analysis.sentiment === "Bullish" ? t.bullish : t.bearish}
                     </span>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export default function Analyzer() {
                     className={`text-2xl font-bold mt-2 ${sentimentColor}`}
                     data-testid="text-recommendation"
                   >
-                    {analysis.recommendation}
+                    {analysis.recommendation === "BUY" ? t.buy : t.sell}
                   </p>
                 </div>
               </div>
