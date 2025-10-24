@@ -1,22 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+declare global {
+  interface Window {
+    phoneEmailListener: (userObj: { user_json_url: string }) => void;
+  }
+}
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const [name, setName] = useState("");
-  const [mobile, setMobile] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
+
+  const verifyPhoneMutation = useMutation({
+    mutationFn: async (userJsonUrl: string) => {
+      const result = await apiRequest("POST", "/api/auth/verify-phone", {
+        userJsonUrl,
+      });
+      return await result.json();
+    },
+    onSuccess: (data) => {
+      setIsVerified(true);
+      setVerifiedPhone(data.phoneNumber);
+      toast({
+        title: t.success || "Success",
+        description: t.phoneVerified || "Phone number verified successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to verify phone number. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const loginMutation = useMutation({
     mutationFn: async () => {
       const result = await apiRequest("POST", "/api/auth/login", {
         name,
-        mobile,
+        mobile: verifiedPhone,
         language,
       });
       return await result.json();
@@ -34,9 +65,31 @@ export default function Login() {
     },
   });
 
+  useEffect(() => {
+    // Load Phone.Email script
+    const script = document.createElement("script");
+    script.src = "https://www.phone.email/sign_in_button_v1.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    // Define callback function
+    window.phoneEmailListener = (userObj: { user_json_url: string }) => {
+      verifyPhoneMutation.mutate(userObj.user_json_url);
+    };
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+      if (window.phoneEmailListener) {
+        window.phoneEmailListener = undefined as any;
+      }
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && mobile.trim()) {
+    if (name.trim() && isVerified && verifiedPhone) {
       loginMutation.mutate();
     }
   };
@@ -78,29 +131,44 @@ export default function Login() {
               />
             </div>
 
-            <div className="relative">
-              <label className="sr-only" htmlFor="mobile">
-                {t.mobileNumber}
-              </label>
-              <input
-                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#6a7f72] px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b] transition-shadow duration-200"
-                id="mobile"
-                placeholder={t.mobileNumber}
-                type="tel"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                data-testid="input-mobile"
-              />
-            </div>
+            {!isVerified ? (
+              <div className="relative">
+                <label className="block text-[#6a7f72] text-sm mb-2">
+                  {t.verifyPhone || "Verify your phone number"}
+                </label>
+                <div 
+                  className="pe_signin_button" 
+                  data-client-id="16614316303161384204"
+                  data-testid="phone-verify-button"
+                ></div>
+                {verifyPhoneMutation.isPending && (
+                  <p className="text-[#6a7f72] text-sm mt-2">
+                    {t.verifying || "Verifying..."}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="relative p-4 bg-[#29382f] rounded-xl border border-[#38e07b]">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">check_circle</span>
+                  <div>
+                    <p className="text-white text-sm font-medium">
+                      {t.phoneVerified || "Phone Verified"}
+                    </p>
+                    <p className="text-[#6a7f72] text-xs">{verifiedPhone}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={loginMutation.isPending || !isVerified || !name.trim()}
               className="mt-8 flex w-full items-center justify-center rounded-full h-12 px-5 bg-[#38e07b] text-[#111714] text-base font-bold leading-normal tracking-[0.015em] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#111714] focus:ring-[#38e07b] transition-all duration-300 disabled:opacity-50"
-              data-testid="button-send-otp"
+              data-testid="button-login"
             >
               <span className="truncate">
-                {loginMutation.isPending ? "Loading..." : t.sendOTP}
+                {loginMutation.isPending ? t.loading || "Loading..." : t.login || "Login"}
               </span>
             </button>
           </form>

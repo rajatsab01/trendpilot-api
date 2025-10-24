@@ -4,10 +4,56 @@ import { storage } from "./storage";
 import { analyzeMarket } from "./gemini";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
-import { TOTP } from "otpauth";
-import QRCode from "qrcode";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Verify phone number from Phone.Email service
+  app.post("/api/auth/verify-phone", async (req, res) => {
+    try {
+      const { userJsonUrl } = req.body;
+      if (!userJsonUrl) {
+        return res.status(400).json({ error: "User JSON URL required" });
+      }
+
+      // Security: Validate URL is from Phone.Email domain to prevent SSRF
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(userJsonUrl);
+      } catch {
+        return res.status(400).json({ error: "Invalid URL format" });
+      }
+
+      // Only allow HTTPS requests to phone.email domain
+      if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "user.phone.email") {
+        return res.status(400).json({ error: "Invalid verification URL" });
+      }
+
+      // Fetch verified phone data from Phone.Email
+      const response = await fetch(userJsonUrl);
+      if (!response.ok) {
+        return res.status(400).json({ error: "Failed to verify phone number" });
+      }
+
+      const data = await response.json();
+      const { user_country_code, user_phone_number } = data;
+
+      if (!user_country_code || !user_phone_number) {
+        return res.status(400).json({ error: "Invalid phone data" });
+      }
+
+      // Combine country code and phone number
+      const phoneNumber = `+${user_country_code}${user_phone_number}`;
+
+      res.json({ 
+        phoneNumber,
+        countryCode: user_country_code,
+        verified: true 
+      });
+    } catch (error) {
+      console.error("Phone verification error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Auth/Login - creates or retrieves user
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -15,8 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const loginSchema = z.object({
         name: z.string().min(1),
         mobile: z.string().min(10),
-        language: z.enum(["en", "hi"]),
-        otp: z.string().optional(),
+        language: z.enum(["en", "hi", "es", "zh", "de", "fr", "ar", "pt", "ru", "ja", "ko", "it"]),
       });
 
       const validationResult = loginSchema.safeParse(req.body);
@@ -24,154 +69,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { name, mobile, language, otp } = validationResult.data;
+      const { name, mobile, language } = validationResult.data;
 
-      // Check if user exists by mobile
-      let user = await storage.getUserByMobile(mobile);
+      // Normalize phone number: remove spaces, dashes
+      const normalizedMobile = mobile.replace(/[\s-]/g, '');
+
+      // Try to find user with multiple format variations for backwards compatibility
+      let user = await storage.getUserByMobile(normalizedMobile);
+      
+      // If not found, try variations to support legacy 10-digit phone numbers
+      if (!user && normalizedMobile.startsWith('+')) {
+        // Try without the + prefix (e.g., '911234567890')
+        const withoutPlus = normalizedMobile.substring(1);
+        user = await storage.getUserByMobile(withoutPlus);
+        
+        // Try last 10 digits only (for legacy users who stored just phone without country code)
+        if (!user && withoutPlus.length > 10) {
+          const last10Digits = withoutPlus.slice(-10);
+          user = await storage.getUserByMobile(last10Digits);
+        }
+        
+        // If found with old format, migrate to new format with +
+        if (user) {
+          await storage.updateUserMobile(user.id, normalizedMobile);
+        }
+      }
 
       if (!user) {
-        // Create new user
+        // Create new user with 20 starting tokens
         user = await storage.createUser({
           name,
-          mobile,
+          mobile: normalizedMobile,
           language,
-          tokens: 100,
+          tokens: 20,
         });
-        // New users don't need OTP yet
-        return res.json({ userId: user.id, tokens: user.tokens, otpEnabled: false });
+        return res.json({ userId: user.id, tokens: user.tokens });
       }
 
-      // If user has OTP enabled, verify it
-      if (user.otpEnabled === 1 && user.otpSecret) {
-        if (!otp) {
-          return res.status(400).json({ error: "OTP required", otpRequired: true });
-        }
-
-        const totp = new TOTP({
-          secret: user.otpSecret,
-          digits: 6,
-          period: 30,
-        });
-
-        const isValid = totp.validate({ token: otp, window: 1 }) !== null;
-        if (!isValid) {
-          return res.status(401).json({ error: "Invalid OTP" });
-        }
-      }
-
-      res.json({ userId: user.id, tokens: user.tokens, otpEnabled: user.otpEnabled === 1 });
+      // Return existing user
+      res.json({ userId: user.id, tokens: user.tokens });
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  // Setup OTP - Generate secret and QR code
-  app.post("/api/auth/setup-otp", async (req, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID required" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      // Generate new TOTP secret
-      const totp = new TOTP({
-        issuer: "Trend Pilot",
-        label: user.mobile,
-        algorithm: "SHA1",
-        digits: 6,
-        period: 30,
-      });
-
-      // Save secret to database (not enabled yet)
-      await storage.updateUserOtp(userId, totp.secret.base32, 0);
-
-      // Generate QR code
-      const otpauth = totp.toString();
-      const qrCode = await QRCode.toDataURL(otpauth);
-
-      res.json({ 
-        secret: totp.secret.base32, 
-        qrCode,
-        otpauth 
-      });
-    } catch (error) {
-      console.error("Setup OTP error:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  // Verify and enable OTP
-  app.post("/api/auth/enable-otp", async (req, res) => {
-    try {
-      const { userId, otp } = req.body;
-      if (!userId || !otp) {
-        return res.status(400).json({ error: "User ID and OTP required" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || !user.otpSecret) {
-        return res.status(404).json({ error: "OTP not set up" });
-      }
-
-      // Verify OTP
-      const totp = new TOTP({
-        secret: user.otpSecret,
-        digits: 6,
-        period: 30,
-      });
-
-      const isValid = totp.validate({ token: otp, window: 1 }) !== null;
-      if (!isValid) {
-        return res.status(401).json({ error: "Invalid OTP" });
-      }
-
-      // Enable OTP for user
-      await storage.updateUserOtp(userId, user.otpSecret, 1);
-
-      res.json({ success: true, message: "OTP enabled successfully" });
-    } catch (error) {
-      console.error("Enable OTP error:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  // Disable OTP
-  app.post("/api/auth/disable-otp", async (req, res) => {
-    try {
-      const { userId, otp } = req.body;
-      if (!userId || !otp) {
-        return res.status(400).json({ error: "User ID and OTP required" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || !user.otpSecret) {
-        return res.status(404).json({ error: "OTP not enabled" });
-      }
-
-      // Verify OTP before disabling
-      const totp = new TOTP({
-        secret: user.otpSecret,
-        digits: 6,
-        period: 30,
-      });
-
-      const isValid = totp.validate({ token: otp, window: 1 }) !== null;
-      if (!isValid) {
-        return res.status(401).json({ error: "Invalid OTP" });
-      }
-
-      // Disable OTP
-      await storage.updateUserOtp(userId, null, 0);
-
-      res.json({ success: true, message: "OTP disabled successfully" });
-    } catch (error) {
-      console.error("Disable OTP error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

@@ -10,8 +10,6 @@ export const users = pgTable("users", {
   mobile: text("mobile").notNull().unique(),
   language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
   tokens: integer("tokens").notNull().default(20),
-  otpSecret: text("otp_secret"), // TOTP secret for 2FA
-  otpEnabled: integer("otp_enabled").notNull().default(0), // 0 = disabled, 1 = enabled
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -55,8 +53,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 }).extend({
   name: z.string().min(1, "Name is required"),
   mobile: z.string().min(10, "Valid mobile number required"),
-  language: z.enum(["en", "hi"]),
-  tokens: z.number().int().min(0).default(100),
+  language: z.enum(["en", "hi", "es", "zh", "de", "fr", "ar", "pt", "ru", "ja", "ko", "it"]),
+  tokens: z.number().int().min(0).default(20),
 });
 
 export const insertAnalysisSchema = createInsertSchema(analyses).omit({
@@ -99,6 +97,6 @@ export type InsertBroker = z.infer<typeof insertBrokerSchema>;
 export const tradeDurations = ["long_term", "short_term", "scalping"] as const;
 export type TradeDuration = typeof tradeDurations[number];
 
-// Language options
-export const languages = ["en", "hi"] as const;
+// Language options - 12 languages supported
+export const languages = ["en", "hi", "es", "zh", "de", "fr", "ar", "pt", "ru", "ja", "ko", "it"] as const;
 export type Language = typeof languages[number];

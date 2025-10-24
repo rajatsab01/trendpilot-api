@@ -20,7 +20,7 @@ export interface IStorage {
   getUserByMobile(mobile: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserTokens(id: string, tokens: number): Promise<User | undefined>;
-  updateUserOtp(id: string, otpSecret: string | null, otpEnabled: number): Promise<User | undefined>;
+  updateUserMobile(id: string, mobile: string): Promise<User | undefined>;
 
   // Analyses
   getAnalysis(id: string): Promise<Analysis | undefined>;
@@ -59,8 +59,6 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const user: User = {
       ...insertUser,
-      otpSecret: insertUser.otpSecret ?? null,
-      otpEnabled: insertUser.otpEnabled ?? 0,
       id,
       createdAt: new Date(),
     };
@@ -77,11 +75,11 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
-  async updateUserOtp(id: string, otpSecret: string | null, otpEnabled: number): Promise<User | undefined> {
+  async updateUserMobile(id: string, mobile: string): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
 
-    const updatedUser = { ...user, otpSecret, otpEnabled };
+    const updatedUser = { ...user, mobile };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -101,6 +99,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const analysis: Analysis = {
       ...insertAnalysis,
+      marketSentiment: insertAnalysis.marketSentiment ?? null,
+      deepAnalysis: insertAnalysis.deepAnalysis ?? null,
       rsi: insertAnalysis.rsi ?? null,
       macd: insertAnalysis.macd ?? null,
       stochastic: insertAnalysis.stochastic ?? null,
@@ -194,10 +194,10 @@ export class PgStorage implements IStorage {
     return result[0];
   }
 
-  async updateUserOtp(id: string, otpSecret: string | null, otpEnabled: number): Promise<User | undefined> {
+  async updateUserMobile(id: string, mobile: string): Promise<User | undefined> {
     const result = await this.db
       .update(users)
-      .set({ otpSecret, otpEnabled })
+      .set({ mobile })
       .where(eq(users.id, id))
       .returning();
     return result[0];
