@@ -482,12 +482,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Perform analysis using Perplexity with real market data (use user's language)
       const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language);
 
-      // Save analysis
+      // Save analysis with Perplexity-validated metadata
       const analysis = await storage.createAnalysis({
         userId,
-        symbol,
-        instrumentName: analysisResult.instrumentName,
-        currentPrice: analysisResult.currentPrice,
+        symbol, // Original user-entered symbol (may be misspelled)
+        correctedSymbol: analysisResult.correctedSymbol, // Perplexity-corrected symbol
+        assetName: analysisResult.assetName, // Perplexity-validated full name
+        instrumentName: analysisResult.instrumentName, // For backward compatibility
+        currentPrice: analysisResult.currentPrice, // Perplexity-validated price
+        priceSource: analysisResult.priceSource, // Where Perplexity found the price
         duration,
         market,
         recommendation: analysisResult.recommendation,

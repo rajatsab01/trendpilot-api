@@ -7,8 +7,12 @@ interface MarketAnalysisResult {
   marketSentiment: string;
   deepAnalysis: string;
   analysis: string;
-  currentPrice: string | null;
-  instrumentName: string | null;
+  // Perplexity-validated symbol metadata
+  correctedSymbol: string;
+  assetName: string;
+  currentPrice: string;
+  priceSource: string;
+  instrumentName: string | null; // For backward compatibility
   indicators: {
     rsi: string;
     macd: string;
@@ -132,18 +136,19 @@ Please research and provide the current market price for ${symbol} in ${marketTy
 ${marketContext}
 
 CRITICAL REQUIREMENTS:
-1. Research the LATEST news, trends, and price action for ${symbol} in ${marketTypeName}
-2. Use your real-time web search to find current market price if not provided above
-3. Calculate REALISTIC technical indicator values based on current market data and recent price action
-4. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
-5. Provide your ENTIRE analysis in ${languageName}
-6. Calculate MULTIPLE take profit targets (TP1, TP2, TP3) with INCREASING risk-reward:
+1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
+2. Research the LATEST news, trends, and price action for this asset
+3. Use your real-time web search to find the EXACT current market price from reliable sources
+4. Calculate REALISTIC technical indicator values based on current market data and recent price action
+5. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
+6. Provide your ENTIRE analysis in ${languageName}
+7. Calculate MULTIPLE take profit targets (TP1, TP2, TP3) with INCREASING risk-reward:
    - TP1: Conservative target (1:1 risk-reward) - book 50% profit here
    - TP2: Medium target (1:2 risk-reward) - trail stop to breakeven
    - TP3: Aggressive target (1:3 risk-reward) - maximize remaining position
-7. Calculate 3 support levels (S1, S2, S3) and 3 resistance levels (R1, R2, R3) based on current price action
-8. Provide a probability score (0-100) for this trade setup based on confluence of indicators
-9. Include detailed explanatory notes with disclaimers about market risks
+8. Calculate 3 support levels (S1, S2, S3) and 3 resistance levels (R1, R2, R3) based on current price action
+9. Provide a probability score (0-100) for this trade setup based on confluence of indicators
+10. Include detailed explanatory notes with disclaimers about market risks
 
 Provide a comprehensive 3-layer analysis:
 
@@ -158,6 +163,10 @@ Based on all indicators + market sentiment + deep analysis using REAL data, prov
 
 Respond with JSON in this exact format:
 {
+  "correctedSymbol": "CORRECTED standard ticker symbol (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
+  "assetName": "Full official name of the asset (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
+  "currentPrice": "EXACT current market price as found via web search (just the number, e.g., '111140.50' for $111,140.50)",
+  "priceSource": "Where you found this price (e.g., 'CoinMarketCap', 'Bloomberg', 'Yahoo Finance', 'Binance')",
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
@@ -168,7 +177,7 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "ACTUAL CURRENT MARKET PRICE as a number (e.g., for BTC at $111,140 use '111140.00')",
+  "entry": "ACTUAL CURRENT MARKET PRICE as a number (same as currentPrice field above)",
   "takeProfit": "final take profit price (same as tp3)",
   "stopLoss": "realistic stop loss price with tight risk control",
   "tp1": "Take Profit 1 - Conservative 1:1 RR (book 50% profit here)",
@@ -185,7 +194,7 @@ Respond with JSON in this exact format:
   "explanatoryNotes": "Detailed explanatory notes in ${languageName} about the trade setup, key levels, market context, and risk disclaimers (3-5 sentences, like: 'This ${durationContext} setup is based on current price action at [price] with tight risk control. Key support at [level] and resistance at [level]. Market conditions favor [direction] momentum. Trade with strict discipline and manage position size according to your risk tolerance. Past performance does not guarantee future results.')"
 }
 
-IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
+IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol, assetName, currentPrice, and priceSource fields are MANDATORY and must be accurate based on your web research.`;
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -257,8 +266,12 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after.`;
       marketSentiment: data.marketSentiment || data.analysis,
       deepAnalysis: data.deepAnalysis || data.analysis,
       analysis: data.analysis,
-      currentPrice: currentPrice > 0 ? currentPrice.toFixed(2) : null,
-      instrumentName: instrumentName,
+      // Perplexity-validated symbol metadata (replaces external API data)
+      correctedSymbol: data.correctedSymbol,
+      assetName: data.assetName,
+      currentPrice: data.currentPrice,
+      priceSource: data.priceSource,
+      instrumentName: data.assetName, // For backward compatibility
       indicators: {
         rsi: data.rsi,
         macd: data.macd,

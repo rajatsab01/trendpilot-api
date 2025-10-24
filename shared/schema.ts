@@ -17,9 +17,12 @@ export const users = pgTable("users", {
 export const analyses = pgTable("analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
-  symbol: text("symbol").notNull(),
-  instrumentName: text("instrument_name"), // Full name of the instrument (e.g., "Apple Inc.")
-  currentPrice: text("current_price"), // Current market price at time of analysis
+  symbol: text("symbol").notNull(), // Original user-entered symbol (may contain misspellings)
+  correctedSymbol: text("corrected_symbol"), // Perplexity-validated correct symbol
+  assetName: text("asset_name"), // Perplexity-validated full asset name
+  instrumentName: text("instrument_name"), // Full name of the instrument (for backward compatibility)
+  currentPrice: text("current_price"), // Perplexity-validated current price
+  priceSource: text("price_source"), // Where Perplexity found the price (e.g., "CoinMarketCap", "Bloomberg")
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
   market: text("market").notNull(), // 'stock_equities', 'commodity', 'forex', 'derivatives_futures', 'bond', 'cryptocurrency'
   recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name
