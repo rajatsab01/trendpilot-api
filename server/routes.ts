@@ -287,8 +287,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Deduct tokens
       await storage.updateUserTokens(userId, user.tokens - 2);
 
-      // Perform analysis using Gemini AI
-      const analysisResult = await analyzeMarket(symbol, duration);
+      // Perform analysis using Gemini AI with user's language
+      const analysisResult = await analyzeMarket(symbol, duration, user.language);
 
       // Save analysis
       const analysis = await storage.createAnalysis({
