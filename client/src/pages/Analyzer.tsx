@@ -520,9 +520,8 @@ export default function Analyzer() {
                   {t.supportResistanceLevels}
                 </h2>
                 <div className="bg-[#1c2620] p-6 rounded-2xl">
-                  <div className="flex gap-4">
-                    {/* Left Side: Price Levels Chart */}
-                    <div className="flex-1 space-y-3">
+                  {/* Price Levels Chart */}
+                  <div className="space-y-3">
                       {/* Resistance R3 */}
                       {analysis.r3 && (
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/10 border-l-4 border-red-500" data-testid="text-r3">
@@ -592,20 +591,6 @@ export default function Analyzer() {
                           <div className="w-2 h-2 rounded-full bg-[#38e07b]/50"></div>
                         </div>
                       )}
-                    </div>
-
-                    {/* Right Side: Strength Thermometer */}
-                    <div className="relative w-16 flex flex-col items-center justify-center py-3">
-                      {/* Thermometer Visual */}
-                      <div className="w-6 flex-1 rounded-full bg-gradient-to-b from-red-500 via-yellow-500 to-[#38e07b] opacity-30 border-2 border-white/10"></div>
-                      
-                      {/* Labels - positioned alongside thermometer */}
-                      <div className="absolute right-0 inset-y-0 flex flex-col justify-around py-8 pr-1">
-                        <p className="text-red-500 text-[9px] font-bold leading-none">High</p>
-                        <p className="text-yellow-500 text-[9px] font-bold leading-none">Mid</p>
-                        <p className="text-[#38e07b] text-[9px] font-bold leading-none">Safe</p>
-                      </div>
-                    </div>
                   </div>
                   
                   {/* Legend */}
