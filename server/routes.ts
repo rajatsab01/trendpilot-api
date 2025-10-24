@@ -375,6 +375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Send webhook to broker
+      console.log("Sending webhook to broker:", webhookUrl);
+      console.log("Payload:", JSON.stringify(payload, null, 2));
+      
       const webhookResponse = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -384,11 +387,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body: JSON.stringify(payload),
       });
 
+      console.log("Broker response status:", webhookResponse.status);
+
       if (!webhookResponse.ok) {
         const errorText = await webhookResponse.text();
+        console.error("Broker webhook error:", errorText);
         return res.status(502).json({ 
           error: "Broker webhook failed", 
-          details: errorText || webhookResponse.statusText 
+          details: errorText || webhookResponse.statusText,
+          status: webhookResponse.status,
+          url: webhookUrl
         });
       }
 

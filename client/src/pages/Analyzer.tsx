@@ -80,18 +80,27 @@ export default function Analyzer() {
         // Parse the template and replace placeholders
         let messageTemplate = selectedBroker.webhookMessage;
         
-        // Replace placeholders
+        // Replace all placeholders
         messageTemplate = messageTemplate.replace(/\{\{ticker\}\}/g, analysis.symbol);
         messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.action\}\}/g, analysis.recommendation);
         messageTemplate = messageTemplate.replace(/\{\{strategy\.order\.contracts\}\}/g, quantity.toString());
         messageTemplate = messageTemplate.replace(/\{\{timenow\}\}/g, new Date().toISOString());
         
-        // Handle take profit and stop loss if included
+        // Replace take profit and stop loss with values or remove them
         if (includeTakeProfit) {
           messageTemplate = messageTemplate.replace(/\{\{take_profit\}\}/g, analysis.takeProfit || "");
+        } else {
+          // Remove the entire field if not included
+          messageTemplate = messageTemplate.replace(/,?\s*"[^"]*":\s*"\{\{take_profit\}\}"/g, "");
+          messageTemplate = messageTemplate.replace(/,?\s*'[^']*':\s*'\{\{take_profit\}\}'/g, "");
         }
+        
         if (includeStopLoss) {
           messageTemplate = messageTemplate.replace(/\{\{stop_loss\}\}/g, analysis.stopLoss || "");
+        } else {
+          // Remove the entire field if not included
+          messageTemplate = messageTemplate.replace(/,?\s*"[^"]*":\s*"\{\{stop_loss\}\}"/g, "");
+          messageTemplate = messageTemplate.replace(/,?\s*'[^']*':\s*'\{\{stop_loss\}\}'/g, "");
         }
         
         try {
