@@ -114,6 +114,11 @@ export const translations = {
     // Common
     profile: "Profile",
     back: "Back",
+    analyseMore: "Analyse More",
+    charityBringsLuck: "Charity brings luck",
+    donateNow: "Donate Now",
+    enterDonationAmount: "Enter donation amount (₹)",
+    minimumDonation: "Minimum ₹10",
   },
   hi: {
     // Language Selection
@@ -228,6 +233,11 @@ export const translations = {
     // Common
     profile: "प्रोफाइल",
     back: "वापस",
+    analyseMore: "और विश्लेषण करें",
+    charityBringsLuck: "दान से सौभाग्य मिलता है",
+    donateNow: "अभी दान करें",
+    enterDonationAmount: "दान राशि दर्ज करें (₹)",
+    minimumDonation: "न्यूनतम ₹10",
   },
   es: {
     // Spanish
@@ -326,6 +336,11 @@ export const translations = {
     saveBroker: "Guardar corredor",
     profile: "Perfil",
     back: "Atrás",
+    analyseMore: "Analizar más",
+    charityBringsLuck: "La caridad trae suerte",
+    donateNow: "Donar ahora",
+    enterDonationAmount: "Ingrese el monto de la donación (₹)",
+    minimumDonation: "Mínimo ₹10",
   },
   zh: {
     // Chinese (Simplified)
@@ -424,6 +439,11 @@ export const translations = {
     saveBroker: "保存经纪商",
     profile: "个人资料",
     back: "返回",
+    analyseMore: "分析更多",
+    charityBringsLuck: "慈善带来好运",
+    donateNow: "立即捐赠",
+    enterDonationAmount: "输入捐赠金额 (₹)",
+    minimumDonation: "最低 ₹10",
   },
   de: {
     // German
@@ -522,6 +542,11 @@ export const translations = {
     saveBroker: "Broker speichern",
     profile: "Profil",
     back: "Zurück",
+    analyseMore: "Mehr analysieren",
+    charityBringsLuck: "Wohltätigkeit bringt Glück",
+    donateNow: "Jetzt spenden",
+    enterDonationAmount: "Spendenbetrag eingeben (₹)",
+    minimumDonation: "Mindestens ₹10",
   },
   fr: {
     // French
@@ -620,6 +645,11 @@ export const translations = {
     saveBroker: "Enregistrer le courtier",
     profile: "Profil",
     back: "Retour",
+    analyseMore: "Analyser plus",
+    charityBringsLuck: "La charité porte chance",
+    donateNow: "Faire un don maintenant",
+    enterDonationAmount: "Entrez le montant du don (₹)",
+    minimumDonation: "Minimum ₹10",
   },
   ar: {
     // Arabic
@@ -718,6 +748,11 @@ export const translations = {
     saveBroker: "حفظ الوسيط",
     profile: "الملف الشخصي",
     back: "رجوع",
+    analyseMore: "تحليل المزيد",
+    charityBringsLuck: "الصدقة تجلب الحظ",
+    donateNow: "تبرع الآن",
+    enterDonationAmount: "أدخل مبلغ التبرع (₹)",
+    minimumDonation: "الحد الأدنى ₹10",
   },
   pt: {
     // Portuguese
@@ -816,6 +851,11 @@ export const translations = {
     saveBroker: "Salvar corretora",
     profile: "Perfil",
     back: "Voltar",
+    analyseMore: "Analisar mais",
+    charityBringsLuck: "Caridade traz sorte",
+    donateNow: "Doar agora",
+    enterDonationAmount: "Digite o valor da doação (₹)",
+    minimumDonation: "Mínimo ₹10",
   },
   ru: {
     // Russian
@@ -914,6 +954,11 @@ export const translations = {
     saveBroker: "Сохранить брокера",
     profile: "Профиль",
     back: "Назад",
+    analyseMore: "Анализировать больше",
+    charityBringsLuck: "Благотворительность приносит удачу",
+    donateNow: "Пожертвовать сейчас",
+    enterDonationAmount: "Введите сумму пожертвования (₹)",
+    minimumDonation: "Минимум ₹10",
   },
   ja: {
     // Japanese
@@ -1012,6 +1057,11 @@ export const translations = {
     saveBroker: "ブローカーを保存",
     profile: "プロフィール",
     back: "戻る",
+    analyseMore: "もっと分析する",
+    charityBringsLuck: "慈善は幸運をもたらします",
+    donateNow: "今すぐ寄付",
+    enterDonationAmount: "寄付金額を入力 (₹)",
+    minimumDonation: "最小 ₹10",
   },
   ko: {
     // Korean
@@ -1110,6 +1160,11 @@ export const translations = {
     saveBroker: "브로커 저장",
     profile: "프로필",
     back: "뒤로",
+    analyseMore: "더 분석하기",
+    charityBringsLuck: "자선은 행운을 가져옵니다",
+    donateNow: "지금 기부하기",
+    enterDonationAmount: "기부 금액 입력 (₹)",
+    minimumDonation: "최소 ₹10",
   },
   it: {
     // Italian
@@ -1208,6 +1263,11 @@ export const translations = {
     saveBroker: "Salva broker",
     profile: "Profilo",
     back: "Indietro",
+    analyseMore: "Analizza di più",
+    charityBringsLuck: "La carità porta fortuna",
+    donateNow: "Dona ora",
+    enterDonationAmount: "Inserisci l'importo della donazione (₹)",
+    minimumDonation: "Minimo ₹10",
   },
 };
 
