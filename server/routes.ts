@@ -454,12 +454,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analyze market symbol
   app.post("/api/analyze", async (req, res) => {
     try {
-      // Validate request body
+      // Validate request body (market type now auto-detected by Perplexity)
       const analyzeSchema = z.object({
         userId: z.string().min(1),
         symbol: z.string().min(1),
         duration: z.enum(["long_term", "short_term", "scalping"]),
-        market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
       });
 
       const validationResult = analyzeSchema.safeParse(req.body);
@@ -467,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { userId, symbol, duration, market } = validationResult.data;
+      const { userId, symbol, duration } = validationResult.data;
 
       // Check user has enough tokens
       const user = await storage.getUser(userId);
@@ -480,9 +479,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Perform analysis using Perplexity with real market data (use user's language)
-      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language);
+      // Perplexity auto-detects market type via web search
+      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, user.language);
 
-      // Save analysis with Perplexity-validated metadata
+      // Save analysis with Perplexity-validated metadata (including auto-detected market)
       const analysis = await storage.createAnalysis({
         userId,
         symbol, // Original user-entered symbol (may be misspelled)
@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentPrice: analysisResult.currentPrice, // Perplexity-validated price
         priceSource: analysisResult.priceSource, // Where Perplexity found the price
         duration,
-        market,
+        market: analysisResult.marketType, // Auto-detected by Perplexity
         recommendation: analysisResult.recommendation,
         confidence: analysisResult.confidence,
         sentiment: analysisResult.sentiment,
