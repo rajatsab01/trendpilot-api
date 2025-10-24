@@ -152,6 +152,12 @@ export const translations = {
     story1Content: "Arjun made his biggest gain one Friday — a trade that doubled overnight. Scrolling through charts, he suddenly paused at a thought: \"What if a part of this win helps someone restart their life too?\" He donated a small share to a charity that helped farmers pay debts. The next month, every trade seemed to flow smoother, every loss recovered faster. Sometimes, good karma becomes your best risk management tool.",
     story2Title: "💰 2. The Missed Trade",
     story2Content: "Riya missed a perfect entry. She felt frustrated — but instead of forcing another trade, she chose to donate that same amount she would've invested to an orphanage. Two days later, she caught a move that earned her ten times more. She smiled and whispered, \"Maybe the universe really does pay interest on kindness.\" When you give without reason, life finds a reason to reward you.",
+    story3Title: "🌾 3. The Coin That Returned",
+    story3Content: "A retired banker always donated ₹11 from every profitable trade — a ritual. When markets crashed, he thought he'd stop. But habit won — he still donated, even on red days. Months later, his lost funds were unexpectedly reimbursed by an old client. The amount? Exactly the sum he had given away all those months. Money leaves with a blessing and returns with interest.",
+    story4Title: "🕊 4. The Analyst's Gift",
+    story4Content: "Kabir, a young analyst, started sending free financial lessons online every Sunday. He believed knowledge should circulate like wealth. One day, a follower he'd never met invested in his startup idea — the same idea he once feared to launch. When you share what you know, the universe shares what you need.",
+    story5Title: "🌙 5. The Candle in the Chart",
+    story5Content: "A small trader named Meena used to light a candle before starting her day — not for luck, but gratitude. Whenever she made profit, she donated to feed stray animals. Years later, she built a fund called The Karma Portfolio, where every gain lit another home. She discovered that the brightest candles aren't on charts — they're in hearts.",
   },
   hi: {
     // Language Selection
@@ -304,6 +310,12 @@ export const translations = {
     story1Content: "अर्जुन ने एक शुक्रवार को अपना सबसे बड़ा लाभ कमाया — एक व्यापार जो रातोंरात दोगुना हो गया। चार्ट स्क्रॉल करते हुए, वह अचानक एक विचार पर रुक गया: \"क्या होगा अगर इस जीत का एक हिस्सा किसी को अपना जीवन फिर से शुरू करने में मदद करे?\" उसने किसानों को कर्ज चुकाने में मदद करने वाले एक दान में एक छोटा हिस्सा दान किया। अगले महीने, हर व्यापार सुचारू रूप से चल रहा था, हर नुकसान तेजी से ठीक हो गया। कभी-कभी, अच्छा कर्म आपका सबसे अच्छा जोखिम प्रबंधन उपकरण बन जाता है।",
     story2Title: "💰 2. छूटी हुई ट्रेड",
     story2Content: "रिया एक सही एंट्री से चूक गई। वह निराश महसूस कर रही थी — लेकिन एक और व्यापार करने के बजाय, उसने उसी राशि को दान करने का फैसला किया जो उसने एक अनाथालय में निवेश किया होता। दो दिन बाद, उसने एक चाल पकड़ी जिसने उसे दस गुना अधिक कमाया। वह मुस्कुराई और फुसफुसाई, \"शायद ब्रह्मांड वास्तव में दयालुता पर ब्याज देता है।\" जब आप बिना कारण देते हैं, तो जीवन आपको पुरस्कृत करने का कारण ढूंढता है।",
+    story3Title: "🌾 3. सिक्का जो वापस आया",
+    story3Content: "एक सेवानिवृत्त बैंकर हर लाभदायक व्यापार से हमेशा ₹11 दान करता था — एक अनुष्ठान। जब बाजार दुर्घटनाग्रस्त हो गया, तो उसने सोचा कि वह रुक जाएगा। लेकिन आदत जीत गई — उसने अभी भी दान किया, लाल दिनों में भी। महीनों बाद, उसके खोए हुए धन को अप्रत्याशित रूप से एक पुराने ग्राहक द्वारा प्रतिपूर्ति की गई। राशि? ठीक वही राशि जो उसने उन सभी महीनों में दी थी। धन आशीर्वाद के साथ जाता है और ब्याज के साथ वापस आता है।",
+    story4Title: "🕊 4. विश्लेषक का उपहार",
+    story4Content: "कबीर, एक युवा विश्लेषक, हर रविवार को मुफ्त वित्तीय पाठ ऑनलाइन भेजना शुरू किया। उनका मानना था कि ज्ञान को धन की तरह परिचालित करना चाहिए। एक दिन, एक अनुयायी जिसे उसने कभी नहीं मिला था, उसके स्टार्टअप विचार में निवेश किया — वही विचार जिसे उसने एक बार लॉन्च करने से डरा था। जब आप जो जानते हैं उसे साझा करते हैं, तो ब्रह्मांड आपको जो चाहिए वह साझा करता है।",
+    story5Title: "🌙 5. चार्ट में मोमबत्ती",
+    story5Content: "मीना नाम की एक छोटी व्यापारी अपने दिन की शुरुआत से पहले एक मोमबत्ती जलाती थी — भाग्य के लिए नहीं, बल्कि कृतज्ञता के लिए। जब भी उसे लाभ होता था, वह आवारा जानवरों को खिलाने के लिए दान करती थी। वर्षों बाद, उसने द कर्मा पोर्टफोलियो नामक एक फंड बनाया, जहां हर लाभ एक और घर को रोशन करता था। उसने पाया कि सबसे चमकीली मोमबत्तियां चार्ट पर नहीं हैं — वे दिलों में हैं।",
   },
   es: {
     // Spanish
@@ -440,6 +452,12 @@ export const translations = {
     story1Content: "Arjun logró su mayor ganancia un viernes — una operación que se duplicó de la noche a la mañana. Mientras navegaba por los gráficos, de repente se detuvo ante un pensamiento: \"¿Y si una parte de esta victoria ayuda a alguien a reiniciar su vida también?\" Donó una pequeña parte a una organización benéfica que ayudaba a los agricultores a pagar deudas. Al mes siguiente, cada operación parecía fluir más suavemente, cada pérdida se recuperaba más rápido. A veces, el buen karma se convierte en tu mejor herramienta de gestión de riesgos.",
     story2Title: "💰 2. La Operación Perdida",
     story2Content: "Riya perdió una entrada perfecta. Se sintió frustrada — pero en lugar de forzar otra operación, eligió donar esa misma cantidad que habría invertido a un orfanato. Dos días después, capturó un movimiento que le ganó diez veces más. Sonrió y susurró: \"Tal vez el universo realmente paga intereses sobre la bondad.\" Cuando das sin razón, la vida encuentra una razón para recompensarte.",
+    story3Title: "🌾 3. La Moneda Que Regresó",
+    story3Content: "Un banquero jubilado siempre donaba ₹11 de cada operación rentable — un ritual. Cuando los mercados colapsaron, pensó que se detendría. Pero el hábito ganó — siguió donando, incluso en días rojos. Meses después, sus fondos perdidos fueron inesperadamente reembolsados por un antiguo cliente. ¿La cantidad? Exactamente la suma que había dado durante todos esos meses. El dinero se va con una bendición y regresa con intereses.",
+    story4Title: "🕊 4. El Regalo del Analista",
+    story4Content: "Kabir, un joven analista, comenzó a enviar lecciones financieras gratuitas en línea cada domingo. Creía que el conocimiento debería circular como la riqueza. Un día, un seguidor que nunca había conocido invirtió en su idea de startup — la misma idea que una vez temió lanzar. Cuando compartes lo que sabes, el universo comparte lo que necesitas.",
+    story5Title: "🌙 5. La Vela en el Gráfico",
+    story5Content: "Una pequeña trader llamada Meena solía encender una vela antes de comenzar su día — no por suerte, sino por gratitud. Cada vez que obtenía ganancias, donaba para alimentar animales callejeros. Años después, construyó un fondo llamado El Portafolio Karma, donde cada ganancia iluminaba otro hogar. Descubrió que las velas más brillantes no están en los gráficos — están en los corazones.",
   },
   zh: {
     // Chinese (Simplified)
@@ -576,6 +594,12 @@ export const translations = {
     story1Content: "阿俊在一个星期五获得了最大的收益——一笔交易在一夜之间翻了一番。浏览图表时，他突然停下来思考：\"如果这次胜利的一部分也能帮助别人重新开始生活呢？\"他向一个帮助农民偿还债务的慈善机构捐赠了一小部分。下个月，每笔交易似乎都更顺畅，每次损失都恢复得更快。有时，善业成为你最好的风险管理工具。",
     story2Title: "💰 2. 错过的交易",
     story2Content: "瑞雅错过了一个完美的入场机会。她感到沮丧——但她没有强行进行另一笔交易，而是选择将她本来会投资的同样金额捐赠给孤儿院。两天后，她抓住了一个让她赚了十倍的机会。她微笑着低语：\"也许宇宙真的会为善良支付利息。\"当你无缘无故地给予时，生活会找到理由回报你。",
+    story3Title: "🌾 3. 归来的硬币",
+    story3Content: "一位退休银行家总是从每笔盈利交易中捐赠₹11——这是一种仪式。当市场崩盘时，他想停止。但习惯战胜了——即使在红色日子里，他仍然捐赠。几个月后，他失去的资金意外地被一位老客户偿还了。金额？正是他在那些月份里捐出的总和。金钱带着祝福离开，带着利息回来。",
+    story4Title: "🕊 4. 分析师的礼物",
+    story4Content: "卡比尔是一位年轻的分析师，他开始每周日在线发送免费的财务课程。他相信知识应该像财富一样流通。有一天，一位他从未见过的追随者投资了他的创业想法——正是他曾经害怕推出的想法。当你分享你所知道的，宇宙会分享你所需要的。",
+    story5Title: "🌙 5. 图表中的蜡烛",
+    story5Content: "一位名叫米娜的小交易者习惯在开始一天之前点燃蜡烛——不是为了运气，而是为了感恩。每当她获利时，她都会捐款喂养流浪动物。多年后，她建立了一个名为因果报应投资组合的基金，每一笔收益都点亮了另一个家。她发现最亮的蜡烛不在图表上——而在心中。",
   },
   de: {
     // German
@@ -712,6 +736,12 @@ export const translations = {
     story1Content: "Arjun machte an einem Freitag seinen größten Gewinn — ein Handel, der über Nacht verdoppelte. Beim Scrollen durch Charts hielt er plötzlich bei einem Gedanken inne: \"Was, wenn ein Teil dieses Gewinns jemandem hilft, sein Leben neu zu starten?\" Er spendete einen kleinen Anteil an eine Wohltätigkeitsorganisation, die Bauern half, Schulden zu bezahlen. Im nächsten Monat schien jeder Handel reibungsloser zu verlaufen, jeder Verlust erholte sich schneller. Manchmal wird gutes Karma zu Ihrem besten Risikomanagement-Tool.",
     story2Title: "💰 2. Der verpasste Handel",
     story2Content: "Riya verpasste einen perfekten Einstieg. Sie fühlte sich frustriert — aber anstatt einen weiteren Handel zu erzwingen, entschied sie sich, denselben Betrag, den sie investiert hätte, an ein Waisenhaus zu spenden. Zwei Tage später erwischte sie eine Bewegung, die ihr das Zehnfache einbrachte. Sie lächelte und flüsterte: \"Vielleicht zahlt das Universum wirklich Zinsen auf Freundlichkeit.\" Wenn Sie ohne Grund geben, findet das Leben einen Grund, Sie zu belohnen.",
+    story3Title: "🌾 3. Die Münze, die zurückkam",
+    story3Content: "Ein pensionierter Banker spendete immer ₹11 von jedem profitablen Handel — ein Ritual. Als die Märkte zusammenbrachen, dachte er, er würde aufhören. Aber die Gewohnheit siegte — er spendete weiterhin, selbst an roten Tagen. Monate später wurden seine verlorenen Mittel unerwartet von einem alten Kunden zurückerstattet. Der Betrag? Genau die Summe, die er all die Monate gegeben hatte. Geld geht mit einem Segen und kommt mit Zinsen zurück.",
+    story4Title: "🕊 4. Das Geschenk des Analysten",
+    story4Content: "Kabir, ein junger Analyst, begann jeden Sonntag kostenlose Finanzlektionen online zu versenden. Er glaubte, dass Wissen wie Wohlstand zirkulieren sollte. Eines Tages investierte ein Follower, den er nie getroffen hatte, in seine Startup-Idee — dieselbe Idee, die er einst fürchtete zu starten. Wenn Sie teilen, was Sie wissen, teilt das Universum, was Sie brauchen.",
+    story5Title: "🌙 5. Die Kerze im Chart",
+    story5Content: "Eine kleine Händlerin namens Meena zündete jeden Tag eine Kerze an, bevor sie begann — nicht für Glück, sondern aus Dankbarkeit. Wann immer sie Gewinn machte, spendete sie, um streunende Tiere zu füttern. Jahre später baute sie einen Fonds namens Das Karma-Portfolio auf, wo jeder Gewinn ein weiteres Zuhause erleuchtete. Sie entdeckte, dass die hellsten Kerzen nicht auf Charts sind — sie sind in Herzen.",
   },
   fr: {
     // French
@@ -848,6 +878,12 @@ export const translations = {
     story1Content: "Arjun a réalisé son plus gros gain un vendredi — une transaction qui a doublé du jour au lendemain. En parcourant les graphiques, il s'est soudainement arrêté sur une pensée : \"Et si une partie de cette victoire aidait quelqu'un à redémarrer sa vie aussi ?\" Il a fait don d'une petite part à une organisation caritative qui aidait les agriculteurs à rembourser leurs dettes. Le mois suivant, chaque transaction semblait plus fluide, chaque perte se récupérait plus rapidement. Parfois, le bon karma devient votre meilleur outil de gestion des risques.",
     story2Title: "💰 2. La Transaction Manquée",
     story2Content: "Riya a raté une entrée parfaite. Elle s'est sentie frustrée — mais au lieu de forcer une autre transaction, elle a choisi de faire don du même montant qu'elle aurait investi à un orphelinat. Deux jours plus tard, elle a saisi un mouvement qui lui a rapporté dix fois plus. Elle a souri et murmuré : \"Peut-être que l'univers paie vraiment des intérêts sur la gentillesse.\" Quand vous donnez sans raison, la vie trouve une raison de vous récompenser.",
+    story3Title: "🌾 3. La Pièce Qui Est Revenue",
+    story3Content: "Un banquier retraité donnait toujours ₹11 de chaque transaction rentable — un rituel. Lorsque les marchés se sont effondrés, il pensait s'arrêter. Mais l'habitude a gagné — il continuait à donner, même les jours rouges. Des mois plus tard, ses fonds perdus ont été remboursés de manière inattendue par un ancien client. Le montant ? Exactement la somme qu'il avait donnée tous ces mois. L'argent part avec une bénédiction et revient avec des intérêts.",
+    story4Title: "🕊 4. Le Cadeau de l'Analyste",
+    story4Content: "Kabir, un jeune analyste, a commencé à envoyer des leçons financières gratuites en ligne chaque dimanche. Il croyait que la connaissance devrait circuler comme la richesse. Un jour, un follower qu'il n'avait jamais rencontré a investi dans son idée de startup — la même idée qu'il craignait autrefois de lancer. Quand vous partagez ce que vous savez, l'univers partage ce dont vous avez besoin.",
+    story5Title: "🌙 5. La Bougie dans le Graphique",
+    story5Content: "Une petite trader nommée Meena avait l'habitude d'allumer une bougie avant de commencer sa journée — non pour la chance, mais pour la gratitude. Chaque fois qu'elle réalisait un profit, elle faisait un don pour nourrir les animaux errants. Des années plus tard, elle a créé un fonds appelé Le Portefeuille Karma, où chaque gain éclairait une autre maison. Elle a découvert que les bougies les plus brillantes ne sont pas sur les graphiques — elles sont dans les cœurs.",
   },
   ar: {
     // Arabic
@@ -984,6 +1020,12 @@ export const translations = {
     story1Content: "حقق أرجون أكبر مكسب له يوم جمعة — صفقة تضاعفت بين عشية وضحاها. أثناء التمرير عبر الرسوم البيانية، توقف فجأة عند فكرة: \"ماذا لو ساعد جزء من هذا الفوز شخصًا ما على إعادة تشغيل حياته أيضًا؟\" تبرع بحصة صغيرة لجمعية خيرية ساعدت المزارعين على سداد الديون. في الشهر التالي، بدا أن كل صفقة تجري بسلاسة أكبر، وكل خسارة تتعافى بشكل أسرع. في بعض الأحيان، تصبح الكارما الجيدة أفضل أداة لإدارة المخاطر.",
     story2Title: "💰 2. الصفقة الضائعة",
     story2Content: "فاتت ريا دخولًا مثاليًا. شعرت بالإحباط — لكن بدلاً من إجبار صفقة أخرى، اختارت التبرع بنفس المبلغ الذي كانت ستستثمره لدار أيتام. بعد يومين، التقطت حركة أكسبتها عشرة أضعاف. ابتسمت وهمست: \"ربما يدفع الكون فعلاً فائدة على اللطف.\" عندما تعطي بدون سبب، تجد الحياة سببًا لمكافأتك.",
+    story3Title: "🌾 3. العملة التي عادت",
+    story3Content: "كان مصرفي متقاعد يتبرع دائمًا بـ ₹11 من كل صفقة مربحة — طقس. عندما انهارت الأسواق، اعتقد أنه سيتوقف. لكن العادة انتصرت — استمر في التبرع، حتى في الأيام الحمراء. بعد شهور، تم تعويض أمواله المفقودة بشكل غير متوقع من قبل عميل قديم. المبلغ؟ بالضبط المبلغ الذي تبرع به طوال تلك الأشهر. المال يغادر ببركة ويعود بفائدة.",
+    story4Title: "🕊 4. هدية المحلل",
+    story4Content: "كابير، محلل شاب، بدأ في إرسال دروس مالية مجانية عبر الإنترنت كل يوم أحد. كان يعتقد أن المعرفة يجب أن تتداول مثل الثروة. في يوم من الأيام، استثمر متابع لم يلتق به أبدًا في فكرة شركته الناشئة — نفس الفكرة التي كان يخشى إطلاقها ذات مرة. عندما تشارك ما تعرفه، يشارك الكون ما تحتاجه.",
+    story5Title: "🌙 5. الشمعة في الرسم البياني",
+    story5Content: "كانت متداولة صغيرة تدعى مينا تشعل شمعة قبل بدء يومها — ليس من أجل الحظ، بل من أجل الامتنان. كلما حققت ربحًا، كانت تتبرع لإطعام الحيوانات الضالة. بعد سنوات، أنشأت صندوقًا يسمى محفظة الكارما، حيث كل مكسب يضيء منزلًا آخر. اكتشفت أن الشموع الأكثر إشراقًا ليست على الرسوم البيانية — بل في القلوب.",
   },
   pt: {
     // Portuguese
@@ -1120,6 +1162,12 @@ export const translations = {
     story1Content: "Arjun teve seu maior ganho numa sexta-feira — uma operação que dobrou da noite para o dia. Rolando pelos gráficos, ele de repente pausou com um pensamento: \"E se parte desta vitória ajudar alguém a recomeçar a vida também?\" Ele doou uma pequena parte para uma instituição que ajudava agricultores a pagar dívidas. No mês seguinte, cada operação parecia fluir mais suavemente, cada perda se recuperava mais rápido. Às vezes, o bom karma se torna sua melhor ferramenta de gestão de risco.",
     story2Title: "💰 2. A Operação Perdida",
     story2Content: "Riya perdeu uma entrada perfeita. Ela se sentiu frustrada — mas em vez de forçar outra operação, escolheu doar a mesma quantia que teria investido para um orfanato. Dois dias depois, ela pegou um movimento que rendeu dez vezes mais. Ela sorriu e sussurrou: \"Talvez o universo realmente pague juros sobre a bondade.\" Quando você dá sem razão, a vida encontra uma razão para recompensá-lo.",
+    story3Title: "🌾 3. A Moeda Que Voltou",
+    story3Content: "Um banqueiro aposentado sempre doava ₹11 de cada operação lucrativa — um ritual. Quando os mercados quebraram, ele pensou em parar. Mas o hábito venceu — ele ainda doava, mesmo nos dias vermelhos. Meses depois, seus fundos perdidos foram inesperadamente reembolsados por um antigo cliente. O valor? Exatamente a quantia que ele havia dado todos aqueles meses. O dinheiro sai com uma bênção e retorna com juros.",
+    story4Title: "🕊 4. O Presente do Analista",
+    story4Content: "Kabir, um jovem analista, começou a enviar lições financeiras gratuitas online todos os domingos. Ele acreditava que o conhecimento deveria circular como a riqueza. Um dia, um seguidor que ele nunca conheceu investiu em sua ideia de startup — a mesma ideia que ele uma vez teve medo de lançar. Quando você compartilha o que sabe, o universo compartilha o que você precisa.",
+    story5Title: "🌙 5. A Vela no Gráfico",
+    story5Content: "Uma pequena trader chamada Meena costumava acender uma vela antes de começar seu dia — não por sorte, mas por gratidão. Sempre que obtinha lucro, doava para alimentar animais de rua. Anos depois, ela construiu um fundo chamado O Portfólio Karma, onde cada ganho iluminava outra casa. Ela descobriu que as velas mais brilhantes não estão nos gráficos — estão nos corações.",
   },
   ru: {
     // Russian
@@ -1256,6 +1304,12 @@ export const translations = {
     story1Content: "Арджун заработал свою самую большую прибыль в пятницу — сделка, которая удвоилась за ночь. Просматривая графики, он внезапно остановился на мысли: \"Что, если часть этой победы поможет кому-то тоже перезапустить свою жизнь?\" Он пожертвовал небольшую долю благотворительной организации, которая помогала фермерам погашать долги. В следующем месяце каждая сделка казалась более гладкой, каждая потеря восстанавливалась быстрее. Иногда хорошая карма становится вашим лучшим инструментом управления рисками.",
     story2Title: "💰 2. Упущенная Сделка",
     story2Content: "Рия упустила идеальный вход. Она чувствовала разочарование — но вместо того, чтобы форсировать еще одну сделку, она решила пожертвовать ту же сумму, которую инвестировала бы, в детский дом. Два дня спустя она поймала движение, которое принесло ей в десять раз больше. Она улыбнулась и прошептала: \"Может быть, вселенная действительно платит проценты за доброту.\" Когда вы даете без причины, жизнь находит причину вознаградить вас.",
+    story3Title: "🌾 3. Монета, Которая Вернулась",
+    story3Content: "Пенсионер-банкир всегда жертвовал ₹11 с каждой прибыльной сделки — ритуал. Когда рынки рухнули, он подумал, что остановится. Но привычка победила — он все еще жертвовал, даже в красные дни. Спустя месяцы его потерянные средства были неожиданно возмещены старым клиентом. Сумма? Точно та сумма, которую он отдал за все эти месяцы. Деньги уходят с благословением и возвращаются с процентами.",
+    story4Title: "🕊 4. Подарок Аналитика",
+    story4Content: "Кабир, молодой аналитик, начал отправлять бесплатные финансовые уроки онлайн каждое воскресенье. Он верил, что знания должны циркулировать, как богатство. Однажды последователь, которого он никогда не встречал, инвестировал в его идею стартапа — ту же идею, которую он когда-то боялся запустить. Когда вы делитесь тем, что знаете, вселенная делится тем, что вам нужно.",
+    story5Title: "🌙 5. Свеча в Графике",
+    story5Content: "Маленький трейдер по имени Мина зажигала свечу перед началом своего дня — не для удачи, а для благодарности. Всякий раз, когда она получала прибыль, она жертвовала на кормление бездомных животных. Спустя годы она создала фонд под названием Портфель Кармы, где каждая прибыль освещала другой дом. Она обнаружила, что самые яркие свечи не на графиках — они в сердцах.",
   },
   ja: {
     // Japanese
@@ -1392,6 +1446,12 @@ export const translations = {
     story1Content: "アルジュンは金曜日に最大の利益を上げました — 一晩で2倍になった取引です。チャートをスクロールしていると、彼は突然ある考えで立ち止まりました：「この勝利の一部が誰かの人生を再スタートさせるのを助けたらどうだろう？」彼は農家が借金を返済するのを助ける慈善団体に少額を寄付しました。翌月、すべての取引がスムーズに流れ、すべての損失がより早く回復しました。時々、良いカルマはあなたの最高のリスク管理ツールになります。",
     story2Title: "💰 2. 逃したトレード",
     story2Content: "リヤは完璧なエントリーを逃しました。彼女はイライラしました — しかし別の取引を強要する代わりに、彼女は投資したであろう同じ金額を孤児院に寄付することを選びました。2日後、彼女は10倍以上の収益を上げる動きを捉えました。彼女は微笑んでささやきました：「たぶん宇宙は本当に親切に利子を払うのかもしれない。」理由なく与えるとき、人生はあなたに報いる理由を見つけます。",
+    story3Title: "🌾 3. 戻ってきたコイン",
+    story3Content: "引退した銀行家は、収益性の高い取引ごとに常に₹11を寄付していました — 儀式でした。市場が暴落したとき、彼は止めようと思いました。しかし習慣が勝ちました — 赤い日でも彼は寄付を続けました。数ヶ月後、彼の失われた資金は古い顧客によって予期せず払い戻されました。金額は？彼がそれらの月の間に与えた正確な金額でした。お金は祝福とともに去り、利子とともに戻ってきます。",
+    story4Title: "🕊 4. アナリストの贈り物",
+    story4Content: "カビールという若いアナリストは、毎週日曜日に無料の金融レッスンをオンラインで送り始めました。彼は知識が富のように循環すべきだと信じていました。ある日、彼が会ったことのないフォロワーが彼のスタートアップのアイデアに投資しました — かつて立ち上げることを恐れていたまさにそのアイデアでした。あなたが知っていることを共有すると、宇宙はあなたが必要とするものを共有します。",
+    story5Title: "🌙 5. チャートのキャンドル",
+    story5Content: "ミーナという小さなトレーダーは、一日を始める前にキャンドルを灯していました — 幸運のためではなく、感謝のためでした。利益を得るたびに、彼女は野良動物に餌を与えるために寄付しました。何年も後、彼女はカルマ・ポートフォリオというファンドを設立し、すべての利益が別の家を照らしました。彼女は、最も明るいキャンドルはチャート上にはなく、心の中にあることを発見しました。",
   },
   ko: {
     // Korean
@@ -1528,6 +1588,12 @@ export const translations = {
     story1Content: "아르준은 금요일에 가장 큰 수익을 올렸습니다 — 하룻밤 사이에 두 배가 된 거래였습니다. 차트를 스크롤하다가 갑자기 한 생각에 멈췄습니다: \"이 승리의 일부가 누군가의 삶을 재시작하는 데 도움이 된다면 어떨까?\" 그는 농부들의 빚 상환을 돕는 자선단체에 소액을 기부했습니다. 다음 달, 모든 거래가 더 순조롭게 진행되고 모든 손실이 더 빨리 회복되었습니다. 때로는 좋은 카르마가 최고의 위험 관리 도구가 됩니다.",
     story2Title: "💰 2. 놓친 거래",
     story2Content: "리야는 완벽한 진입을 놓쳤습니다. 그녀는 좌절감을 느꼈습니다 — 하지만 다른 거래를 강요하는 대신, 투자했을 같은 금액을 고아원에 기부하기로 선택했습니다. 이틀 후, 그녀는 10배 더 많은 수익을 올린 움직임을 잡았습니다. 그녀는 미소 지으며 속삭였습니다: \"아마도 우주는 정말로 친절에 이자를 지급하나 봐.\" 이유 없이 줄 때, 삶은 당신에게 보상할 이유를 찾습니다.",
+    story3Title: "🌾 3. 돌아온 동전",
+    story3Content: "은퇴한 은행가는 수익성 있는 모든 거래에서 항상 ₹11을 기부했습니다 — 의식이었습니다. 시장이 붕괴되었을 때, 그는 멈추려고 생각했습니다. 하지만 습관이 이겼습니다 — 빨간 날에도 여전히 기부했습니다. 몇 달 후, 그의 잃어버린 자금은 예상치 못하게 오래된 고객에 의해 상환되었습니다. 금액은? 그가 그 모든 달 동안 준 정확한 금액이었습니다. 돈은 축복과 함께 떠나고 이자와 함께 돌아옵니다.",
+    story4Title: "🕊 4. 분석가의 선물",
+    story4Content: "카비르라는 젊은 분석가는 매주 일요일마다 온라인으로 무료 금융 수업을 보내기 시작했습니다. 그는 지식이 부처럼 순환해야 한다고 믿었습니다. 어느 날, 그가 만난 적 없는 팔로워가 그의 스타트업 아이디어에 투자했습니다 — 그가 한때 출시를 두려워했던 바로 그 아이디어였습니다. 당신이 아는 것을 공유하면, 우주는 당신이 필요한 것을 공유합니다.",
+    story5Title: "🌙 5. 차트 속 양초",
+    story5Content: "미나라는 작은 트레이더는 하루를 시작하기 전에 양초를 켜곤 했습니다 — 행운을 위해서가 아니라 감사를 위해서였습니다. 이익을 얻을 때마다 그녀는 길고양이를 먹이기 위해 기부했습니다. 몇 년 후, 그녀는 카르마 포트폴리오라는 펀드를 만들었고, 모든 이익이 또 다른 집을 밝혔습니다. 그녀는 가장 밝은 양초가 차트에 있지 않고 마음속에 있다는 것을 발견했습니다.",
   },
   it: {
     // Italian
@@ -1664,6 +1730,12 @@ export const translations = {
     story1Content: "Arjun ha ottenuto il suo più grande guadagno un venerdì — un'operazione che è raddoppiata durante la notte. Scorrendo i grafici, si è improvvisamente fermato su un pensiero: \"E se una parte di questa vittoria aiutasse qualcuno a riavviare anche la sua vita?\" Ha donato una piccola parte a un'organizzazione benefica che aiutava gli agricoltori a pagare i debiti. Il mese successivo, ogni operazione sembrava scorrere più agevolmente, ogni perdita si recuperava più velocemente. A volte, il buon karma diventa il tuo miglior strumento di gestione del rischio.",
     story2Title: "💰 2. L'Operazione Mancata",
     story2Content: "Riya ha perso un'entrata perfetta. Si è sentita frustrata — ma invece di forzare un'altra operazione, ha scelto di donare la stessa somma che avrebbe investito a un orfanotrofio. Due giorni dopo, ha colto un movimento che le ha fatto guadagnare dieci volte di più. Ha sorriso e sussurrato: \"Forse l'universo paga davvero gli interessi sulla gentilezza.\" Quando dai senza motivo, la vita trova un motivo per ricompensarti.",
+    story3Title: "🌾 3. La Moneta Che È Tornata",
+    story3Content: "Un banchiere in pensione donava sempre ₹11 da ogni operazione redditizia — un rituale. Quando i mercati sono crollati, pensava di smettere. Ma l'abitudine ha vinto — continuava a donare, anche nei giorni rossi. Mesi dopo, i suoi fondi persi sono stati inaspettatamente rimborsati da un vecchio cliente. L'importo? Esattamente la somma che aveva dato in tutti quei mesi. Il denaro parte con una benedizione e torna con gli interessi.",
+    story4Title: "🕊 4. Il Regalo dell'Analista",
+    story4Content: "Kabir, un giovane analista, ha iniziato a inviare lezioni finanziarie gratuite online ogni domenica. Credeva che la conoscenza dovesse circolare come la ricchezza. Un giorno, un follower che non aveva mai incontrato ha investito nella sua idea di startup — la stessa idea che una volta temeva di lanciare. Quando condividi ciò che sai, l'universo condivide ciò di cui hai bisogno.",
+    story5Title: "🌙 5. La Candela nel Grafico",
+    story5Content: "Una piccola trader di nome Meena era solita accendere una candela prima di iniziare la sua giornata — non per fortuna, ma per gratitudine. Ogni volta che otteneva un profitto, donava per nutrire gli animali randagi. Anni dopo, ha costruito un fondo chiamato Il Portafoglio Karma, dove ogni guadagno illuminava un'altra casa. Ha scoperto che le candele più luminose non sono sui grafici — sono nei cuori.",
   },
 };
 

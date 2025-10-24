@@ -54,7 +54,12 @@ The application supports 12 languages, a token-based usage model, and provides a
   - Receipt format: `char_${shortUserId}_${timestamp}` (~22 chars)
   - Payment verification via HMAC SHA256 signature
   - **Enhanced Good Karma section** with inspirational content about money's energy and trading philosophy
-  - **Stories section** featuring "The Trader's Pause" and "The Missed Trade" - real-world examples of karma in trading
+  - **Stories section** featuring five karma stories:
+    - "The Trader's Pause" - about good karma as a risk management tool
+    - "The Missed Trade" - about the universe paying interest on kindness
+    - "The Coin That Returned" - about money leaving with blessings and returning with interest
+    - "The Analyst's Gift" - about sharing knowledge and receiving support
+    - "The Candle in the Chart" - about The Karma Portfolio and gratitude in trading
   - **Note:** Donations not currently persisted to database (enhancement opportunity)
 
 ### Critical Razorpay Fix (October 24, 2025)

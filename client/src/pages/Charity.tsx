@@ -270,6 +270,30 @@ export default function Charity() {
                   {t.story2Content}
                 </p>
               </div>
+
+              {/* Story 3 */}
+              <div className="border-l-4 border-[#38e07b] pl-4">
+                <h4 className="text-white font-bold mb-2">{t.story3Title}</h4>
+                <p className="text-[#9eb7a8] text-sm leading-relaxed">
+                  {t.story3Content}
+                </p>
+              </div>
+
+              {/* Story 4 */}
+              <div className="border-l-4 border-[#38e07b] pl-4">
+                <h4 className="text-white font-bold mb-2">{t.story4Title}</h4>
+                <p className="text-[#9eb7a8] text-sm leading-relaxed">
+                  {t.story4Content}
+                </p>
+              </div>
+
+              {/* Story 5 */}
+              <div className="border-l-4 border-[#38e07b] pl-4">
+                <h4 className="text-white font-bold mb-2">{t.story5Title}</h4>
+                <p className="text-[#9eb7a8] text-sm leading-relaxed">
+                  {t.story5Content}
+                </p>
+              </div>
             </div>
           </div>
         </main>
