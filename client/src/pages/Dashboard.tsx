@@ -139,7 +139,7 @@ export default function Dashboard() {
               {t.yourTokens}
             </p>
             <p className="text-white text-base font-bold" data-testid="text-tokens">
-              {user?.tokens ?? 0}/10
+              {user?.tokens ?? 0}/20
             </p>
           </div>
 

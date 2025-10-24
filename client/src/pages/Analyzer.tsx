@@ -278,6 +278,12 @@ export default function Analyzer() {
                   </div>
                 </div>
 
+                <div className="bg-[#29382f]/50 p-3 rounded-xl border border-[#38e07b]/20">
+                  <p className="text-xs text-[#9eb7a8] leading-relaxed">
+                    <span className="font-semibold text-[#38e07b]">Disclaimer:</span> Bracket order will only work if the webhook message provided by the broker has the relevant fields like take profit and stop loss.
+                  </p>
+                </div>
+
                 <div className="bg-[#1c2620] p-4 rounded-2xl flex items-center justify-between">
                   <label className="text-[#9eb7a8] text-base font-normal" htmlFor="quantity">
                     {t.quantity}
