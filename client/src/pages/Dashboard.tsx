@@ -123,13 +123,13 @@ export default function Dashboard() {
       setTokenAnimation(true);
       setTimeout(() => setTokenAnimation(false), 1000);
       toast({
-        title: "Tokens Added!",
-        description: "You earned 2 tokens for watching the ad!",
+        title: t.tokensAdded,
+        description: t.earnedTokensFromAd,
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Daily Limit Reached",
+        title: t.dailyLimitReached,
         description: error.message || "Failed to add tokens",
         variant: "destructive",
       });
@@ -150,8 +150,8 @@ export default function Dashboard() {
     setShowAdModal(false);
     setAdCountdown(60);
     toast({
-      title: "Ad Skipped",
-      description: "Watch the full ad to earn tokens",
+      title: t.adSkipped,
+      description: t.watchFullAd,
     });
   };
 
@@ -171,14 +171,14 @@ export default function Dashboard() {
       setTokenAnimation(true);
       setTimeout(() => setTokenAnimation(false), 1000);
       toast({
-        title: "Bonus Claimed! 🎉",
-        description: `You received 5 bonus tokens! New balance: ${data.newBalance}/${data.maxTokens}`,
+        title: t.bonusClaimed,
+        description: t.bonusClaimedDesc.replace("{balance}", data.newBalance).replace("{max}", data.maxTokens),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to claim bonus",
+        title: t.error,
+        description: error.message || t.failedToClaimBonus,
         variant: "destructive",
       });
     },
@@ -206,8 +206,8 @@ export default function Dashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to analyze symbol. Please try again.",
+        title: t.error,
+        description: error.message || t.failedToAnalyze,
         variant: "destructive",
       });
     },
@@ -216,8 +216,8 @@ export default function Dashboard() {
   const handleAnalyze = () => {
     if (!symbol.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter a financial symbol",
+        title: t.error,
+        description: t.enterSymbolError,
         variant: "destructive",
       });
       return;
@@ -225,8 +225,8 @@ export default function Dashboard() {
 
     if (!user || user.tokens < 2) {
       toast({
-        title: "Insufficient Tokens",
-        description: "You need at least 2 tokens to perform analysis",
+        title: t.insufficientTokensTitle,
+        description: t.needTokensToAnalyze,
         variant: "destructive",
       });
       return;
@@ -238,10 +238,7 @@ export default function Dashboard() {
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
     setShowSettings(false);
-    toast({
-      title: "Language Changed",
-      description: "Language has been updated successfully",
-    });
+    // Language change is obvious from UI update, no toast needed
   };
 
   const handleInstallApp = async (fromBonusCard = false) => {
