@@ -181,7 +181,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst with access to real-time market data and news. CRITICAL: For ${duration.toUpperCase()} analysis, always use the LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLES for currentPrice and entry fields - never use tick prices or shorter timeframes. Your timeframe field MUST be '${requiredTimeframe}' and priceSource field must mention the ${timeframeDescription} timeframe to confirm the data source. Return responses in valid JSON format only.`,
+            content: `You are an expert financial analyst with access to real-time market data and news. CRITICAL: For ${duration.toUpperCase()} analysis, always use the LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLES for currentPrice and entry fields - never use tick prices or shorter timeframes. Your timeframe field MUST be one of: ${durationConfig.variants.join(', ')} and priceSource field must mention the ${timeframeDescription} timeframe to confirm the data source. Return responses in valid JSON format only.`,
           },
           { role: "user", content: prompt },
         ],
