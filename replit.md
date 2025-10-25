@@ -35,6 +35,24 @@ The design emphasizes a clean, simple analyzer form. The application features a 
 *   **Payment Gateway:** Razorpay
 ## Recent Changes
 
+### Complete Application Localization (October 25, 2025)
+- **Added 18 new translation keys across all 12 languages** - Completed comprehensive localization of user-facing UI elements
+  - Translation keys added: `pinToHomeScreen`, `quickAccessDesc`, `aiTradingAssistant`, `tokensAdded`, `earnedTokensFromAd`, `dailyLimitReached`, `adSkipped`, `watchFullAd`, `bonusClaimed`, `bonusClaimedDesc`, `failedToClaimBonus`, `failedToAnalyze`, `enterSymbolError`, `failedToVerifyPhone`, `failedToLogin`, `error`
+  - All keys translated across: English, Hindi, Spanish, Chinese, Arabic, French, German, Portuguese, Russian, Japanese, Korean, Italian
+- **Replaced hardcoded English strings with translation keys** across all core pages:
+  - **Welcome.tsx**: PWA install prompts now fully localized (`pinToHomeScreen`, `quickAccessDesc`)
+  - **Dashboard.tsx**: All toast messages, error messages, and user notifications now localized (tokens added, ad watching, bonus claiming, analysis errors, insufficient tokens)
+  - **Login.tsx**: Error messages and branding text localized (`aiTradingAssistant`, `failedToVerifyPhone`, `failedToLogin`)
+  - **LanguageSelection.tsx**: Intentionally kept in English as it's the entry point before language selection
+- **Dynamic string interpolation support**: `bonusClaimedDesc` correctly handles {balance}/{max} placeholders using `.replace()` for all languages
+- **Removed unnecessary toast**: Language change confirmation toast removed as UI update makes change obvious
+- **Benefits:**
+  - ✅ Complete 12-language support for all user-facing interactions
+  - ✅ No hardcoded English strings in post-onboarding UI
+  - ✅ Consistent user experience across all supported languages
+  - ✅ Professional localization for financial terminology
+  - ✅ Scalable translation infrastructure for future additions
+
 ### UI/UX Refinements & Token System Enhancement (October 25, 2025)
 - **Removed help icons** - Eliminated question mark/help icons from Language Selection and Welcome screens for cleaner UI
 - **Added settings wheel** - Settings gear icon now available on both Welcome and Dashboard screens
