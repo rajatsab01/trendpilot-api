@@ -98,6 +98,23 @@ export default function BuyTokens() {
             });
             const result = await verifyResponse.json();
 
+            if (!verifyResponse.ok) {
+              // Handle token cap reached case
+              if (result.tokenCapReached) {
+                toast({
+                  title: "Token Limit Reached",
+                  description: result.error || "Maximum token limit reached. Payment was successful but tokens cannot be added.",
+                  variant: "destructive",
+                });
+                queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+                setLocation("/dashboard");
+                return;
+              }
+              
+              // Handle other verification errors
+              throw new Error(result.error || "Payment verification failed");
+            }
+
             if (result.success) {
               toast({
                 title: "Payment Successful!",
