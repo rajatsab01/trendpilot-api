@@ -643,8 +643,12 @@ export default function Analyzer() {
             <div className="mt-8 flex gap-3">
               <button
                 onClick={() => handleSaveClick(analysis)}
-                disabled={saveMutation.isPending}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] font-bold py-4 rounded-full text-center text-lg hover:bg-[#38e07b] hover:text-[#111714] transition-colors disabled:opacity-50"
+                disabled={saveMutation.isPending || analysis.isSaved === 1}
+                className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-center text-lg transition-colors ${
+                  analysis.isSaved === 1 
+                    ? 'bg-[#38e07b] text-[#111714] border-2 border-[#38e07b] cursor-not-allowed opacity-90' 
+                    : 'bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] hover:bg-[#38e07b] hover:text-[#111714]'
+                } ${saveMutation.isPending ? 'opacity-50' : ''}`}
                 data-testid="button-save-analysis"
               >
                 {analysis.isSaved === 1 ? (
@@ -652,7 +656,7 @@ export default function Analyzer() {
                 ) : (
                   <Bookmark className="w-6 h-6" />
                 )}
-                <span>{analysis.isSaved === 1 ? "Saved" : "Save"}</span>
+                <span>{analysis.isSaved === 1 ? "Saved ✓" : "Save"}</span>
               </button>
               <button
                 onClick={() => setLocation("/dashboard")}
