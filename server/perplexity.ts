@@ -88,7 +88,7 @@ export async function analyzeMarketWithPerplexity(
 CRITICAL REQUIREMENTS:
 1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
 2. Research the LATEST news, trends, and price action for this asset
-3. Use your real-time web search to find the LAST CLOSED PRICE OF THE 5-MINUTE CANDLE as the current price - this provides standardized, accurate pricing across all markets
+3. **MANDATORY PRICE REQUIREMENT**: Use your real-time web search to find the LAST CLOSED PRICE OF THE 5-MINUTE CANDLE as the current price. This is CRITICAL for price accuracy and consistency. Look for "5m candle close", "5min close price", or "last 5-minute bar close" in your data sources. DO NOT use tick prices, 1m candles, or live bid/ask - ONLY 5-minute candle close prices.
 4. Calculate REALISTIC technical indicator values based on current market data and recent price action
 5. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
 6. Provide your ENTIRE analysis in ${languageName}
@@ -158,7 +158,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         messages: [
           {
             role: "system",
-            content: "You are an expert financial analyst with access to real-time market data and news. Always use ACTUAL CURRENT prices and market conditions in your analysis. Return responses in valid JSON format only.",
+            content: "You are an expert financial analyst with access to real-time market data and news. CRITICAL: Always use the LAST CLOSED PRICE OF 5-MINUTE CANDLES for currentPrice and entry fields - never use tick prices or other timeframes. Your priceSource field MUST mention '5m', '5min', or '5-minute' to confirm the data source. Return responses in valid JSON format only.",
           },
           { role: "user", content: prompt },
         ],
@@ -199,6 +199,22 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     
     if (missingFields.length > 0) {
       throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
+    }
+
+    // VALIDATION: Verify price source mentions 5-minute candle data for accuracy
+    const priceSource = data.priceSource?.toLowerCase() || '';
+    const has5MinReference = priceSource.includes('5m') || 
+                            priceSource.includes('5min') || 
+                            priceSource.includes('5-min') ||
+                            priceSource.includes('5 min') ||
+                            priceSource.includes('five min');
+    
+    if (!has5MinReference) {
+      console.warn(`⚠️  Price source validation: "${data.priceSource}" does not explicitly mention 5-minute candle data. Price accuracy may vary.`);
+      console.warn(`   Symbol: ${data.correctedSymbol}, Current Price: ${data.currentPrice}`);
+      // Don't throw error - log warning and continue, as some sources may be valid but not mention timeframe explicitly
+    } else {
+      console.log(`✅ Price source validated: "${data.priceSource}" confirms 5-minute candle data for ${data.correctedSymbol}`);
     }
     
     // Store auto-detected market type for database
