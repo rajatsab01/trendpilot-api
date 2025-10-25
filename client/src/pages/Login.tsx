@@ -37,8 +37,8 @@ export default function Login() {
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to verify phone number. Please try again.",
+        title: t.error,
+        description: t.failedToVerifyPhone,
         variant: "destructive",
       });
     },
@@ -60,8 +60,8 @@ export default function Login() {
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to login. Please try again.",
+        title: t.error,
+        description: t.failedToLogin,
         variant: "destructive",
       });
     },
@@ -124,7 +124,7 @@ export default function Login() {
             <h1 className="text-[#38e07b] text-2xl font-bold tracking-tight">
               Trend Pilot
             </h1>
-            <p className="text-[#9eb7a8] text-sm mt-1">AI Trading Assistant</p>
+            <p className="text-[#9eb7a8] text-sm mt-1">{t.aiTradingAssistant}</p>
           </div>
 
           <h2 className="text-white text-2xl font-bold tracking-tight text-center mb-8">
