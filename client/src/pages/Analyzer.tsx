@@ -142,8 +142,9 @@ export default function Analyzer() {
             </div>
           </div>
 
-          {/* Symbol and Current Price Display - Perplexity Validated */}
-          <div className="px-4 pt-2 pb-2">
+          {/* Symbol and Price Display - Perplexity Validated */}
+          <div className="px-4 pt-2 pb-2 space-y-3">
+            {/* Symbol Display */}
             <div className="bg-[#1c2620] rounded-2xl p-6 text-center">
               {/* Show if symbol was corrected by Perplexity */}
               {analysis.correctedSymbol && analysis.symbol !== analysis.correctedSymbol && (
@@ -154,7 +155,7 @@ export default function Analyzer() {
                 </div>
               )}
               
-              <div className="mb-2">
+              <div>
                 <h2 className="text-white text-3xl font-bold tracking-tight" data-testid="text-instrument-name">
                   {analysis.assetName || analysis.instrumentName || analysis.symbol}
                 </h2>
@@ -164,35 +165,55 @@ export default function Analyzer() {
                   </p>
                 )}
               </div>
-              
-              <div className="mt-4">
-                <p className="text-[#9eb7a8] text-sm mb-1">{t.currentPrice}</p>
-                {analysis.currentPrice && parseFloat(analysis.currentPrice) > 0 ? (
-                  <>
-                    <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
-                      ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    {/* Display timestamp and timeframe if available */}
-                    {(analysis.candleCloseTime || analysis.timeframe) && (
-                      <div className="mt-2 text-[#6a7f72] text-xs">
-                        {analysis.timeframe && (
-                          <span className="inline-block bg-[#111714] px-2 py-1 rounded">
-                            {analysis.timeframe} candle
-                          </span>
-                        )}
-                        {analysis.candleCloseTime && (
-                          <span className="block mt-1" data-testid="text-timestamp">
-                            {analysis.candleCloseTime}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-[#9eb7a8] text-2xl font-medium" data-testid="text-current-price-unavailable">
-                    {t.priceDataUnavailable}
+            </div>
+
+            {/* Current Live Market Price */}
+            {analysis.livePrice && parseFloat(analysis.livePrice) > 0 && (
+              <div className="bg-[#1c2620] rounded-2xl p-6 text-center border-2 border-[#38e07b]">
+                <p className="text-[#9eb7a8] text-sm mb-1">💹 Current Market Price (Live)</p>
+                <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-live-price">
+                  ${parseFloat(analysis.livePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            )}
+
+            {/* Analysis Price (Candle Close) */}
+            {analysis.candleClosePrice && parseFloat(analysis.candleClosePrice) > 0 && (
+              <div className="bg-[#1c2620] rounded-2xl p-4 text-center">
+                <p className="text-[#6a7f72] text-xs mb-1">📊 Analysis Based On</p>
+                <p className="text-white text-2xl font-bold tracking-tight" data-testid="text-analysis-price">
+                  ${parseFloat(analysis.candleClosePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                {/* Display timeframe and timestamp */}
+                <div className="mt-2 text-[#6a7f72] text-xs">
+                  {analysis.timeframe && (
+                    <span className="inline-block bg-[#111714] px-2 py-1 rounded">
+                      {analysis.timeframe} candle close
+                    </span>
+                  )}
+                  {analysis.candleCloseTime && (
+                    <span className="block mt-1" data-testid="text-timestamp">
+                      {analysis.candleCloseTime}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Explanation Box - Why Closed Candles */}
+            <div className="bg-[#111714] rounded-2xl p-4 border border-[#1c2620]">
+              <div className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-[#38e07b] text-xl mt-0.5">info</span>
+                <div className="flex-1">
+                  <p className="text-[#9eb7a8] text-sm leading-relaxed">
+                    <span className="text-white font-medium">Why closed candles?</span> We analyze the last <strong>closed {analysis.timeframe || ''} candle</strong> for accuracy and reliability. Live prices fluctuate constantly, making analysis unreliable.
                   </p>
-                )}
+                  {analysis.nextCandleCloseTime && (
+                    <p className="text-[#6a7f72] text-xs mt-2">
+                      <span className="text-[#38e07b]">⏰ Re-analyze after:</span> {analysis.nextCandleCloseTime}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
