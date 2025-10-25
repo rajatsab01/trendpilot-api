@@ -90,16 +90,27 @@ State management uses TanStack Query for server state and React Context API for 
     - New "Saved" tab in BottomNav navigation (4 tabs: Home, Analyzer, Saved, Buy Tokens)
     - Dedicated SavedAnalyses page at `/saved` route
   - **SavedAnalyses page features:**
-    - Card-based layout displaying all saved trades
+    - **🚦 Traffic Light Stats Dashboard:**
+      - Total saved trades count
+      - Won trades (green), Lost trades (red), Active trades (yellow), Expired trades (gray)
+      - Win/loss percentages calculated from closed trades
+      - Responsive 5-column grid layout with percentage breakdown
+    - **Compact Card Design:**
+      - 2-line maximum layout for efficient space usage
+      - Newest trades appear first (sorted by analysis date)
+      - Inline display of verdict + RRR on same line
+      - Entry price, TP1/TP2/SL targets visible at a glance
+    - **Accidental Unsave Prevention:**
+      - Confirmation dialog when unsaving trades opened from saved page
+      - Passes `fromSaved=true` query parameter from saved page navigation
+      - Prevents accidental removal with "Are you sure?" prompt
     - Trade status badges with color coding (green=won, red=lost, blue=active, gray=expired)
-    - Entry price, current price, TP1/TP2/SL targets display
-    - Profit/loss percentage when trade is closed
     - Clickable cards navigate back to full analysis view
   - **User flow:** Analyze → Save → View in Saved tab → Track status → See performance
+  - **Payment Bug Fix:** Razorpay verification now properly handles token cap errors (10-token test limit) instead of showing "payment failed" when payment succeeds
 - **Pending features (for future development):**
   - Automated trade status detection based on current price vs TP/SL
   - Progress bar visualization (green for BUY, red for SELL recommendations)
-  - Success rate statistics dashboard showing win/loss breakdown
 
 ## External Dependencies
 *   **AI Service & Market Data:** Perplexity AI (sonar-pro model)
