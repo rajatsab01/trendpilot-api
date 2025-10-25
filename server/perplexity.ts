@@ -227,19 +227,28 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
 
     const data = JSON.parse(jsonContent);
 
-    // Validate required Perplexity fields
+    // Validate required Perplexity fields (core fields only)
     const requiredFields = [
       'correctedSymbol', 
       'assetName', 
       'marketType', 
-      'livePrice',           // Actual current live price
-      'candleClosePrice',    // Last closed candle price for analysis
+      'currentPrice',  // Must have at least one price
       'priceSource'
     ];
     const missingFields = requiredFields.filter(field => !data[field]);
     
     if (missingFields.length > 0) {
       throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
+    }
+
+    // Fallback: If new price fields are missing, use currentPrice for both
+    if (!data.livePrice) {
+      data.livePrice = data.currentPrice;
+      console.warn(`⚠️  livePrice not provided by Perplexity, using currentPrice: ${data.currentPrice}`);
+    }
+    if (!data.candleClosePrice) {
+      data.candleClosePrice = data.currentPrice;
+      console.warn(`⚠️  candleClosePrice not provided by Perplexity, using currentPrice: ${data.currentPrice}`);
     }
 
     // VALIDATION: Verify candle data accuracy using multiple checks based on duration
