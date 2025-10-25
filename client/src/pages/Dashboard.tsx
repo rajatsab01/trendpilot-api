@@ -231,7 +231,7 @@ export default function Dashboard() {
     mutationFn: async () => {
       const result = await apiRequest("POST", "/api/analyze", {
         userId,
-        symbol: validatedSymbol || symbol,
+        symbol: validatedData?.symbol || symbol,
         duration,
         market,
       });
@@ -257,11 +257,21 @@ export default function Dashboard() {
     },
   });
 
-  const handleAnalyze = () => {
+  const handleEnlightenMe = () => {
+    // Validate inputs before showing validation modal
     if (!symbol.trim()) {
       toast({
         title: t.error,
         description: t.enterSymbolError,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!market) {
+      toast({
+        title: t.error,
+        description: "Please select a market type",
         variant: "destructive",
       });
       return;
@@ -276,7 +286,24 @@ export default function Dashboard() {
       return;
     }
 
+    // Trigger validation and show popup
+    validateSymbolMutation.mutate({ symbol: symbol.trim(), market });
+  };
+
+  const handleConfirmValidation = () => {
+    setShowValidationModal(false);
+    // Proceed with analysis using validated data
     analyzeMutation.mutate();
+  };
+
+  const handleSelectSuggestion = (suggestion: {symbol: string; name: string; price?: number}) => {
+    setValidatedData({
+      symbol: suggestion.symbol,
+      name: suggestion.name,
+      market: market,
+    });
+    setSymbol(suggestion.name);
+    setSymbolSuggestions([]);
   };
 
   const handleLanguageChange = (lang: Language) => {
@@ -366,83 +393,17 @@ export default function Dashboard() {
 
         <main className="flex-1 px-4 py-6 space-y-6">
           <div className="space-y-4">
-            <label className="flex flex-col relative">
+            <label className="flex flex-col">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">
                 {t.financialSymbol}
               </span>
-              <div className="relative">
-                <input
-                  className={`flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 pr-12 text-base font-normal leading-normal ${
-                    validationState === "validating"
-                      ? "ring-2 ring-yellow-500"
-                      : validationState === "valid"
-                      ? "ring-2 ring-green-500"
-                      : validationState === "invalid"
-                      ? "ring-2 ring-red-500"
-                      : "focus:ring-[#38e07b]"
-                  }`}
-                  placeholder={t.symbolPlaceholder}
-                  value={symbol}
-                  onChange={(e) => {
-                    setSymbol(e.target.value.toUpperCase());
-                    setValidationState("idle");
-                    setSymbolSuggestions([]);
-                  }}
-                  data-testid="input-symbol"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  {validationState === "validating" && (
-                    <span className="material-symbols-outlined text-yellow-500 animate-spin">
-                      hourglass_empty
-                    </span>
-                  )}
-                  {validationState === "valid" && (
-                    <span className="material-symbols-outlined text-green-500">
-                      check_circle
-                    </span>
-                  )}
-                  {validationState === "invalid" && (
-                    <span className="material-symbols-outlined text-red-500">
-                      error
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Symbol Suggestions Dropdown */}
-              {symbolSuggestions.length > 0 && (
-                <div 
-                  className="absolute top-full mt-2 w-full bg-[#1e2823] border border-[#38e07b]/30 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto"
-                  data-testid="symbol-suggestions"
-                >
-                  <div className="p-2 border-b border-[#38e07b]/20">
-                    <span className="text-xs text-[#9eb7a8]">Did you mean?</span>
-                  </div>
-                  {symbolSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setSymbol(suggestion.name);
-                        setValidatedSymbol(suggestion.symbol);
-                        setValidationState("valid");
-                        setSymbolSuggestions([]);
-                      }}
-                      className="w-full px-4 py-3 flex items-center justify-between hover-elevate active-elevate-2 border-b border-[#38e07b]/10 last:border-b-0"
-                      data-testid={`suggestion-${idx}`}
-                    >
-                      <div className="flex flex-col items-start">
-                        <span className="text-white font-medium">{suggestion.name}</span>
-                        <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
-                      </div>
-                      {suggestion.price && (
-                        <span className="text-[#38e07b] font-medium">
-                          ${suggestion.price.toFixed(2)}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <input
+                className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
+                placeholder={t.symbolPlaceholder}
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                data-testid="input-symbol"
+              />
             </label>
 
             <label className="flex flex-col">
@@ -482,9 +443,18 @@ export default function Dashboard() {
                   paddingRight: "2.5rem",
                 }}
                 value={market}
-                onChange={(e) => setMarket(e.target.value)}
+                onChange={(e) => {
+                  const newMarket = e.target.value;
+                  setMarket(newMarket);
+                  
+                  // Trigger validation immediately when market is selected (if symbol entered)
+                  if (symbol.trim().length >= 2 && newMarket) {
+                    validateSymbolMutation.mutate({ symbol: symbol.trim(), market: newMarket });
+                  }
+                }}
                 data-testid="select-market"
               >
+                <option value="" disabled>{t.selectMarket || "Select Market Type"}</option>
                 <option value="cryptocurrency">{t.cryptocurrencyMarket}</option>
                 <option value="stock_equities">{t.stockMarket}</option>
                 <option value="forex">{t.forexMarket}</option>
@@ -511,13 +481,17 @@ export default function Dashboard() {
 
           <div className="space-y-4">
             <button
-              onClick={handleAnalyze}
-              disabled={analyzeMutation.isPending}
+              onClick={handleEnlightenMe}
+              disabled={!symbol.trim() || !market || analyzeMutation.isPending || validateSymbolMutation.isPending}
               className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-6 bg-[#38e07b] text-[#111714] text-base font-bold leading-normal tracking-[0.015em] hover:bg-opacity-90 transition-opacity disabled:opacity-50"
               data-testid="button-enlighten"
             >
               <span className="truncate">
-                {analyzeMutation.isPending ? "Analyzing..." : t.enlightenMe}
+                {validateSymbolMutation.isPending 
+                  ? "Validating..." 
+                  : analyzeMutation.isPending 
+                  ? "Analyzing..." 
+                  : t.enlightenMe}
               </span>
             </button>
             <p className="text-[#9eb7a8] text-xs font-normal leading-normal text-center">
@@ -686,6 +660,106 @@ export default function Dashboard() {
               <p className="text-xs text-[#9eb7a8] text-center mt-2">
                 Install for quick access from your home screen
               </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Validation Confirmation Modal */}
+      <Dialog open={showValidationModal} onOpenChange={setShowValidationModal}>
+        <DialogContent className="bg-[#1c2620] border-[#38e07b]/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#38e07b]">
+              {validationResult?.isValid ? "✅ Symbol Validated" : "⚠️ Symbol Not Found"}
+            </DialogTitle>
+            <DialogDescription className="text-[#9eb7a8]">
+              {validationResult?.isValid 
+                ? "Please confirm the details below to proceed with analysis" 
+                : "Please select the correct symbol from the suggestions below"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {validationResult?.isValid ? (
+            <div className="space-y-4 mt-4">
+              <div className="bg-[#29382f] rounded-xl p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[#9eb7a8] text-sm">Symbol:</span>
+                  <span className="text-white font-bold">{validatedData?.symbol}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#9eb7a8] text-sm">Name:</span>
+                  <span className="text-white font-medium text-right max-w-[60%]">{validatedData?.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#9eb7a8] text-sm">Market:</span>
+                  <span className="text-white capitalize">{market.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#9eb7a8] text-sm">Duration:</span>
+                  <span className="text-white capitalize">{duration.replace(/_/g, ' ')}</span>
+                </div>
+                {validationResult.currentPrice && (
+                  <div className="flex justify-between items-center border-t border-[#38e07b]/20 pt-3">
+                    <span className="text-[#9eb7a8] text-sm">Current Price:</span>
+                    <span className="text-[#38e07b] font-bold">${validationResult.currentPrice.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowValidationModal(false)}
+                  className="flex-1 py-3 px-4 rounded-xl bg-[#29382f] text-white font-medium hover-elevate active-elevate-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmValidation}
+                  disabled={analyzeMutation.isPending}
+                  className="flex-1 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors disabled:opacity-50"
+                >
+                  {analyzeMutation.isPending ? "Analyzing..." : "Confirm & Analyze"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 mt-4">
+              <p className="text-red-400 text-sm">{validationResult?.error}</p>
+              
+              {symbolSuggestions.length > 0 ? (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <p className="text-[#9eb7a8] text-sm">Select the correct symbol:</p>
+                  {symbolSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectSuggestion(suggestion)}
+                      className="w-full px-4 py-3 bg-[#29382f] rounded-xl hover-elevate active-elevate-2 flex items-center justify-between"
+                      data-testid={`modal-suggestion-${idx}`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-white font-medium">{suggestion.name}</span>
+                        <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
+                      </div>
+                      {suggestion.price && (
+                        <span className="text-[#38e07b] font-bold">
+                          ${suggestion.price.toFixed(2)}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[#9eb7a8] text-sm text-center py-4">
+                  No suggestions available. Please check your symbol and try again.
+                </p>
+              )}
+
+              <button
+                onClick={() => setShowValidationModal(false)}
+                className="w-full py-3 px-4 rounded-xl bg-[#29382f] text-white font-medium hover-elevate active-elevate-2"
+              >
+                Close
+              </button>
             </div>
           )}
         </DialogContent>
