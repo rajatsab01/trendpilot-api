@@ -22,6 +22,48 @@ State management uses TanStack Query for server state and React Context API for 
 
 ## Recent Changes
 
+### Symbol Validation & Autocomplete System (October 25, 2025)
+- **🔍 Real-time Symbol Validation** - Prevents analysis failures from incorrect symbols
+  - **Auto-validation flow:**
+    - User types symbol (2+ characters) → 800ms debounce → validate against selected market
+    - Backend validates using Yahoo Finance (stocks/forex/commodities/bonds) or Binance (crypto)
+    - Visual feedback: Yellow hourglass (validating), Green checkmark (valid), Red error (invalid)
+  - **Autocomplete suggestions:**
+    - If symbol not found, show dropdown with similar symbols
+    - Each suggestion shows: Symbol name, ticker, current price
+    - Click to auto-fill with correct symbol
+  - **Implementation:**
+    - `server/symbolValidator.ts`: Validation logic for all markets
+    - `/api/symbols/validate` endpoint: POST { symbol, market } → validation result
+    - Dashboard: Real-time validation UI with status indicators & dropdown
+  - **Market-specific validation:**
+    - Cryptocurrency: Validates against Binance USDT pairs, provides top 5 matches
+    - Stocks/Forex/Commodities: Yahoo Finance lookup with automatic symbol formatting
+  - **Benefits:**
+    - ✅ Eliminates "Symbol not found" errors during analysis
+    - ✅ Provides instant feedback before user spends tokens
+    - ✅ Shows current price during validation (builds confidence)
+    - ✅ Prevents issues like "ETH → $3" from incorrect symbols
+
+### Perplexity Enhanced Research (October 25, 2025)
+- **🌐 Market-Specific Research Sources** - AI searches specialized sites per market
+  - **Cryptocurrency sources:** x.com (Twitter/X), coincodex.com, coincentral.com, youtube.com, coinedition.com, feargreedmeter.com
+  - **Stock/Equity sources:** yahoofinance.com, m.economictimes.com, ig.com, marketwatch.com, cnbc.com
+  - **Forex sources:** forex.com, ig.com, yahoofinance.com, fxstreet.com, dailyfx.com
+  - **Commodity/Bond sources:** ig.com, yahoofinance.com, m.economictimes.com, marketwatch.com
+  - **Implementation:** Perplexity prompt dynamically includes market-specific sources in Critical Requirements #3
+- **📊 Minimum 1:3 Risk-Reward Ratio Enforcement**
+  - **Requirement:** TP3 (Take Profit 3) must be at least 3x the distance from entry to stop loss
+  - **Applies to all durations:** Scalping, Short-term, Long-term
+  - **Prompt validation:** AI instructed to recalculate targets if 1:3 not achieved
+  - **60%+ Probability Score Required:** Trades below 60% flagged as high risk
+  - **Implementation:** Updated Perplexity prompt Critical Requirements #5, #7, #9
+- **Benefits:**
+  - ✅ Comprehensive market research from 5-7 specialized sources per analysis
+  - ✅ Better sentiment analysis from social media (crypto) and news sites (stocks)
+  - ✅ Enforces professional trading standard of minimum 1:3 RR
+  - ✅ Quality filter: Only high-probability setups recommended
+
 ### Dual Price Display Enhancement (October 25, 2025)
 - **💹 Live vs Analysis Price Separation** - Critical UX improvement to prevent user confusion
   - **Database fields added:**
