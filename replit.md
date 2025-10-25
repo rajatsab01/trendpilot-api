@@ -76,6 +76,31 @@ State management uses TanStack Query for server state and React Context API for 
 - **Validation:** 3-layer validation system checks timeframe matches expected duration
 - **Token cap security:** 10-token maximum during Razorpay test period prevents exploitation
 
+### Saved Analyses Feature (October 25, 2025)
+- **📌 Save & Track Analyses** - Users can bookmark analyses and track trading performance
+  - **Database schema additions:**
+    - `isSaved`: Boolean flag (0/1) to mark saved analyses
+    - `tradeStatus`: Enum tracking trade outcome ("active", "won", "lost", "expired")
+    - `actualProfit`: Decimal field for realized profit/loss percentage
+  - **Backend implementation:**
+    - Storage methods: `getSavedAnalysesByUser()`, `toggleSaveAnalysis()`, `updateAnalysisStatus()`
+    - API endpoints: `POST /api/analysis/:id/save`, `GET /api/analyses/saved/:userId`
+  - **Frontend implementation:**
+    - Save/Unsave button on Analyzer page with bookmark icons (Lucide React)
+    - New "Saved" tab in BottomNav navigation (4 tabs: Home, Analyzer, Saved, Buy Tokens)
+    - Dedicated SavedAnalyses page at `/saved` route
+  - **SavedAnalyses page features:**
+    - Card-based layout displaying all saved trades
+    - Trade status badges with color coding (green=won, red=lost, blue=active, gray=expired)
+    - Entry price, current price, TP1/TP2/SL targets display
+    - Profit/loss percentage when trade is closed
+    - Clickable cards navigate back to full analysis view
+  - **User flow:** Analyze → Save → View in Saved tab → Track status → See performance
+- **Pending features (for future development):**
+  - Automated trade status detection based on current price vs TP/SL
+  - Progress bar visualization (green for BUY, red for SELL recommendations)
+  - Success rate statistics dashboard showing win/loss breakdown
+
 ## External Dependencies
 *   **AI Service & Market Data:** Perplexity AI (sonar-pro model)
 *   **Database Service:** Neon PostgreSQL (`@neondatabase/serverless`)

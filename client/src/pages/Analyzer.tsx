@@ -62,17 +62,18 @@ export default function Analyzer() {
       const result = await apiRequest("POST", `/api/analysis/${id}/save`, {});
       return await result.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/analysis", analysisId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
       toast({
         title: "Success",
-        description: "Analysis saved successfully",
+        description: data.isSaved ? "Analysis saved successfully" : "Analysis unsaved",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to save analysis",
+        description: "Failed to update analysis",
         variant: "destructive",
       });
     },
