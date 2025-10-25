@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import type { Analysis } from "@shared/schema";
 
 export default function Analyzer() {
@@ -51,6 +52,27 @@ export default function Analyzer() {
       toast({
         title: t.analysisFailed,
         description: error.message || t.failedToAnalyzeMarket,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await apiRequest("POST", `/api/analysis/${id}/save`, {});
+      return await result.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/analysis", analysisId] });
+      toast({
+        title: "Success",
+        description: "Analysis saved successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save analysis",
         variant: "destructive",
       });
     },
@@ -606,11 +628,24 @@ export default function Analyzer() {
               </div>
             )}
 
-            {/* Analyse More Button */}
-            <div className="mt-8">
+            {/* Analyse More and Save Buttons */}
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => saveMutation.mutate(analysis.id)}
+                disabled={saveMutation.isPending}
+                className="flex items-center justify-center gap-2 bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] font-bold py-4 px-6 rounded-full text-center text-lg hover:bg-[#38e07b] hover:text-[#111714] transition-colors disabled:opacity-50"
+                data-testid="button-save-analysis"
+              >
+                {analysis.isSaved === 1 ? (
+                  <BookmarkCheck className="w-6 h-6" />
+                ) : (
+                  <Bookmark className="w-6 h-6" />
+                )}
+                <span>{analysis.isSaved === 1 ? "Saved" : "Save"}</span>
+              </button>
               <button
                 onClick={() => setLocation("/dashboard")}
-                className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
+                className="flex-1 bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
                 data-testid="button-analyse-more"
               >
                 {t.analyseMore}
