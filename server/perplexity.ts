@@ -13,6 +13,8 @@ interface MarketAnalysisResult {
   marketType: string; // Auto-detected market type from Perplexity
   currentPrice: string;
   priceSource: string;
+  candleCloseTime?: string; // Optional timestamp of candle close
+  timeframe?: string; // Candle timeframe (e.g., "15min", "1hr", "1day")
   instrumentName: string | null; // For backward compatibility
   indicators: {
     rsi: string;
@@ -306,6 +308,8 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       marketType: detectedMarket, // Auto-detected market type from Perplexity
       currentPrice: data.currentPrice,
       priceSource: data.priceSource,
+      candleCloseTime: data.candleCloseTime, // Optional timestamp
+      timeframe: data.timeframe, // Candle timeframe used
       instrumentName: data.assetName, // For backward compatibility
       indicators: {
         rsi: data.rsi,

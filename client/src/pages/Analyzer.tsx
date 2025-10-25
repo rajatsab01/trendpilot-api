@@ -108,8 +108,19 @@ export default function Analyzer() {
             </h1>
           </header>
 
-          {/* Symbol and Current Price Display - Perplexity Validated */}
+          {/* TradingView Chart Widget */}
           <div className="px-4 pt-6 pb-2">
+            <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
+              <iframe
+                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(analysis.correctedSymbol || analysis.symbol)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`}
+                style={{ width: '100%', height: '300px', border: 'none' }}
+                title="TradingView Chart"
+              />
+            </div>
+          </div>
+
+          {/* Symbol and Current Price Display - Perplexity Validated */}
+          <div className="px-4 pt-2 pb-2">
             <div className="bg-[#1c2620] rounded-2xl p-6 text-center">
               {/* Show if symbol was corrected by Perplexity */}
               {analysis.correctedSymbol && analysis.symbol !== analysis.correctedSymbol && (
@@ -134,9 +145,26 @@ export default function Analyzer() {
               <div className="mt-4">
                 <p className="text-[#9eb7a8] text-sm mb-1">{t.currentPrice}</p>
                 {analysis.currentPrice && parseFloat(analysis.currentPrice) > 0 ? (
-                  <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
-                    ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+                  <>
+                    <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-current-price">
+                      ${parseFloat(analysis.currentPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    {/* Display timestamp and timeframe if available */}
+                    {(analysis.candleCloseTime || analysis.timeframe) && (
+                      <div className="mt-2 text-[#6a7f72] text-xs">
+                        {analysis.timeframe && (
+                          <span className="inline-block bg-[#111714] px-2 py-1 rounded">
+                            {analysis.timeframe} candle
+                          </span>
+                        )}
+                        {analysis.candleCloseTime && (
+                          <span className="block mt-1" data-testid="text-timestamp">
+                            {analysis.candleCloseTime}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <p className="text-[#9eb7a8] text-2xl font-medium" data-testid="text-current-price-unavailable">
                     {t.priceDataUnavailable}

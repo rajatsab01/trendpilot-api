@@ -25,6 +25,8 @@ export const analyses = pgTable("analyses", {
   instrumentName: text("instrument_name"), // Full name of the instrument (for backward compatibility)
   currentPrice: text("current_price"), // Perplexity-validated current price
   priceSource: text("price_source"), // Where Perplexity found the price (e.g., "CoinMarketCap", "Bloomberg")
+  candleCloseTime: text("candle_close_time"), // Timestamp of candle close (e.g., "2024-10-25 11:30 UTC")
+  timeframe: text("timeframe"), // Candle timeframe used for analysis (e.g., "15min", "1hr", "1day")
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
   market: text("market").notNull(), // 'stock_equities', 'commodity', 'forex', 'derivatives_futures', 'bond', 'cryptocurrency'
   recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name

@@ -624,6 +624,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         instrumentName: analysisResult.instrumentName, // For backward compatibility
         currentPrice: analysisResult.currentPrice, // Perplexity-validated price
         priceSource: analysisResult.priceSource, // Where Perplexity found the price
+        candleCloseTime: analysisResult.candleCloseTime, // Timestamp of candle close
+        timeframe: analysisResult.timeframe, // Candle timeframe (e.g., "15min", "1hr", "1day")
         duration,
         market: analysisResult.marketType as "stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency", // Auto-detected by Perplexity
         recommendation: analysisResult.recommendation,
