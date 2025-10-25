@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
@@ -15,6 +15,22 @@ export default function Welcome() {
   const [, setLocation] = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const [showSettings, setShowSettings] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
 
   const handleAgree = () => {
     setLocation("/dashboard");
@@ -28,6 +44,17 @@ export default function Welcome() {
     setShowSettings(false);
     // Redirect to language screen to restart onboarding
     setLocation("/");
+  };
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    // Always clear the prompt regardless of outcome to prevent reuse
+    setDeferredPrompt(null);
+    setIsInstallable(false);
   };
 
   const languages = [
@@ -54,9 +81,6 @@ export default function Welcome() {
           data-testid="button-settings"
         >
           <span className="material-symbols-outlined">settings</span>
-        </button>
-        <button className="text-white hover-elevate active-elevate-2 p-2 rounded-full" data-testid="button-help">
-          <span className="material-symbols-outlined">help</span>
         </button>
       </header>
 
@@ -126,6 +150,22 @@ export default function Welcome() {
               </button>
             ))}
           </div>
+          
+          {isInstallable && (
+            <div className="mt-6 pt-6 border-t border-[#38e07b]/20">
+              <button
+                onClick={handleInstallApp}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors"
+                data-testid="button-install-app"
+              >
+                <span className="material-symbols-outlined">download</span>
+                <span>Pin App to Home Screen</span>
+              </button>
+              <p className="text-xs text-[#9eb7a8] text-center mt-2">
+                Install for quick access from your home screen
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
