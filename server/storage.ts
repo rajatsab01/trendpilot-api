@@ -64,6 +64,7 @@ export class MemStorage implements IStorage {
       ...insertUser,
       id,
       maxTokens: insertUser.maxTokens ?? 20,
+      pwaInstallBonusClaimed: insertUser.pwaInstallBonusClaimed ?? 0,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -140,7 +141,12 @@ export class MemStorage implements IStorage {
       assetName: insertAnalysis.assetName ?? null,
       instrumentName: insertAnalysis.instrumentName ?? null,
       currentPrice: insertAnalysis.currentPrice ?? null,
+      livePrice: insertAnalysis.livePrice ?? null,
+      candleClosePrice: insertAnalysis.candleClosePrice ?? null,
       priceSource: insertAnalysis.priceSource ?? null,
+      candleCloseTime: insertAnalysis.candleCloseTime ?? null,
+      timeframe: insertAnalysis.timeframe ?? null,
+      nextCandleCloseTime: insertAnalysis.nextCandleCloseTime ?? null,
       marketSentiment: insertAnalysis.marketSentiment ?? null,
       deepAnalysis: insertAnalysis.deepAnalysis ?? null,
       rsi: insertAnalysis.rsi ?? null,
