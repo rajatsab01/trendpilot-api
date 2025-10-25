@@ -24,6 +24,7 @@ interface SymbolValidationResult {
 async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationResult> {
   try {
     const cleanSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    console.log(`[validateCrypto] Input symbol: "${symbol}" → Cleaned: "${cleanSymbol}"`);
     
     // Try direct Binance lookup
     // Remove USD/USDT suffix first, then add USDT properly
@@ -32,26 +33,34 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
       .replace(/USD$/g, "");   // Remove USD suffix
     
     let binanceSymbol = `${baseSymbol}USDT`;
+    console.log(`[validateCrypto] Base symbol: "${baseSymbol}" → Binance symbol: "${binanceSymbol}"`);
     
     try {
       const tickerUrl = `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`;
+      console.log(`[validateCrypto] Fetching: ${tickerUrl}`);
       const response = await fetch(tickerUrl);
       
       if (response.ok) {
         const data = await response.json();
+        console.log(`[validateCrypto] ✅ Found on Binance:`, data);
         return {
           isValid: true,
           correctedSymbol: binanceSymbol,
           assetName: cleanSymbol, // Will be enriched by Perplexity
           currentPrice: parseFloat(data.price),
         };
+      } else {
+        console.log(`[validateCrypto] ❌ Binance response not OK: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
+      console.log(`[validateCrypto] ⚠️ Binance fetch error:`, err);
       // Symbol not found, continue to suggestions
     }
     
     // Symbol not found directly - fetch popular crypto suggestions
+    console.log(`[validateCrypto] Fetching suggestions for: "${cleanSymbol}"`);
     const suggestions = await fetchCryptoSuggestions(cleanSymbol);
+    console.log(`[validateCrypto] Found ${suggestions.length} suggestions:`, suggestions);
     
     if (suggestions.length > 0) {
       return {
