@@ -30,15 +30,6 @@ export default function LanguageSelection() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#111714] text-white">
-      <header className="flex justify-end p-4">
-        <button
-          className="p-2 rounded-full hover-elevate active-elevate-2"
-          data-testid="button-help"
-        >
-          <span className="material-symbols-outlined">help</span>
-        </button>
-      </header>
-
       <main className="flex flex-col items-center justify-center flex-grow text-center px-4 py-8">
         <div className="w-32 h-32 mb-4 flex items-center justify-center">
           <img 

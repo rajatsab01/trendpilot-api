@@ -1,22 +1,33 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
+import type { Language } from "@/lib/translations";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { User } from "@shared/schema";
 import logoImage from "@assets/logo 3_1761320611938.png";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { toast } = useToast();
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState("short_term");
   const [showAdModal, setShowAdModal] = useState(false);
   const [adCountdown, setAdCountdown] = useState(60);
   const [tokenAnimation, setTokenAnimation] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -24,6 +35,21 @@ export default function Dashboard() {
     queryKey: ["/api/user", userId],
     enabled: !!userId,
   });
+
+  // PWA install prompt handling
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
 
   // Countdown timer for ad
   useEffect(() => {
@@ -43,6 +69,10 @@ export default function Dashboard() {
       const result = await apiRequest("POST", "/api/watch-ad", {
         userId,
       });
+      if (!result.ok) {
+        const errorData = await result.json();
+        throw new Error(errorData.error || "Failed to add tokens");
+      }
       return await result.json();
     },
     onSuccess: () => {
@@ -56,7 +86,7 @@ export default function Dashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: "Daily Limit Reached",
         description: error.message || "Failed to add tokens",
         variant: "destructive",
       });
@@ -126,6 +156,41 @@ export default function Dashboard() {
     analyzeMutation.mutate();
   };
 
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+    setShowSettings(false);
+    toast({
+      title: "Language Changed",
+      description: "Language has been updated successfully",
+    });
+  };
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    // Always clear the prompt regardless of outcome to prevent reuse
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
+
+  const languages = [
+    { code: "en" as Language, name: "English", flag: "🇬🇧" },
+    { code: "es" as Language, name: "Español", flag: "🇪🇸" },
+    { code: "zh" as Language, name: "中文", flag: "🇨🇳" },
+    { code: "hi" as Language, name: "हिन्दी", flag: "🇮🇳" },
+    { code: "ar" as Language, name: "العربية", flag: "🇸🇦" },
+    { code: "fr" as Language, name: "Français", flag: "🇫🇷" },
+    { code: "de" as Language, name: "Deutsch", flag: "🇩🇪" },
+    { code: "pt" as Language, name: "Português", flag: "🇧🇷" },
+    { code: "ru" as Language, name: "Русский", flag: "🇷🇺" },
+    { code: "ja" as Language, name: "日本語", flag: "🇯🇵" },
+    { code: "ko" as Language, name: "한국어", flag: "🇰🇷" },
+    { code: "it" as Language, name: "Italiano", flag: "🇮🇹" },
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#111714] flex items-center justify-center">
@@ -138,6 +203,15 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#111714] flex flex-col">
       <div className="flex flex-col flex-1">
         <header className="flex flex-col p-4 pb-2">
+          <div className="flex items-center justify-end mb-2">
+            <button 
+              onClick={() => setShowSettings(true)}
+              className="text-white hover-elevate active-elevate-2 p-2 rounded-full" 
+              data-testid="button-settings"
+            >
+              <span className="material-symbols-outlined">settings</span>
+            </button>
+          </div>
           <div className="flex flex-col items-center mb-2">
             <div className="w-20 h-20 mb-2">
               <img 
@@ -310,6 +384,53 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Settings Dialog with Language Selection and PWA Install */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="bg-[#1c2620] border-[#38e07b]/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#38e07b]">
+              {t.settings || "Settings"}
+            </DialogTitle>
+            <DialogDescription className="text-[#9eb7a8]">
+              {t.selectLanguage || "Select your preferred language"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className={`flex items-center justify-between py-3 px-4 rounded-xl font-medium text-sm transition-colors ${
+                  lang.code === language
+                    ? "bg-[#38e07b] text-[#111714]"
+                    : "bg-[#29382f] text-white hover-elevate active-elevate-2"
+                }`}
+                data-testid={`button-change-language-${lang.code}`}
+              >
+                <span className="text-2xl mr-2">{lang.flag}</span>
+                <span className="flex-1 text-left">{lang.name}</span>
+              </button>
+            ))}
+          </div>
+          
+          {isInstallable && (
+            <div className="mt-6 pt-6 border-t border-[#38e07b]/20">
+              <button
+                onClick={handleInstallApp}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors"
+                data-testid="button-install-app"
+              >
+                <span className="material-symbols-outlined">download</span>
+                <span>Pin App to Home Screen</span>
+              </button>
+              <p className="text-xs text-[#9eb7a8] text-center mt-2">
+                Install for quick access from your home screen
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

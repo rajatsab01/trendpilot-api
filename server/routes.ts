@@ -368,15 +368,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // In-memory store for tracking last ad watch time per user (prevents spam)
-  const lastAdWatchTime = new Map<string, number>();
+  // In-memory store for tracking ad watch history per user
+  // Structure: Map<userId, { count: number, firstWatchToday: number }>
+  const adWatchHistory = new Map<string, { count: number, firstWatchToday: number }>();
 
   // Watch Ad - Add 2 free tokens for watching an ad
-  // NOTE: Demo mode implementation. For production with real Google AdSense:
-  // 1. Require authenticated session/user context
-  // 2. Validate ad completion with signed callback from ad provider
-  // 3. Persist watch timestamps in database for multi-instance support
-  // 4. Add daily/weekly reward limits per user
+  // Limit: 2 ads per 24 hours per user
   app.post("/api/watch-ad", async (req, res) => {
     try {
       const { userId } = req.body;
@@ -390,33 +387,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
-      // Rate limiting: User must wait at least 60 seconds between ad watches
       const now = Date.now();
-      const lastWatchTime = lastAdWatchTime.get(userId) || 0;
-      const timeSinceLastWatch = now - lastWatchTime;
-      const minWaitTime = 60000; // 60 seconds in milliseconds
+      const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-      if (timeSinceLastWatch < minWaitTime) {
-        const remainingTime = Math.ceil((minWaitTime - timeSinceLastWatch) / 1000);
-        return res.status(429).json({ 
-          error: `Please wait ${remainingTime} seconds before watching another ad`,
-          remainingTime 
-        });
+      // Get or initialize user's watch history
+      let history = adWatchHistory.get(userId);
+      
+      if (!history) {
+        // First time watching
+        history = { count: 0, firstWatchToday: now };
+        adWatchHistory.set(userId, history);
+      } else {
+        // Check if 24 hours have passed since first watch
+        const timeSinceFirst = now - history.firstWatchToday;
+        
+        if (timeSinceFirst >= twentyFourHours) {
+          // Reset counter after 24 hours
+          history.count = 0;
+          history.firstWatchToday = now;
+        } else if (history.count >= 2) {
+          // Already watched 2 ads in the last 24 hours
+          const hoursRemaining = Math.ceil((twentyFourHours - timeSinceFirst) / (60 * 60 * 1000));
+          return res.status(429).json({ 
+            error: `You've reached the daily limit of 2 ads. Please try again in ${hoursRemaining} hours.`,
+            limit: true,
+            hoursRemaining
+          });
+        }
       }
 
-      // Update last watch time BEFORE adding tokens (prevents race conditions)
-      lastAdWatchTime.set(userId, now);
+      // Increment watch count
+      history.count++;
 
       // Add 2 tokens for watching the ad
       const newTokenBalance = user.tokens + 2;
       await storage.updateUserTokens(userId, newTokenBalance);
 
-      console.log(`User ${userId} watched ad and earned 2 tokens. New balance: ${newTokenBalance}`);
+      console.log(`User ${userId} watched ad (${history.count}/2 today) and earned 2 tokens. New balance: ${newTokenBalance}`);
 
       res.json({ 
         success: true, 
         tokensAdded: 2,
-        newBalance: newTokenBalance 
+        newBalance: newTokenBalance,
+        remainingAds: 2 - history.count
       });
     } catch (error: any) {
       console.error("Watch ad error:", error);
