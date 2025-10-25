@@ -702,6 +702,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's saved analyses
+  app.get("/api/analyses/saved/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const savedAnalyses = await storage.getSavedAnalysesByUser(userId);
+      res.json(savedAnalyses);
+    } catch (error) {
+      console.error("Get saved analyses error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Toggle save status for an analysis
+  app.post("/api/analysis/:id/save", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const analysis = await storage.toggleSaveAnalysis(id);
+      
+      if (!analysis) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+
+      res.json({ 
+        success: true, 
+        isSaved: analysis.isSaved === 1,
+        analysis 
+      });
+    } catch (error) {
+      console.error("Toggle save error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Execute trade - send webhook to broker
   app.post("/api/execute-trade", async (req, res) => {
     try {
