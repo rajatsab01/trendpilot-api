@@ -138,6 +138,18 @@ export async function analyzeMarketWithPerplexity(
     }
     
     const nextCandleCloseTime = nextCandleCloseDate.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+    
+    // Market-specific research sources
+    const researchSources = {
+      cryptocurrency: "x.com (Twitter/X), coincodex.com, coincentral.com, youtube.com, coinedition.com, feargreedmeter.com",
+      stock_equities: "yahoofinance.com, m.economictimes.com, ig.com, marketwatch.com, cnbc.com",
+      forex: "forex.com, ig.com, yahoofinance.com, fxstreet.com, dailyfx.com",
+      commodity: "ig.com, yahoofinance.com, m.economictimes.com, marketwatch.com",
+      bond: "yahoofinance.com, m.economictimes.com, bloomberg.com",
+      derivatives_futures: "ig.com, yahoofinance.com, cmegroup.com, m.economictimes.com"
+    };
+    
+    const recommendedSources = researchSources[market as keyof typeof researchSources] || "yahoofinance.com, m.economictimes.com";
 
     const prompt = `You are an expert financial analyst. Analyze the trading symbol "${symbol}" (${marketName} market) for ${durationContext}.
 
@@ -152,16 +164,26 @@ export async function analyzeMarketWithPerplexity(
 CRITICAL REQUIREMENTS:
 1. **USE EXACT PRICES PROVIDED ABOVE** - Do NOT fetch new prices. Use the exact live price ($${priceData.livePrice.toFixed(2)}) and candle close price ($${priceData.candleClosePrice.toFixed(2)}) provided.
 2. VALIDATE THE SYMBOL: Use web search to find the CORRECT standard symbol name and full asset name (e.g., if symbol is "BTC", full name is "Bitcoin")
-3. Research the LATEST news, trends, and sentiment for this ${marketName} asset
+3. **MANDATORY RESEARCH SOURCES** - Search these ${marketName}-specific sites for news, sentiment, and trends:
+   ${recommendedSources}
+   Focus on latest news, market sentiment, fear/greed indices, social media buzz, and expert opinions from these sources.
 4. Calculate REALISTIC technical indicator values using the OHLCV data provided above
-5. ${isScalping ? `**SCALPING SPECIAL**: Use LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Scalping needs immediate actionable levels near current market price.` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) with MINIMUM 1:2 or 1:3 risk-reward ratio`}
+5. **MINIMUM 1:3 RISK-REWARD RATIO REQUIRED** - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Even for scalping, maintain minimum 1:3 RR or higher (TP3 must be at least 3x the distance from entry to SL).` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) with MINIMUM 1:3 risk-reward ratio (TP3 must be at least 3x the distance from entry to stop loss).`}
 6. Provide your ENTIRE analysis in ${languageName}
-7. Calculate MULTIPLE take profit targets (TP1, TP2, TP3) with INCREASING risk-reward:
-   - TP1: Conservative target (1:1 risk-reward) - book 50% profit here
-   - TP2: Medium target (1:2 risk-reward) - trail stop to breakeven
-   - TP3: Aggressive target (1:3 risk-reward) - maximize remaining position
+7. Calculate MULTIPLE take profit targets with STRICT risk-reward requirements:
+   - TP1: Conservative target (1:1 risk-reward MINIMUM) - book 50% profit here
+   - TP2: Medium target (1:2 risk-reward MINIMUM) - trail stop to breakeven
+   - TP3: Aggressive target (1:3 risk-reward MINIMUM - MANDATORY) - maximize remaining position
+   **CRITICAL**: If TP3 doesn't achieve 1:3 RR, recalculate all targets to ensure minimum 1:3 ratio.
 8. Calculate 3 support levels (S1, S2, S3) and 3 resistance levels (R1, R2, R3) based on current price action
-9. Provide a probability score (0-100) for this trade setup based on confluence of indicators
+9. **Probability Score Calculation**: Base on:
+   - Indicator confluence (RSI, MACD, Stochastic alignment)
+   - Trend strength and momentum
+   - News sentiment from ${recommendedSources}
+   - Support/resistance proximity
+   - Volume analysis
+   - Market-wide sentiment (fear/greed for crypto, economic data for stocks/forex)
+   ONLY recommend trades with 60%+ probability score. If below 60%, note high risk.
 10. Include detailed explanatory notes with disclaimers about market risks
 
 Provide a comprehensive 3-layer analysis:

@@ -5,6 +5,7 @@ import { analyzeMarket } from "./gemini";
 import { analyzeMarketWithPerplexity } from "./perplexity";
 import { searchCryptoSymbols } from "./marketData";
 import { fetchMarketPrice } from "./priceData";
+import { validateSymbol } from "./symbolValidator";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 import Razorpay from "razorpay";
@@ -582,6 +583,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Symbol search error:", error);
       res.status(500).json({ error: "Failed to search symbols" });
+    }
+  });
+
+  // Validate symbol and provide suggestions
+  app.post("/api/symbols/validate", async (req, res) => {
+    try {
+      const validateSchema = z.object({
+        symbol: z.string().min(1),
+        market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
+      });
+
+      const validationResult = validateSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ error: validationResult.error.errors[0].message });
+      }
+
+      const { symbol, market } = validationResult.data;
+
+      console.log(`🔍 Validating symbol "${symbol}" for ${market} market...`);
+      const result = await validateSymbol(symbol, market);
+      
+      if (result.isValid) {
+        console.log(`✅ Symbol "${symbol}" validated successfully:`, result.correctedSymbol);
+      } else {
+        console.log(`⚠️ Symbol "${symbol}" validation failed:`, result.error);
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Symbol validation error:", error);
+      res.status(500).json({ error: "Failed to validate symbol" });
     }
   });
 
