@@ -35,6 +35,26 @@ The design emphasizes a clean, simple analyzer form. The application features a 
 *   **Payment Gateway:** Razorpay
 ## Recent Changes
 
+### UI/UX Refinements & Token System Enhancement (October 25, 2025)
+- **Removed help icons** - Eliminated question mark/help icons from Language Selection and Welcome screens for cleaner UI
+- **Added settings wheel** - Settings gear icon now available on both Welcome and Dashboard screens
+  - Settings modal includes language selection (all 12 languages)
+  - PWA install button (when browser supports it) for "Pin to Home Screen" functionality
+- **Enhanced Login page** - Added Trend Pilot logo and branding (logo image + "Trend Pilot" text + "AI Trading Assistant" subtitle)
+- **Updated AI description** - Changed Welcome screen text from "recommendations" to emphasize AI advantages over human analysis
+  - New copy highlights: real-time analysis, removing emotional bias, faster decisions, consistent precision
+  - Educates users about benefits of AI-powered vs. human trading analysis
+- **Token display system overhaul** - Changed from fixed "current/20" to dynamic "current/max" display
+  - Added `maxTokens` field to users table to track highest token count ever owned
+  - System now displays actual capacity based on tokens purchased (e.g., if user bought 100 tokens with 2 free remaining, shows 102/102)
+  - `maxTokens` automatically increases when tokens are added (purchases, ad watching, donations)
+  - `maxTokens` stays constant when tokens are spent (analysis costs)
+  - Benefits: Users see their true token capacity, not a misleading fixed denominator
+- **Ad watching restrictions** - Limited to 2 ads per 24-hour period with user-friendly error messaging
+  - Backend tracks ad watch history per user (count + first watch timestamp)
+  - Soft error message: "You've reached the daily limit of 2 ads. Please try again in X hours."
+  - Resets automatically after 24 hours from first watch
+
 ### Market Type Auto-Detection (October 24, 2025)
 - **Removed market type dropdown** - Perplexity AI now automatically detects market type via real-time web search
 - **Removed symbol autocomplete** - Simplified to pure text input (Perplexity validates all symbols anyway)

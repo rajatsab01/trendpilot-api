@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   mobile: text("mobile").notNull().unique(),
   language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
   tokens: integer("tokens").notNull().default(20),
+  maxTokens: integer("max_tokens").notNull().default(20), // Tracks the highest token count ever owned
   createdAt: timestamp("created_at").defaultNow(),
 });
 

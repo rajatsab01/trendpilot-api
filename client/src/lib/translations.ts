@@ -27,7 +27,7 @@ export const translations = {
     // Welcome/Consent
     appName: "Trend Pilot",
     aiGuidedTrading: "AI-Guided Trading",
-    aiDescription: "Unlock the power of AI to analyze financial symbols and make informed trading decisions. Our algorithms provide insights and recommendations to optimize your trading strategy.",
+    aiDescription: "Experience the future of trading with AI-powered intelligence that outperforms traditional human analysis. Our advanced algorithms continuously study market data, price patterns, and sentiment in real time to uncover opportunities that human traders might miss. By removing emotional bias and fatigue, AI ensures faster, data-driven decisions with consistent precision. Whether in volatile crypto markets or dynamic stock movements, AI-guided trading empowers you to act confidently, adapt instantly, and stay ahead of the curve.",
     disclaimer: "Disclaimer",
     disclaimerText: "Trading involves risk of loss and is not suitable for all investors. Past performance is not indicative of future results. Trend Pilot provides AI-guided analysis for informational purposes only and should not be considered financial advice. Always consult with a qualified financial advisor before making any investment decisions.",
     iAgree: "I Agree",

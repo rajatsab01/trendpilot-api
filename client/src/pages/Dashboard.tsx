@@ -276,7 +276,7 @@ export default function Dashboard() {
               }`}
               data-testid="text-tokens"
             >
-              {user?.tokens ?? 0}/20
+              {user?.tokens ?? 0}/{user?.maxTokens ?? 20}
             </p>
           </div>
 

@@ -62,6 +62,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      maxTokens: insertUser.maxTokens ?? 20,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -72,7 +73,9 @@ export class MemStorage implements IStorage {
     const user = this.users.get(id);
     if (!user) return undefined;
 
-    const updatedUser = { ...user, tokens };
+    // Update maxTokens if new token count is higher
+    const maxTokens = Math.max(user.maxTokens, tokens);
+    const updatedUser = { ...user, tokens, maxTokens };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -84,6 +87,7 @@ export class MemStorage implements IStorage {
     // Check if user has enough tokens
     if (user.tokens < amount) return undefined;
 
+    // Don't change maxTokens when decrementing (only when adding)
     const updatedUser = { ...user, tokens: user.tokens - amount };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -122,6 +126,11 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const analysis: Analysis = {
       ...insertAnalysis,
+      correctedSymbol: insertAnalysis.correctedSymbol ?? null,
+      assetName: insertAnalysis.assetName ?? null,
+      instrumentName: insertAnalysis.instrumentName ?? null,
+      currentPrice: insertAnalysis.currentPrice ?? null,
+      priceSource: insertAnalysis.priceSource ?? null,
       marketSentiment: insertAnalysis.marketSentiment ?? null,
       deepAnalysis: insertAnalysis.deepAnalysis ?? null,
       rsi: insertAnalysis.rsi ?? null,
@@ -131,6 +140,18 @@ export class MemStorage implements IStorage {
       entry: insertAnalysis.entry ?? null,
       takeProfit: insertAnalysis.takeProfit ?? null,
       stopLoss: insertAnalysis.stopLoss ?? null,
+      tp1: insertAnalysis.tp1 ?? null,
+      tp2: insertAnalysis.tp2 ?? null,
+      tp3: insertAnalysis.tp3 ?? null,
+      r1: insertAnalysis.r1 ?? null,
+      r2: insertAnalysis.r2 ?? null,
+      r3: insertAnalysis.r3 ?? null,
+      s1: insertAnalysis.s1 ?? null,
+      s2: insertAnalysis.s2 ?? null,
+      s3: insertAnalysis.s3 ?? null,
+      trailingStopStrategy: insertAnalysis.trailingStopStrategy ?? null,
+      probabilityScore: insertAnalysis.probabilityScore ?? null,
+      explanatoryNotes: insertAnalysis.explanatoryNotes ?? null,
       id,
       createdAt: new Date(),
     };
@@ -211,9 +232,13 @@ export class PgStorage implements IStorage {
   }
 
   async updateUserTokens(id: string, tokens: number): Promise<User | undefined> {
+    // Update maxTokens if new token count is higher using GREATEST SQL function
     const result = await this.db
       .update(users)
-      .set({ tokens })
+      .set({ 
+        tokens,
+        maxTokens: sql`GREATEST(${users.maxTokens}, ${tokens})`
+      })
       .where(eq(users.id, id))
       .returning();
     return result[0];
@@ -221,6 +246,7 @@ export class PgStorage implements IStorage {
 
   async decrementUserTokens(id: string, amount: number): Promise<User | undefined> {
     // Atomic decrement with balance check - only succeeds if user has enough tokens
+    // Don't update maxTokens when decrementing (only when adding tokens)
     const result = await this.db
       .update(users)
       .set({ tokens: sql`${users.tokens} - ${amount}` })
