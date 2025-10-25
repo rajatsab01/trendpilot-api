@@ -8,6 +8,7 @@ export default function BottomNav() {
   const navItems = [
     { path: "/dashboard", icon: "home", label: t.home, testId: "nav-home" },
     { path: "/analyzer", icon: "analytics", label: t.analyzer, testId: "nav-analyzer" },
+    { path: "/saved", icon: "bookmark", label: "Saved", testId: "nav-saved" },
     { path: "/buy-tokens", icon: "add_circle", label: "Buy Tokens", testId: "nav-buy-tokens" },
   ];
 

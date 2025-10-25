@@ -13,6 +13,7 @@ import Dashboard from "@/pages/Dashboard";
 import Analyzer from "@/pages/Analyzer";
 import BuyTokens from "@/pages/BuyTokens";
 import Charity from "@/pages/Charity";
+import SavedAnalyses from "@/pages/SavedAnalyses";
 import NotFound from "@/pages/not-found";
 
 function SmartRouter() {
@@ -40,6 +41,7 @@ function SmartRouter() {
       <Route path="/analyzer" component={Analyzer} />
       <Route path="/buy-tokens" component={BuyTokens} />
       <Route path="/charity" component={Charity} />
+      <Route path="/saved" component={SavedAnalyses} />
       <Route component={NotFound} />
     </Switch>
   );
