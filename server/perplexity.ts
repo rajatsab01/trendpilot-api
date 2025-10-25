@@ -71,11 +71,32 @@ export async function analyzeMarketWithPerplexity(
   }
 
   try {
-    const durationContext = {
-      long_term: "long-term investment (months to years)",
-      short_term: "short-term trading (days to weeks)",
-      scalping: "scalping (minutes to hours)",
-    }[duration] || "short-term trading";
+    // Map duration to appropriate analysis timeframe
+    const timeframeMapping = {
+      scalping: { 
+        timeframe: "15min",
+        context: "scalping (trades executed on 5min, analysis on 15min timeframe)",
+        description: "15-minute",
+        variants: ["15m", "15min", "15-min", "15 min"]
+      },
+      short_term: { 
+        timeframe: "1hr",
+        context: "short-term trading (days to weeks)",
+        description: "1-hour or 4-hour",
+        variants: ["1h", "1hr", "4h", "4hr", "1hour", "4hour"]
+      },
+      long_term: { 
+        timeframe: "1day",
+        context: "long-term investment (months to years)",
+        description: "1-day or 1-week",
+        variants: ["1d", "1day", "1w", "1week", "daily", "weekly"]
+      },
+    };
+
+    const durationConfig = timeframeMapping[duration as keyof typeof timeframeMapping] || timeframeMapping.short_term;
+    const durationContext = durationConfig.context;
+    const requiredTimeframe = durationConfig.timeframe;
+    const timeframeDescription = durationConfig.description;
 
     const languageName = languageMap[language] || "English";
 
@@ -88,7 +109,7 @@ export async function analyzeMarketWithPerplexity(
 CRITICAL REQUIREMENTS:
 1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
 2. Research the LATEST news, trends, and price action for this asset
-3. **MANDATORY PRICE REQUIREMENT**: Use your real-time web search to find the LAST CLOSED PRICE OF THE 5-MINUTE CANDLE as the current price. This is CRITICAL for price accuracy and consistency. Look for "5m candle close", "5min close price", or "last 5-minute bar close" in your data sources. DO NOT use tick prices, 1m candles, or live bid/ask - ONLY 5-minute candle close prices.
+3. **MANDATORY PRICE REQUIREMENT FOR ${duration.toUpperCase()}**: Use your real-time web search to find the LAST CLOSED PRICE OF THE ${timeframeDescription.toUpperCase()} CANDLE as the current price. This is CRITICAL for accurate analysis matching the ${durationContext}. Look for "${requiredTimeframe} candle close", "${timeframeDescription} close price", or "last ${timeframeDescription} bar close" in your data sources. DO NOT use tick prices, shorter timeframe candles, or live bid/ask spreads.
 4. Calculate REALISTIC technical indicator values based on current market data and recent price action
 5. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
 6. Provide your ENTIRE analysis in ${languageName}
@@ -116,10 +137,10 @@ Respond with JSON in this exact format:
   "correctedSymbol": "CORRECTED standard ticker symbol (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
   "assetName": "Full official name of the asset (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
   "marketType": "AUTO-DETECTED market type - one of: 'cryptocurrency', 'stock_equities', 'commodity', 'forex', 'derivatives_futures', or 'bond'",
-  "currentPrice": "LAST CLOSED PRICE OF 5-MINUTE CANDLE as found via web search (just the number, e.g., '111140.50' for $111,140.50) - use this standardized price for accurate market entry",
-  "priceSource": "Where you found this 5min candle close price (e.g., 'CoinMarketCap 5m chart', 'TradingView 5m candle', 'Yahoo Finance 5m data', 'Binance 5m close')",
-  "candleCloseTime": "OPTIONAL: Timestamp or time of the 5-minute candle close (e.g., '2024-10-25 11:30 UTC', '11:30 AM', or 'Latest 5m close'). Include if available from your data source.",
-  "timeframe": "MUST be '5min' or '5m' to confirm this is 5-minute candle data",
+  "currentPrice": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as found via web search (just the number, e.g., '111140.50' for $111,140.50) - use this standardized price for accurate analysis",
+  "priceSource": "Where you found this ${timeframeDescription} candle close price (e.g., 'CoinMarketCap ${requiredTimeframe} chart', 'TradingView ${requiredTimeframe} candle', 'Yahoo Finance ${requiredTimeframe} data')",
+  "candleCloseTime": "OPTIONAL: Timestamp or time of the ${timeframeDescription} candle close (e.g., '2024-10-25 11:30 UTC', '11:30 AM', or 'Latest ${requiredTimeframe} close'). Include if available from your data source.",
+  "timeframe": "MUST match the required timeframe for ${duration}: '${requiredTimeframe}' or acceptable variants to confirm this is ${timeframeDescription} candle data",
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
@@ -130,7 +151,7 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "LAST CLOSED PRICE OF 5-MINUTE CANDLE as a number (same as currentPrice field above - this is your recommended entry price)",
+  "entry": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as a number (same as currentPrice field above - this is your recommended entry price)",
   "takeProfit": "final take profit price (same as tp3)",
   "stopLoss": "realistic stop loss price with tight risk control",
   "tp1": "Take Profit 1 - Conservative 1:1 RR (book 50% profit here)",
@@ -160,7 +181,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         messages: [
           {
             role: "system",
-            content: "You are an expert financial analyst with access to real-time market data and news. CRITICAL: Always use the LAST CLOSED PRICE OF 5-MINUTE CANDLES for currentPrice and entry fields - never use tick prices or other timeframes. Your priceSource field MUST mention '5m', '5min', or '5-minute' to confirm the data source. Return responses in valid JSON format only.",
+            content: `You are an expert financial analyst with access to real-time market data and news. CRITICAL: For ${duration.toUpperCase()} analysis, always use the LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLES for currentPrice and entry fields - never use tick prices or shorter timeframes. Your timeframe field MUST be '${requiredTimeframe}' and priceSource field must mention the ${timeframeDescription} timeframe to confirm the data source. Return responses in valid JSON format only.`,
           },
           { role: "user", content: prompt },
         ],
@@ -203,20 +224,18 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
     }
 
-    // VALIDATION: Verify 5-minute candle data accuracy using multiple checks
+    // VALIDATION: Verify candle data accuracy using multiple checks based on duration
     const priceSource = data.priceSource?.toLowerCase() || '';
     const timeframe = data.timeframe?.toLowerCase() || '';
     const candleCloseTime = data.candleCloseTime || 'Not provided';
     
-    // Check 1: Timeframe field (strongest validation)
-    const hasTimeframeConfirmation = timeframe === '5m' || timeframe === '5min';
+    // Check 1: Timeframe field matches expected variants for this duration (strongest validation)
+    const hasTimeframeConfirmation = durationConfig.variants.some(variant => timeframe === variant.toLowerCase());
     
-    // Check 2: Price source mentions 5-minute
-    const has5MinInSource = priceSource.includes('5m') || 
-                           priceSource.includes('5min') || 
-                           priceSource.includes('5-min') ||
-                           priceSource.includes('5 min') ||
-                           priceSource.includes('five min');
+    // Check 2: Price source mentions the expected timeframe
+    const hasTimeframeInSource = durationConfig.variants.some(variant => 
+      priceSource.includes(variant.toLowerCase())
+    ) || priceSource.includes(timeframeDescription.toLowerCase());
     
     // Check 3: Validate currentPrice is numeric
     const currentPrice = parseFloat(data.currentPrice);
@@ -228,26 +247,29 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     }
     
     // Log validation results
-    if (hasTimeframeConfirmation && has5MinInSource) {
-      console.log(`✅ FULL VALIDATION PASSED for ${data.correctedSymbol}:`);
+    if (hasTimeframeConfirmation && hasTimeframeInSource) {
+      console.log(`✅ FULL VALIDATION PASSED for ${data.correctedSymbol} (${duration.toUpperCase()}):`);
+      console.log(`   • Duration: ${duration} requires ${timeframeDescription} candle`);
       console.log(`   • Timeframe: "${data.timeframe}" ✓`);
       console.log(`   • Price Source: "${data.priceSource}" ✓`);
       console.log(`   • Current Price: ${data.currentPrice} ✓`);
       console.log(`   • Candle Close Time: ${candleCloseTime}`);
-    } else if (hasTimeframeConfirmation || has5MinInSource) {
-      console.warn(`⚠️  PARTIAL VALIDATION for ${data.correctedSymbol}:`);
+    } else if (hasTimeframeConfirmation || hasTimeframeInSource) {
+      console.warn(`⚠️  PARTIAL VALIDATION for ${data.correctedSymbol} (${duration.toUpperCase()}):`);
+      console.warn(`   • Duration: ${duration} requires ${timeframeDescription} candle`);
       console.warn(`   • Timeframe: "${data.timeframe}" ${hasTimeframeConfirmation ? '✓' : '✗'}`);
-      console.warn(`   • Price Source: "${data.priceSource}" ${has5MinInSource ? '✓' : '✗'}`);
+      console.warn(`   • Price Source: "${data.priceSource}" ${hasTimeframeInSource ? '✓' : '✗'}`);
       console.warn(`   • Current Price: ${data.currentPrice} ✓`);
       console.warn(`   • Candle Close Time: ${candleCloseTime}`);
       console.warn(`   → Price accuracy may vary - not all validation checks passed`);
     } else {
-      console.error(`❌ VALIDATION WARNING for ${data.correctedSymbol}:`);
-      console.error(`   • Timeframe: "${data.timeframe}" ✗ (expected '5m' or '5min')`);
-      console.error(`   • Price Source: "${data.priceSource}" ✗ (no 5-minute reference found)`);
+      console.error(`❌ VALIDATION WARNING for ${data.correctedSymbol} (${duration.toUpperCase()}):`);
+      console.error(`   • Duration: ${duration} requires ${timeframeDescription} candle`);
+      console.error(`   • Timeframe: "${data.timeframe}" ✗ (expected: ${durationConfig.variants.join(', ')})`);
+      console.error(`   • Price Source: "${data.priceSource}" ✗ (no ${timeframeDescription} reference found)`);
       console.error(`   • Current Price: ${data.currentPrice} ✓`);
       console.error(`   • Candle Close Time: ${candleCloseTime}`);
-      console.error(`   → HIGH RISK: Response does not confirm 5-minute candle data!`);
+      console.error(`   → HIGH RISK: Response does not confirm ${timeframeDescription} candle data!`);
       // Continue anyway but flag for monitoring - this helps identify when AI deviates from requirements
     }
     
