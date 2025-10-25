@@ -39,54 +39,63 @@ function getTimeframeForDuration(duration: string): { interval: string; label: s
 }
 
 /**
- * Fetch cryptocurrency prices from Binance
+ * Fetch cryptocurrency prices from Binance with CoinGecko fallback
  * Completely FREE - no API key required
  */
 async function fetchCryptoPrice(
   symbol: string,
   duration: string
 ): Promise<OHLCVData> {
+  const { interval, label } = getTimeframeForDuration(duration);
+  
+  // Convert symbol to Binance format (e.g., "BTC" -> "BTCUSDT", "ETH" -> "ETHUSDT")
+  let cleanSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  
+  // Remove USD/USDT suffix to get base symbol
+  const baseSymbol = cleanSymbol
+    .replace(/USDT$/g, "")
+    .replace(/USD$/g, "");
+  
+  // Construct Binance symbol
+  let binanceSymbol = `${baseSymbol}USDT`;
+  
+  // Fallback conversions for common symbols
+  const symbolMap: Record<string, string> = {
+    "BTC": "BTCUSDT",
+    "BITCOIN": "BTCUSDT",
+    "ETH": "ETHUSDT",
+    "ETHEREUM": "ETHUSDT",
+    "BNB": "BNBUSDT",
+    "SOL": "SOLUSDT",
+    "SOLANA": "SOLUSDT",
+    "XRP": "XRPUSDT",
+    "ADA": "ADAUSDT",
+    "CARDANO": "ADAUSDT",
+    "DOGE": "DOGEUSDT",
+    "DOGECOIN": "DOGEUSDT",
+    "1INCH": "1INCHUSDT",
+    "1000SATS": "1000SATSUSDT",
+    "AVAX": "AVAXUSDT",
+    "MATIC": "MATICUSDT",
+    "LINK": "LINKUSDT",
+    "DOT": "DOTUSDT",
+  };
+  
+  if (symbolMap[baseSymbol]) {
+    binanceSymbol = symbolMap[baseSymbol];
+  }
+  
+  console.log(`[fetchCryptoPrice] Symbol: "${symbol}" → Base: "${baseSymbol}" → Binance: "${binanceSymbol}"`);
+  
+  // Try Binance first (will fail with 451 on Replit)
   try {
-    const { interval, label } = getTimeframeForDuration(duration);
-    
-    // Convert symbol to Binance format (e.g., "BTC" -> "BTCUSDT", "ETH" -> "ETHUSDT")
-    // Preserve digits for symbols like 1INCH, 1000SATS
-    let binanceSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    
-    // Add USDT if not already present
-    if (!binanceSymbol.includes("USDT") && !binanceSymbol.includes("BTC") && !binanceSymbol.includes("ETH")) {
-      binanceSymbol = `${binanceSymbol}USDT`;
-    }
-    
-    // Fallback conversions for common symbols
-    const symbolMap: Record<string, string> = {
-      "BTC": "BTCUSDT",
-      "BITCOIN": "BTCUSDT",
-      "ETH": "ETHUSDT",
-      "ETHEREUM": "ETHUSDT",
-      "BNB": "BNBUSDT",
-      "SOL": "SOLUSDT",
-      "SOLANA": "SOLUSDT",
-      "XRP": "XRPUSDT",
-      "ADA": "ADAUSDT",
-      "CARDANO": "ADAUSDT",
-      "DOGE": "DOGEUSDT",
-      "DOGECOIN": "DOGEUSDT",
-      "1INCH": "1INCHUSDT",
-      "1000SATS": "1000SATSUSDT",
-      "AVAX": "AVAXUSDT",
-      "MATIC": "MATICUSDT",
-      "LINK": "LINKUSDT",
-      "DOT": "DOTUSDT",
-    };
-    
-    if (symbolMap[symbol.toUpperCase()]) {
-      binanceSymbol = symbolMap[symbol.toUpperCase()];
-    }
-    
-    // Fetch current live price (ticker)
     const tickerUrl = `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`;
     const tickerResponse = await fetch(tickerUrl);
+    
+    if (tickerResponse.status === 451) {
+      console.log(`[fetchCryptoPrice] Binance blocked (451), falling back to CoinGecko`);
+      return await fetchCryptoPriceFromCoinGecko(baseSymbol, binanceSymbol, interval, label);
+    }
     
     if (!tickerResponse.ok) {
       throw new Error(`Binance ticker API error: ${tickerResponse.status}`);
@@ -104,8 +113,6 @@ async function fetchCryptoPrice(
     }
     
     const klinesData = await klinesResponse.json();
-    
-    // Get the most recent CLOSED candle (second-to-last in the array)
     const closedCandle = klinesData[klinesData.length - 2];
     
     if (!closedCandle) {
@@ -117,7 +124,7 @@ async function fetchCryptoPrice(
     return {
       symbol: binanceSymbol,
       livePrice: livePrice,
-      candleClosePrice: parseFloat(closedCandle[4]), // Close price
+      candleClosePrice: parseFloat(closedCandle[4]),
       candleCloseTime,
       timeframe: label,
       open: parseFloat(closedCandle[1]),
@@ -129,7 +136,84 @@ async function fetchCryptoPrice(
     };
   } catch (error: any) {
     console.error(`❌ Binance API error for symbol "${symbol}":`, error.message);
-    throw new Error(`Failed to fetch crypto price for "${symbol}": ${error.message}`);
+    console.log(`[fetchCryptoPrice] Attempting CoinGecko fallback...`);
+    return await fetchCryptoPriceFromCoinGecko(baseSymbol, binanceSymbol, interval, label);
+  }
+}
+
+/**
+ * Fetch crypto price from CoinGecko (fallback when Binance is blocked)
+ */
+async function fetchCryptoPriceFromCoinGecko(
+  baseSymbol: string,
+  binanceSymbol: string,
+  interval: string,
+  label: string
+): Promise<OHLCVData> {
+  const coinGeckoMap: Record<string, string> = {
+    'BTC': 'bitcoin',
+    'ETH': 'ethereum',
+    'BNB': 'binancecoin',
+    'XRP': 'ripple',
+    'SOL': 'solana',
+    'ADA': 'cardano',
+    'DOGE': 'dogecoin',
+    'MATIC': 'matic-network',
+    'DOT': 'polkadot',
+    'AVAX': 'avalanche-2',
+    'LINK': 'chainlink',
+    'UNI': 'uniswap',
+    'ATOM': 'cosmos',
+    'LTC': 'litecoin',
+    'BCH': 'bitcoin-cash',
+  };
+  
+  const coinGeckoId = coinGeckoMap[baseSymbol];
+  
+  if (!coinGeckoId) {
+    throw new Error(`Cryptocurrency "${baseSymbol}" not supported. Supported: ${Object.keys(coinGeckoMap).join(', ')}`);
+  }
+  
+  try {
+    // Fetch current price from CoinGecko
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`CoinGecko API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const currentPrice = data[coinGeckoId]?.usd;
+    
+    if (!currentPrice) {
+      throw new Error(`No price data found for ${baseSymbol}`);
+    }
+    
+    console.log(`[CoinGecko] ✅ Fetched ${baseSymbol}: $${currentPrice}`);
+    
+    // For CoinGecko, we only get current price, not historical candles
+    // Use current price as both live and close price
+    const now = new Date();
+    const candleCloseTime = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
+    
+    return {
+      symbol: binanceSymbol,
+      livePrice: currentPrice,
+      candleClosePrice: currentPrice, // Same as live for CoinGecko
+      candleCloseTime,
+      timeframe: label,
+      open: currentPrice,
+      high: currentPrice,
+      low: currentPrice,
+      close: currentPrice,
+      volume: 0, // No volume data from CoinGecko simple API
+      dataSource: "CoinGecko",
+    };
+  } catch (error: any) {
+    console.error(`❌ CoinGecko API error for symbol "${baseSymbol}":`, error.message);
+    throw new Error(`Failed to fetch crypto price for "${baseSymbol}": ${error.message}`);
   }
 }
 
