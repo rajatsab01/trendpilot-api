@@ -180,10 +180,10 @@ export default function Welcome() {
                 data-testid="button-install-app"
               >
                 <span className="material-symbols-outlined">download</span>
-                <span>Pin App to Home Screen</span>
+                <span>{t.pinToHomeScreen}</span>
               </button>
               <p className="text-xs text-[#9eb7a8] text-center mt-2">
-                Install for quick access from your home screen
+                {t.quickAccessDesc}
               </p>
             </div>
           )}
