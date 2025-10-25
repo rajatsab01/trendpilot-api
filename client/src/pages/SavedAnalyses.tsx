@@ -1,19 +1,52 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/context/LanguageContext";
 import { useLocation } from "wouter";
 import BottomNav from "@/components/BottomNav";
 import type { Analysis } from "@shared/schema";
-import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SavedAnalyses() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  const { toast } = useToast();
   const userId = localStorage.getItem("userId");
 
   const { data: savedAnalysesRaw = [], isLoading } = useQuery<Analysis[]>({
     queryKey: ["/api/analyses/saved", userId || ""],
     enabled: !!userId,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (analysisId: string) => {
+      const result = await apiRequest("DELETE", `/api/analysis/${analysisId}`, {});
+      return await result.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
+      toast({
+        title: "Deleted",
+        description: "Analysis deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete analysis",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = (e: React.MouseEvent, analysisId: string, symbolName: string) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete button
+    
+    const confirmed = window.confirm(`Are you sure you want to delete ${symbolName} analysis? This action cannot be undone.`);
+    if (confirmed) {
+      deleteMutation.mutate(analysisId);
+    }
+  };
 
   // Sort by newest first
   const savedAnalyses = [...savedAnalysesRaw].sort((a, b) => {
@@ -156,7 +189,7 @@ export default function SavedAnalyses() {
                   className="bg-[#1c2620] border border-[#29382f] rounded-xl p-3 cursor-pointer hover:border-[#38e07b] transition-colors"
                   data-testid={`card-saved-analysis-${analysis.id}`}
                 >
-                  {/* Line 1: Symbol, Sentiment + Verdict, RRR, Status */}
+                  {/* Line 1: Symbol, Sentiment + Verdict, RRR, Status, Delete */}
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <span className="text-white font-bold text-base truncate">
@@ -173,11 +206,22 @@ export default function SavedAnalyses() {
                         </span>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${statusConfig.bgColor} ${statusConfig.borderColor} border flex-shrink-0`}>
-                      <StatusIcon className={`w-3 h-3 ${statusConfig.color}`} />
-                      <span className={`text-xs font-medium ${statusConfig.color}`}>
-                        {statusConfig.label}
-                      </span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${statusConfig.bgColor} ${statusConfig.borderColor} border`}>
+                        <StatusIcon className={`w-3 h-3 ${statusConfig.color}`} />
+                        <span className={`text-xs font-medium ${statusConfig.color}`}>
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => handleDelete(e, analysis.id, analysis.symbol)}
+                        disabled={deleteMutation.isPending}
+                        className="p-1.5 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                        data-testid={`button-delete-analysis-${analysis.id}`}
+                        title="Delete analysis"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
                     </div>
                   </div>
 

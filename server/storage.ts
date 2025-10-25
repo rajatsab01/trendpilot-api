@@ -32,6 +32,7 @@ export interface IStorage {
   createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
   toggleSaveAnalysis(id: string): Promise<Analysis | undefined>;
   updateAnalysisStatus(id: string, status: string, profit: string | null): Promise<Analysis | undefined>;
+  deleteAnalysis(id: string): Promise<boolean>;
 
   // Brokers
   getBroker(id: string): Promise<Broker | undefined>;
@@ -205,6 +206,10 @@ export class MemStorage implements IStorage {
     return updatedAnalysis;
   }
 
+  async deleteAnalysis(id: string): Promise<boolean> {
+    return this.analyses.delete(id);
+  }
+
   // Brokers
   async getBroker(id: string): Promise<Broker | undefined> {
     return this.brokers.get(id);
@@ -366,6 +371,11 @@ export class PgStorage implements IStorage {
       .where(eq(analyses.id, id))
       .returning();
     return result[0];
+  }
+
+  async deleteAnalysis(id: string): Promise<boolean> {
+    const result = await this.db.delete(analyses).where(eq(analyses.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Brokers

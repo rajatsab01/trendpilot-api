@@ -5,8 +5,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import { Bookmark, BookmarkCheck, Share2, Download } from "lucide-react";
 import type { Analysis } from "@shared/schema";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
@@ -21,6 +23,7 @@ export default function Analyzer() {
   const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency">("stock_equities");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -81,6 +84,70 @@ export default function Analyzer() {
       });
     },
   });
+
+  const handleExportPDF = async () => {
+    if (!analysis) return;
+    
+    setIsExportingPDF(true);
+    try {
+      const element = document.getElementById("analysis-content");
+      if (!element) {
+        throw new Error("Analysis content not found");
+      }
+
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we create your analysis report",
+      });
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#111714",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = `TrendPilot_${analysis.symbol}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "PDF Exported Successfully",
+        description: `Your analysis has been saved as ${fileName}`,
+      });
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   const handleSaveClick = (analysis: Analysis) => {
     // If opened from saved page and currently saved, show confirmation before unsaving
@@ -253,7 +320,7 @@ export default function Analyzer() {
             </div>
           </div>
 
-          <main className="p-4 space-y-8 pb-24">
+          <main id="analysis-content" className="p-4 space-y-8 pb-24">
             <div>
               <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4">
                 {t.leadingIndicators}
@@ -641,28 +708,39 @@ export default function Analyzer() {
               </div>
             )}
 
-            {/* Analyse More and Save Buttons */}
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => handleSaveClick(analysis)}
-                disabled={saveMutation.isPending || analysis.isSaved === 1}
-                className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-center text-lg transition-colors ${
-                  analysis.isSaved === 1 
-                    ? 'bg-[#38e07b] text-[#111714] border-2 border-[#38e07b] cursor-not-allowed opacity-90' 
-                    : 'bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] hover:bg-[#38e07b] hover:text-[#111714]'
-                } ${saveMutation.isPending ? 'opacity-50' : ''}`}
-                data-testid="button-save-analysis"
-              >
-                {analysis.isSaved === 1 ? (
-                  <BookmarkCheck className="w-6 h-6" />
-                ) : (
-                  <Bookmark className="w-6 h-6" />
-                )}
-                <span>{analysis.isSaved === 1 ? "Saved ✓" : "Save"}</span>
-              </button>
+            {/* Action Buttons: Save, Share, Analyse More */}
+            <div className="mt-8 space-y-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleSaveClick(analysis)}
+                  disabled={saveMutation.isPending || analysis.isSaved === 1}
+                  className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-center text-lg transition-colors ${
+                    analysis.isSaved === 1 
+                      ? 'bg-[#38e07b] text-[#111714] border-2 border-[#38e07b] cursor-not-allowed opacity-90' 
+                      : 'bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] hover:bg-[#38e07b] hover:text-[#111714]'
+                  } ${saveMutation.isPending ? 'opacity-50' : ''}`}
+                  data-testid="button-save-analysis"
+                >
+                  {analysis.isSaved === 1 ? (
+                    <BookmarkCheck className="w-6 h-6" />
+                  ) : (
+                    <Bookmark className="w-6 h-6" />
+                  )}
+                  <span>{analysis.isSaved === 1 ? "Saved ✓" : "Save"}</span>
+                </button>
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExportingPDF}
+                  className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-center text-lg transition-colors bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] hover:bg-[#38e07b] hover:text-[#111714] ${isExportingPDF ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  data-testid="button-export-pdf"
+                >
+                  <Download className="w-6 h-6" />
+                  <span>{isExportingPDF ? "Exporting..." : "Share PDF"}</span>
+                </button>
+              </div>
               <button
                 onClick={() => setLocation("/dashboard")}
-                className="flex-1 bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
+                className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
                 data-testid="button-analyse-more"
               >
                 {t.analyseMore}

@@ -783,6 +783,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete an analysis
+  app.delete("/api/analysis/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteAnalysis(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+
+      res.json({ success: true, message: "Analysis deleted successfully" });
+    } catch (error) {
+      console.error("Delete analysis error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Execute trade - send webhook to broker
   app.post("/api/execute-trade", async (req, res) => {
     try {

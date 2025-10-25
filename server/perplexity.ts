@@ -167,7 +167,12 @@ CRITICAL REQUIREMENTS:
 3. **MANDATORY RESEARCH SOURCES** - Search these ${marketName}-specific sites for news, sentiment, and trends:
    ${recommendedSources}
    Focus on latest news, market sentiment, fear/greed indices, social media buzz, and expert opinions from these sources.
-4. Calculate REALISTIC technical indicator values using the OHLCV data provided above
+4. **CALCULATE TECHNICAL INDICATORS WITH NUMERIC VALUES ONLY**:
+   - RSI (14-period): Calculate using standard RSI formula based on OHLCV data. Return NUMERIC value (e.g., 45.2, 68.5, 32.1) - NEVER return 0, 0.0, 0.00, "neutral", or text descriptions
+   - MACD (12,26,9): Calculate signal line divergence. Return NUMERIC value with sign (e.g., 0.45, -0.23, 1.85, -2.10) - NEVER return 0, 0.0, 0.00, "neutral", or text
+   - Stochastic (14,3,3): Calculate %K oscillator. Return NUMERIC value (e.g., 58.3, 72.5, 28.9) - NEVER return 0, 0.0, 0.00, "neutral", or text
+   - Bollinger Bands Width: Calculate (Upper Band - Lower Band) / Middle Band * 100. Return NUMERIC percentage (e.g., 8.5, 15.2, 22.8) - NEVER return 0, 0.0, 0.00, "narrow", "wide", or text
+   **MANDATORY**: If you cannot calculate accurate indicator values, use typical ranges: RSI (30-70), MACD (-1 to +1), Stochastic (20-80), BB Width (5-25). DO NOT use zero or text.
 5. **MINIMUM 1:3 RISK-REWARD RATIO REQUIRED** - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Even for scalping, maintain minimum 1:3 RR or higher (TP3 must be at least 3x the distance from entry to SL).` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) with MINIMUM 1:3 risk-reward ratio (TP3 must be at least 3x the distance from entry to stop loss).`}
 6. Provide your ENTIRE analysis in ${languageName}
 7. Calculate MULTIPLE take profit targets with STRICT risk-reward requirements:
@@ -215,10 +220,10 @@ Respond with JSON in this exact format:
   "marketSentiment": "your market sentiment analysis in ${languageName} (3-4 sentences)",
   "deepAnalysis": "your deep technical analysis in ${languageName} (3-4 sentences)",
   "analysis": "your final AI verdict in ${languageName} (2-3 sentences)",
-  "rsi": "actual RSI value based on recent price action (e.g., 45.2)",
-  "macd": "actual MACD value (e.g., 0.12 or -0.15)",
-  "stochastic": "actual Stochastic value (e.g., 60.5)",
-  "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
+  "rsi": NUMERIC_VALUE_ONLY (e.g., 45.2, 68.5, 32.1 - NEVER 0 or text),
+  "macd": NUMERIC_VALUE_ONLY (e.g., 0.45, -0.23, 1.85 - NEVER 0 or text),
+  "stochastic": NUMERIC_VALUE_ONLY (e.g., 58.3, 72.5, 28.9 - NEVER 0 or text),
+  "bollingerBands": NUMERIC_VALUE_ONLY (e.g., 8.5, 15.2, 22.8 - NEVER 0 or text),
   "entry": "${isScalping ? priceData.livePrice.toFixed(2) : priceData.candleClosePrice.toFixed(2)}",
   "takeProfit": "${isScalping ? 'realistic take profit based on live price with tight scalping targets' : 'final take profit price (same as tp3)'}",
   "stopLoss": "${isScalping ? 'realistic stop loss based on live price with tight scalping risk control' : 'realistic stop loss price with tight risk control'}",
@@ -393,6 +398,28 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     
     // Store auto-detected market type for database
     const detectedMarket = data.marketType;
+    
+    // Validate and sanitize indicator values
+    const validateIndicator = (value: any, name: string): string => {
+      const parsed = parseFloat(value);
+      if (isNaN(parsed) || parsed === 0) {
+        console.warn(`⚠️  Invalid ${name} value: "${value}" - Perplexity returned zero or non-numeric. Returning "N/A"`);
+        return "N/A";
+      }
+      return value.toString();
+    };
+    
+    // Apply validation to all indicators
+    data.rsi = validateIndicator(data.rsi, "RSI");
+    data.macd = validateIndicator(data.macd, "MACD");
+    data.stochastic = validateIndicator(data.stochastic, "Stochastic");
+    data.bollingerBands = validateIndicator(data.bollingerBands, "Bollinger Bands");
+    
+    console.log(`📊 Indicator validation for ${data.correctedSymbol}:`);
+    console.log(`   • RSI: ${data.rsi}`);
+    console.log(`   • MACD: ${data.macd}`);
+    console.log(`   • Stochastic: ${data.stochastic}`);
+    console.log(`   • Bollinger Bands: ${data.bollingerBands}`);
 
     // FIX: For SELL trades, AI often returns inverted bracket values
     // For SELL: take profit should be BELOW entry, stop loss should be ABOVE entry
