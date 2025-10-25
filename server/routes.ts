@@ -9,6 +9,33 @@ import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
+// 🔒 SECURITY: Token cap during testing period to prevent abuse
+// While Razorpay is in test mode, limit max tokens to prevent users from accumulating
+// thousands of free "test" tokens that would become real when switching to live mode
+const TEST_MODE_ACTIVE = true; // Set to false when switching to live Razorpay
+const TEST_MODE_TOKEN_CAP = 10; // Maximum tokens allowed during testing
+
+/**
+ * Check if adding tokens would exceed the test mode cap
+ * @returns { allowed: boolean, error?: string, maxTokens?: number }
+ */
+function checkTokenCap(currentTokens: number, tokensToAdd: number) {
+  if (!TEST_MODE_ACTIVE) {
+    return { allowed: true }; // No cap in production mode
+  }
+
+  const newBalance = currentTokens + tokensToAdd;
+  if (newBalance > TEST_MODE_TOKEN_CAP) {
+    return {
+      allowed: false,
+      error: `Testing period limit: Maximum ${TEST_MODE_TOKEN_CAP} tokens allowed. You currently have ${currentTokens} tokens. This cap will be removed once the app launches with live payments.`,
+      maxTokens: TEST_MODE_TOKEN_CAP
+    };
+  }
+
+  return { allowed: true };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Verify phone number from Phone.Email service
   app.post("/api/auth/verify-phone", async (req, res) => {
@@ -238,6 +265,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Demo mode - just add tokens without verification
       if (demoMode) {
         console.log(`Demo mode: Adding ${tokens} tokens to user ${userId}`);
+        
+        // Check token cap before adding
+        const capCheck = checkTokenCap(user.tokens, tokens);
+        if (!capCheck.allowed) {
+          return res.status(400).json({ 
+            error: capCheck.error,
+            tokenCapReached: true,
+            currentTokens: user.tokens,
+            maxTokens: capCheck.maxTokens
+          });
+        }
+        
         await storage.updateUserTokens(userId, user.tokens + tokens);
         return res.json({ 
           success: true, 
@@ -261,7 +300,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid payment signature" });
       }
 
-      // Payment verified - add tokens
+      // Payment verified - check token cap before adding
+      const capCheck = checkTokenCap(user.tokens, tokens);
+      if (!capCheck.allowed) {
+        return res.status(400).json({ 
+          error: capCheck.error,
+          tokenCapReached: true,
+          currentTokens: user.tokens,
+          maxTokens: capCheck.maxTokens
+        });
+      }
+      
+      // Add tokens
       await storage.updateUserTokens(userId, user.tokens + tokens);
 
       res.json({ 
@@ -394,6 +444,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Check token cap before adding bonus
+      const capCheck = checkTokenCap(user.tokens, 5);
+      if (!capCheck.allowed) {
+        return res.status(400).json({ 
+          error: capCheck.error,
+          tokenCapReached: true,
+          currentTokens: user.tokens,
+          maxTokens: capCheck.maxTokens
+        });
+      }
+
       // Add 5 tokens for installing the app
       const newTokenBalance = user.tokens + 5;
       await storage.updateUserTokens(userId, newTokenBalance);
@@ -464,6 +525,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment watch count
       history.count++;
+
+      // Check token cap before adding ad tokens
+      const capCheck = checkTokenCap(user.tokens, 2);
+      if (!capCheck.allowed) {
+        // Decrement count since we didn't actually add tokens
+        history.count--;
+        return res.status(400).json({ 
+          error: capCheck.error,
+          tokenCapReached: true,
+          currentTokens: user.tokens,
+          maxTokens: capCheck.maxTokens
+        });
+      }
 
       // Add 2 tokens for watching the ad
       const newTokenBalance = user.tokens + 2;
