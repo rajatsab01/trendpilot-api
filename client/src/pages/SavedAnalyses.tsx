@@ -10,9 +10,16 @@ export default function SavedAnalyses() {
   const { t } = useLanguage();
   const userId = localStorage.getItem("userId");
 
-  const { data: savedAnalyses = [], isLoading } = useQuery<Analysis[]>({
+  const { data: savedAnalysesRaw = [], isLoading } = useQuery<Analysis[]>({
     queryKey: ["/api/analyses/saved", userId || ""],
     enabled: !!userId,
+  });
+
+  // Sort by newest first
+  const savedAnalyses = [...savedAnalysesRaw].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA; // Newest first
   });
 
   const getStatusConfig = (status: string) => {
@@ -95,91 +102,55 @@ export default function SavedAnalyses() {
                 <div
                   key={analysis.id}
                   onClick={() => setLocation(`/analyzer?analysisId=${analysis.id}`)}
-                  className="bg-[#1c2620] border border-[#29382f] rounded-2xl p-4 cursor-pointer hover:border-[#38e07b] transition-colors"
+                  className="bg-[#1c2620] border border-[#29382f] rounded-xl p-3 cursor-pointer hover:border-[#38e07b] transition-colors"
                   data-testid={`card-saved-analysis-${analysis.id}`}
                 >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-bold text-lg">
-                          {analysis.symbol}
-                        </span>
+                  {/* Line 1: Symbol, Sentiment + Verdict, RRR, Status */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-white font-bold text-base truncate">
+                        {analysis.symbol}
+                      </span>
+                      <div className="flex items-center gap-1">
                         {isBullish ? (
-                          <TrendingUp className="w-5 h-5 text-[#38e07b]" />
+                          <TrendingUp className="w-4 h-4 text-[#38e07b]" />
                         ) : (
-                          <TrendingDown className="w-5 h-5 text-red-500" />
+                          <TrendingDown className="w-4 h-4 text-red-500" />
                         )}
+                        <span className={`text-sm font-medium ${isBullish ? "text-[#38e07b]" : "text-red-500"}`}>
+                          {analysis.sentiment}
+                        </span>
                       </div>
-                      <p className={`text-sm font-medium mt-1 ${isBullish ? "text-[#38e07b]" : "text-red-500"}`}>
-                        {analysis.sentiment}
-                      </p>
                     </div>
-                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${statusConfig.bgColor} ${statusConfig.borderColor} border`}>
-                      <StatusIcon className={`w-4 h-4 ${statusConfig.color}`} />
-                      <span className={`text-sm font-medium ${statusConfig.color}`}>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${statusConfig.bgColor} ${statusConfig.borderColor} border flex-shrink-0`}>
+                      <StatusIcon className={`w-3 h-3 ${statusConfig.color}`} />
+                      <span className={`text-xs font-medium ${statusConfig.color}`}>
                         {statusConfig.label}
                       </span>
                     </div>
                   </div>
 
-                  {/* Price Info */}
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="bg-[#111714] rounded-lg p-2">
-                      <p className="text-[#9eb7a8] text-xs mb-1">Entry Price</p>
-                      <p className="text-white font-bold text-sm">
-                        {analysis.entry || "N/A"}
-                      </p>
+                  {/* Line 2: Entry, Current, TP1, TP2, SL */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[#9eb7a8]">Entry:</span>
+                      <span className="text-white font-medium">{analysis.entry || "N/A"}</span>
                     </div>
-                    <div className="bg-[#111714] rounded-lg p-2">
-                      <p className="text-[#9eb7a8] text-xs mb-1">Current Price</p>
-                      <p className="text-white font-bold text-sm">
-                        {analysis.currentPrice || analysis.livePrice || "N/A"}
-                      </p>
+                    <span className="text-[#9eb7a8]">•</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[#9eb7a8]">Now:</span>
+                      <span className="text-white font-medium">{analysis.currentPrice || analysis.livePrice || "N/A"}</span>
                     </div>
-                  </div>
-
-                  {/* Targets */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="bg-[#111714] rounded-lg p-2">
-                      <p className="text-[#9eb7a8] text-xs mb-1">TP1</p>
-                      <p className="text-[#38e07b] font-bold text-xs">
-                        {analysis.tp1 || "N/A"}
-                      </p>
+                    <span className="text-[#9eb7a8]">•</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[#38e07b]">TP1:</span>
+                      <span className="text-[#38e07b] font-medium">{analysis.tp1 || "N/A"}</span>
                     </div>
-                    <div className="bg-[#111714] rounded-lg p-2">
-                      <p className="text-[#9eb7a8] text-xs mb-1">TP2</p>
-                      <p className="text-[#38e07b] font-bold text-xs">
-                        {analysis.tp2 || "N/A"}
-                      </p>
+                    <span className="text-[#9eb7a8]">•</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-red-500">SL:</span>
+                      <span className="text-red-500 font-medium">{analysis.stopLoss || "N/A"}</span>
                     </div>
-                    <div className="bg-[#111714] rounded-lg p-2">
-                      <p className="text-[#9eb7a8] text-xs mb-1">SL</p>
-                      <p className="text-red-500 font-bold text-xs">
-                        {analysis.stopLoss || "N/A"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Profit/Loss */}
-                  {analysis.actualProfit && (
-                    <div className="bg-[#111714] rounded-lg p-2">
-                      <p className="text-[#9eb7a8] text-xs mb-1">Profit/Loss</p>
-                      <p className={`font-bold text-sm ${
-                        parseFloat(analysis.actualProfit) >= 0 ? "text-[#38e07b]" : "text-red-500"
-                      }`}>
-                        {parseFloat(analysis.actualProfit) >= 0 ? "+" : ""}
-                        {analysis.actualProfit}%
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Date */}
-                  <div className="mt-3 pt-3 border-t border-[#29382f]">
-                    <p className="text-[#9eb7a8] text-xs">
-                      {analysis.createdAt ? new Date(analysis.createdAt).toLocaleDateString() : "N/A"} at{" "}
-                      {analysis.createdAt ? new Date(analysis.createdAt).toLocaleTimeString() : "N/A"}
-                    </p>
                   </div>
                 </div>
               );
