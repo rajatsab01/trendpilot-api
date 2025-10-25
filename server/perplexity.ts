@@ -88,7 +88,7 @@ export async function analyzeMarketWithPerplexity(
 CRITICAL REQUIREMENTS:
 1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
 2. Research the LATEST news, trends, and price action for this asset
-3. Use your real-time web search to find the EXACT current market price from reliable sources
+3. Use your real-time web search to find the LAST CLOSED PRICE OF THE 5-MINUTE CANDLE as the current price - this provides standardized, accurate pricing across all markets
 4. Calculate REALISTIC technical indicator values based on current market data and recent price action
 5. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
 6. Provide your ENTIRE analysis in ${languageName}
@@ -116,8 +116,8 @@ Respond with JSON in this exact format:
   "correctedSymbol": "CORRECTED standard ticker symbol (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
   "assetName": "Full official name of the asset (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
   "marketType": "AUTO-DETECTED market type - one of: 'cryptocurrency', 'stock_equities', 'commodity', 'forex', 'derivatives_futures', or 'bond'",
-  "currentPrice": "EXACT current market price as found via web search (just the number, e.g., '111140.50' for $111,140.50)",
-  "priceSource": "Where you found this price (e.g., 'CoinMarketCap', 'Bloomberg', 'Yahoo Finance', 'Binance')",
+  "currentPrice": "LAST CLOSED PRICE OF 5-MINUTE CANDLE as found via web search (just the number, e.g., '111140.50' for $111,140.50) - use this standardized price for accurate market entry",
+  "priceSource": "Where you found this 5min candle close price (e.g., 'CoinMarketCap 5m chart', 'TradingView 5m candle', 'Yahoo Finance 5m data', 'Binance 5m close')",
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
@@ -128,7 +128,7 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "ACTUAL CURRENT MARKET PRICE as a number (same as currentPrice field above)",
+  "entry": "LAST CLOSED PRICE OF 5-MINUTE CANDLE as a number (same as currentPrice field above - this is your recommended entry price)",
   "takeProfit": "final take profit price (same as tp3)",
   "stopLoss": "realistic stop loss price with tight risk control",
   "tp1": "Take Profit 1 - Conservative 1:1 RR (book 50% profit here)",
