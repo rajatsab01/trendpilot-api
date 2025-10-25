@@ -67,6 +67,17 @@ export default function SavedAnalyses() {
     );
   }
 
+  // Calculate stats
+  const totalTrades = savedAnalyses.length;
+  const greenTrades = savedAnalyses.filter(a => a.tradeStatus === "won").length;
+  const redTrades = savedAnalyses.filter(a => a.tradeStatus === "lost").length;
+  const yellowTrades = savedAnalyses.filter(a => a.tradeStatus === "active" || !a.tradeStatus).length;
+  const grayTrades = savedAnalyses.filter(a => a.tradeStatus === "expired").length;
+  
+  const totalClosed = greenTrades + redTrades;
+  const winRate = totalClosed > 0 ? ((greenTrades / totalClosed) * 100).toFixed(1) : "0.0";
+  const lossRate = totalClosed > 0 ? ((redTrades / totalClosed) * 100).toFixed(1) : "0.0";
+
   return (
     <div className="min-h-screen bg-[#111714] pb-24">
       <header className="bg-[#1c2620] border-b border-[#29382f] px-4 py-6">
@@ -75,6 +86,46 @@ export default function SavedAnalyses() {
           Track your saved trades and performance
         </p>
       </header>
+
+      {/* Traffic Light Stats Dashboard */}
+      {totalTrades > 0 && (
+        <div className="bg-[#1c2620] border-b border-[#29382f] px-4 py-4">
+          <div className="grid grid-cols-5 gap-2 mb-3">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">{totalTrades}</div>
+              <div className="text-xs text-[#9eb7a8]">Total</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#38e07b]">{greenTrades}</div>
+              <div className="text-xs text-[#9eb7a8]">Won</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-500">{redTrades}</div>
+              <div className="text-xs text-[#9eb7a8]">Lost</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-500">{yellowTrades}</div>
+              <div className="text-xs text-[#9eb7a8]">Active</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-500">{grayTrades}</div>
+              <div className="text-xs text-[#9eb7a8]">Expired</div>
+            </div>
+          </div>
+          {totalClosed > 0 && (
+            <div className="flex gap-2">
+              <div className="flex-1 bg-[#111714] rounded-lg p-2 text-center">
+                <div className="text-sm font-medium text-[#38e07b]">{winRate}%</div>
+                <div className="text-xs text-[#9eb7a8]">Win Rate</div>
+              </div>
+              <div className="flex-1 bg-[#111714] rounded-lg p-2 text-center">
+                <div className="text-sm font-medium text-red-500">{lossRate}%</div>
+                <div className="text-xs text-[#9eb7a8]">Loss Rate</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <main className="px-4 py-6">
         {savedAnalyses.length === 0 ? (
