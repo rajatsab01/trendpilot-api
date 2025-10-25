@@ -228,7 +228,14 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     const data = JSON.parse(jsonContent);
 
     // Validate required Perplexity fields
-    const requiredFields = ['correctedSymbol', 'assetName', 'marketType', 'currentPrice', 'priceSource'];
+    const requiredFields = [
+      'correctedSymbol', 
+      'assetName', 
+      'marketType', 
+      'livePrice',           // Actual current live price
+      'candleClosePrice',    // Last closed candle price for analysis
+      'priceSource'
+    ];
     const missingFields = requiredFields.filter(field => !data[field]);
     
     if (missingFields.length > 0) {
