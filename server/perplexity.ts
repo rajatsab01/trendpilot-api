@@ -1,5 +1,19 @@
 // Removed fetchMarketData import - Perplexity now handles all market data validation via real-time web search
 
+interface OHLCVData {
+  symbol: string;
+  livePrice: number;
+  candleClosePrice: number;
+  candleCloseTime: string;
+  timeframe: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  dataSource: string;
+}
+
 interface MarketAnalysisResult {
   recommendation: "BUY" | "SELL";
   confidence: number;
@@ -69,7 +83,9 @@ const languageMap: Record<string, string> = {
 export async function analyzeMarketWithPerplexity(
   symbol: string,
   duration: string,
-  language: string = "en"
+  market: string,
+  language: string = "en",
+  priceData: OHLCVData
 ): Promise<MarketAnalysisResult> {
   if (!process.env.PERPLEXITY_API_KEY) {
     throw new Error("Perplexity API key not configured");
@@ -105,22 +121,40 @@ export async function analyzeMarketWithPerplexity(
     const isScalping = duration === "scalping";
 
     const languageName = languageMap[language] || "English";
+    
+    // Format market type for display
+    const marketName = market.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Calculate next candle close time based on timeframe
+    const candleCloseDate = new Date(priceData.candleCloseTime);
+    let nextCandleCloseDate = new Date(candleCloseDate);
+    
+    if (requiredTimeframe === "15min") {
+      nextCandleCloseDate.setMinutes(nextCandleCloseDate.getMinutes() + 15);
+    } else if (requiredTimeframe === "1hr") {
+      nextCandleCloseDate.setHours(nextCandleCloseDate.getHours() + 1);
+    } else if (requiredTimeframe === "1day") {
+      nextCandleCloseDate.setDate(nextCandleCloseDate.getDate() + 1);
+    }
+    
+    const nextCandleCloseTime = nextCandleCloseDate.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
 
-    const prompt = `You are an expert financial analyst with real-time market access. Analyze the trading symbol "${symbol}" for ${durationContext}.
+    const prompt = `You are an expert financial analyst. Analyze the trading symbol "${symbol}" (${marketName} market) for ${durationContext}.
 
-**IMPORTANT**: Use your real-time web search to:
-1. AUTO-DETECT what market this symbol belongs to (cryptocurrency, stocks, forex, commodities, bonds, or derivatives)
-2. Find ALL market data for this symbol
+**PRICE DATA PROVIDED** (from ${priceData.dataSource}):
+- Symbol: ${priceData.symbol}
+- Live Current Price: $${priceData.livePrice.toFixed(2)}
+- Candle Close Price (${priceData.timeframe}): $${priceData.candleClosePrice.toFixed(2)}
+- Candle Close Time: ${priceData.candleCloseTime}
+- Next Candle Close: ${nextCandleCloseTime}
+- OHLCV Data: Open $${priceData.open.toFixed(2)}, High $${priceData.high.toFixed(2)}, Low $${priceData.low.toFixed(2)}, Close $${priceData.close.toFixed(2)}, Volume ${priceData.volume.toLocaleString()}
 
 CRITICAL REQUIREMENTS:
-1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
-2. Research the LATEST news, trends, and price action for this asset
-3. **MANDATORY DUAL PRICE REQUIREMENT**:
-   a. **Candle Close Price**: Find the LAST CLOSED PRICE OF THE ${timeframeDescription.toUpperCase()} CANDLE for analysis accuracy. Look for "${requiredTimeframe} candle close", "${timeframeDescription} close price", or "last ${timeframeDescription} bar close".
-   b. **Live Current Price**: ALSO fetch the ACTUAL CURRENT LIVE MARKET PRICE (spot/ticker price) so users see the latest market value.
-   c. **Next Candle Close**: Calculate when the NEXT ${timeframeDescription} candle will close (for re-analysis recommendation).
-4. Calculate REALISTIC technical indicator values based on current market data and recent price action
-5. ${isScalping ? "**SCALPING SPECIAL**: Use LIVE CURRENT PRICE for entry/TP/SL calculations (NOT closed candle price). Scalping needs immediate actionable levels near current market price." : "Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio"}
+1. **USE EXACT PRICES PROVIDED ABOVE** - Do NOT fetch new prices. Use the exact live price ($${priceData.livePrice.toFixed(2)}) and candle close price ($${priceData.candleClosePrice.toFixed(2)}) provided.
+2. VALIDATE THE SYMBOL: Use web search to find the CORRECT standard symbol name and full asset name (e.g., if symbol is "BTC", full name is "Bitcoin")
+3. Research the LATEST news, trends, and sentiment for this ${marketName} asset
+4. Calculate REALISTIC technical indicator values using the OHLCV data provided above
+5. ${isScalping ? `**SCALPING SPECIAL**: Use LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Scalping needs immediate actionable levels near current market price.` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) with MINIMUM 1:2 or 1:3 risk-reward ratio`}
 6. Provide your ENTIRE analysis in ${languageName}
 7. Calculate MULTIPLE take profit targets (TP1, TP2, TP3) with INCREASING risk-reward:
    - TP1: Conservative target (1:1 risk-reward) - book 50% profit here
@@ -143,16 +177,16 @@ Based on all indicators + market sentiment + deep analysis using REAL data, prov
 
 Respond with JSON in this exact format:
 {
-  "correctedSymbol": "CORRECTED standard ticker symbol (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
-  "assetName": "Full official name of the asset (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
-  "marketType": "AUTO-DETECTED market type - one of: 'cryptocurrency', 'stock_equities', 'commodity', 'forex', 'derivatives_futures', or 'bond'",
+  "correctedSymbol": "CORRECTED standard ticker symbol from your web search (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
+  "assetName": "Full official name of the asset from your web search (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
+  "marketType": "${market}",
   "currentPrice": "DEPRECATED - Use candleClosePrice instead",
-  "livePrice": "ACTUAL CURRENT LIVE MARKET PRICE right now (spot/ticker price, e.g., '111655.00' for $111,655.00) - THIS IS WHAT USERS SEE AS 'CURRENT PRICE'",
-  "candleClosePrice": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE for analysis (e.g., '111140.50' for $111,140.50) - use this for technical analysis calculations",
-  "priceSource": "Where you found these prices (e.g., 'CoinMarketCap live ticker and ${requiredTimeframe} chart')",
-  "candleCloseTime": "Timestamp of the ${timeframeDescription} candle close (e.g., '2025-10-25 13:00:00 UTC'). REQUIRED.",
-  "timeframe": "MUST match: '${requiredTimeframe}' (the timeframe of the closed candle used for analysis)",
-  "nextCandleCloseTime": "When the NEXT ${timeframeDescription} candle will close (e.g., '2025-10-25 14:00:00 UTC' for 1hr, '2025-10-25 13:15:00 UTC' for 15min). Calculate from candleCloseTime + timeframe duration.",
+  "livePrice": "${priceData.livePrice.toFixed(2)}",
+  "candleClosePrice": "${priceData.candleClosePrice.toFixed(2)}",
+  "priceSource": "${priceData.dataSource}",
+  "candleCloseTime": "${priceData.candleCloseTime}",
+  "timeframe": "${priceData.timeframe}",
+  "nextCandleCloseTime": "${nextCandleCloseTime}",
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
@@ -163,7 +197,7 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "${isScalping ? 'LIVE CURRENT PRICE (same as livePrice field) - scalping needs entry near current market price' : `LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as a number (same as candleClosePrice field above - this is your recommended entry price for analysis)`}",
+  "entry": "${isScalping ? priceData.livePrice.toFixed(2) : priceData.candleClosePrice.toFixed(2)}",
   "takeProfit": "${isScalping ? 'realistic take profit based on live price with tight scalping targets' : 'final take profit price (same as tp3)'}",
   "stopLoss": "${isScalping ? 'realistic stop loss based on live price with tight scalping risk control' : 'realistic stop loss price with tight risk control'}",
   "tp1": "${isScalping ? 'Take Profit 1 - Based on LIVE PRICE with tight scalping targets (1:1 RR)' : 'Take Profit 1 - Conservative 1:1 RR (book 50% profit here)'}",
@@ -180,7 +214,7 @@ Respond with JSON in this exact format:
   "explanatoryNotes": "Detailed explanatory notes in ${languageName} about the trade setup, key levels, market context, and risk disclaimers (3-5 sentences, like: 'This ${durationContext} setup is based on current price action at [price] with tight risk control. Key support at [level] and resistance at [level]. Market conditions favor [direction] momentum. Trade with strict discipline and manage position size according to your risk tolerance. Past performance does not guarantee future results.')"
 }
 
-IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol, assetName, marketType, livePrice, candleClosePrice, candleCloseTime, nextCandleCloseTime, timeframe, and priceSource fields are MANDATORY and must be accurate based on your web research.`;
+IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol and assetName fields must be validated via web search. All price fields must match the EXACT values provided above - DO NOT fetch new prices.`;
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -193,7 +227,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst with access to real-time market data and news. ${isScalping ? `CRITICAL FOR SCALPING: Use LIVE CURRENT PRICE for entry/TP/SL calculations - not closed candle price. Scalping traders need actionable levels near current market price. Still fetch ${timeframeDescription} closed candle data for technical indicators (RSI, MACD, etc.) but bracket orders must be based on live price.` : `CRITICAL: For ${duration.toUpperCase()} analysis, always use the LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLES for currentPrice and entry fields - never use tick prices or shorter timeframes.`} Your timeframe field MUST be one of: ${durationConfig.variants.join(', ')} and priceSource field must mention the ${timeframeDescription} timeframe to confirm the data source. Return responses in valid JSON format only.`,
+            content: `You are an expert financial analyst with access to real-time market news and sentiment analysis. CRITICAL: Use the EXACT prices provided in the prompt - DO NOT fetch new prices. ${isScalping ? `For SCALPING: Use the LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Scalping needs actionable levels near current market price.` : `For ${duration.toUpperCase()} analysis: Use the CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) for entry and bracket order calculations.`} Return the exact price values provided in your JSON response fields. Return responses in valid JSON format only.`,
           },
           { role: "user", content: prompt },
         ],

@@ -18,6 +18,7 @@ export default function Analyzer() {
 
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
+  const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency">("stock_equities");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
 
@@ -42,6 +43,7 @@ export default function Analyzer() {
         userId,
         symbol,
         duration,
+        market,
       });
       return await result.json();
     },

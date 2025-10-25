@@ -50,7 +50,8 @@ async function fetchCryptoPrice(
     const { interval, label } = getTimeframeForDuration(duration);
     
     // Convert symbol to Binance format (e.g., "BTC" -> "BTCUSDT", "ETH" -> "ETHUSDT")
-    let binanceSymbol = symbol.toUpperCase().replace(/[^A-Z]/g, "");
+    // Preserve digits for symbols like 1INCH, 1000SATS
+    let binanceSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
     
     // Add USDT if not already present
     if (!binanceSymbol.includes("USDT") && !binanceSymbol.includes("BTC") && !binanceSymbol.includes("ETH")) {
@@ -71,6 +72,12 @@ async function fetchCryptoPrice(
       "CARDANO": "ADAUSDT",
       "DOGE": "DOGEUSDT",
       "DOGECOIN": "DOGEUSDT",
+      "1INCH": "1INCHUSDT",
+      "1000SATS": "1000SATSUSDT",
+      "AVAX": "AVAXUSDT",
+      "MATIC": "MATICUSDT",
+      "LINK": "LINKUSDT",
+      "DOT": "DOTUSDT",
     };
     
     if (symbolMap[symbol.toUpperCase()]) {
@@ -121,8 +128,8 @@ async function fetchCryptoPrice(
       dataSource: "Binance",
     };
   } catch (error: any) {
-    console.error("Binance API error:", error);
-    throw new Error(`Failed to fetch crypto price: ${error.message}`);
+    console.error(`❌ Binance API error for symbol "${symbol}":`, error.message);
+    throw new Error(`Failed to fetch crypto price for "${symbol}": ${error.message}`);
   }
 }
 
@@ -219,8 +226,8 @@ async function fetchYahooFinancePrice(
       dataSource: "Yahoo Finance",
     };
   } catch (error: any) {
-    console.error("Yahoo Finance API error:", error);
-    throw new Error(`Failed to fetch Yahoo Finance price: ${error.message}`);
+    console.error(`❌ Yahoo Finance API error for symbol "${symbol}" (${market} market):`, error.message);
+    throw new Error(`Failed to fetch ${market} price for "${symbol}": ${error.message}`);
   }
 }
 
