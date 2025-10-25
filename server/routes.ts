@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { analyzeMarket } from "./gemini";
 import { analyzeMarketWithPerplexity } from "./perplexity";
 import { searchCryptoSymbols } from "./marketData";
+import { fetchMarketPrice } from "./priceData";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
 import Razorpay from "razorpay";
@@ -587,11 +588,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analyze market symbol
   app.post("/api/analyze", async (req, res) => {
     try {
-      // Validate request body (market type now auto-detected by Perplexity)
+      // Validate request body with market type
       const analyzeSchema = z.object({
         userId: z.string().min(1),
         symbol: z.string().min(1),
         duration: z.enum(["long_term", "short_term", "scalping"]),
+        market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
       });
 
       const validationResult = analyzeSchema.safeParse(req.body);
@@ -599,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { userId, symbol, duration } = validationResult.data;
+      const { userId, symbol, duration, market } = validationResult.data;
 
       // Check user has enough tokens
       const user = await storage.getUser(userId);
@@ -611,9 +613,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Insufficient tokens" });
       }
 
-      // Perform analysis using Perplexity with real market data (use user's language)
-      // Perplexity auto-detects market type via web search
-      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, user.language);
+      // 🎯 STEP 1: Fetch accurate prices from Yahoo Finance / Binance
+      let priceData;
+      try {
+        priceData = await fetchMarketPrice(symbol, duration, market);
+        console.log(`✅ Fetched accurate ${market} price for ${symbol}:`, priceData);
+      } catch (error: any) {
+        console.error(`❌ Price fetching error for ${symbol}:`, error.message);
+        return res.status(400).json({ 
+          error: `Unable to fetch price data for symbol "${symbol}". Please verify the symbol is correct for ${market} market.` 
+        });
+      }
+
+      // 🎯 STEP 2: Perform analysis using Perplexity with pre-fetched prices
+      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData);
 
       // Save analysis with Perplexity-validated metadata (including auto-detected market)
       const analysis = await storage.createAnalysis({
