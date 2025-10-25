@@ -69,10 +69,11 @@ State management uses TanStack Query for server state and React Context API for 
 
 ### Duration-Based Candle Timeframes (October 25, 2025)
 - **Correct timeframe mapping** (fixed from incorrect 5-minute hardcoding):
-  - **Scalping** → Analysis uses **15-minute candle** (trades executed on 5min, analysis on 15min)
-  - **Short-term** → Analysis uses **1-hour or 4-hour candle**
-  - **Long-term** → Analysis uses **1-day or 1-week candle**
+  - **Scalping** → Analysis uses **15-minute candle** for technical indicators, but **LIVE PRICE** for entry/TP/SL calculations
+  - **Short-term** → Analysis uses **1-hour or 4-hour candle** for both indicators and bracket orders
+  - **Long-term** → Analysis uses **1-day or 1-week candle** for both indicators and bracket orders
 - **Implementation:** Dynamic timeframe selection in Perplexity prompts based on duration parameter
+- **Scalping-specific logic:** Entry/TP/SL based on live current price (not closed candle) to prevent expired trade recommendations
 - **Validation:** 3-layer validation system checks timeframe matches expected duration
 - **Token cap security:** 10-token maximum during Razorpay test period prevents exploitation
 
@@ -101,9 +102,10 @@ State management uses TanStack Query for server state and React Context API for 
       - Inline display of verdict + RRR on same line
       - Entry price, TP1/TP2/SL targets visible at a glance
     - **Accidental Unsave Prevention:**
-      - Confirmation dialog when unsaving trades opened from saved page
-      - Passes `fromSaved=true` query parameter from saved page navigation
-      - Prevents accidental removal with "Are you sure?" prompt
+      - Locked save button (disabled + green background) when analysis is already saved
+      - Shows "Saved ✓" text with checkmark icon
+      - Cannot accidentally unsave - button is disabled when saved
+      - Visual distinction: Green background indicates saved state, prevents user errors
     - Trade status badges with color coding (green=won, red=lost, blue=active, gray=expired)
     - Clickable cards navigate back to full analysis view
   - **User flow:** Analyze → Save → View in Saved tab → Track status → See performance
