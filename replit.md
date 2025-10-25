@@ -22,6 +22,27 @@ State management uses TanStack Query for server state and React Context API for 
 
 ## Recent Changes
 
+### Dual Price Display Enhancement (October 25, 2025)
+- **💹 Live vs Analysis Price Separation** - Critical UX improvement to prevent user confusion
+  - **Database fields added:**
+    - `livePrice`: Actual current live market price (e.g., "50,234.50")
+    - `candleClosePrice`: Price at closed candle used for analysis (e.g., "50,180.25")
+    - `nextCandleCloseTime`: When next candle closes for re-analysis (e.g., "2024-10-25 12:00 UTC")
+  - **Frontend implementation:**
+    - Live market price prominently displayed with green border (💹 Current Market Price)
+    - Analysis price shown separately (📊 Analysis Based On) with timestamp
+    - Explanation box clarifying why closed candles are used for accuracy
+    - Next candle close time displayed for re-analysis guidance
+  - **Backend integration:** Perplexity returns all three price fields → database → frontend
+  - **Data flow:** Complete end-to-end from API to UI
+- **Problem solved:** Previously, users only saw the candle close price labeled as "current", which was misleading when the live price had moved significantly. This caused confusion about whether analysis was up-to-date.
+- **Benefits:**
+  - ✅ Users see ACTUAL live market price for current context
+  - ✅ Clear separation between live price and analysis basis price
+  - ✅ Transparent explanation about closed candle methodology
+  - ✅ Guidance on when to re-analyze (next candle close)
+  - ✅ Builds trust through data transparency and clear labeling
+
 ### Chart Visualization & Timestamp Display (October 25, 2025)
 - **📊 TradingView Chart Integration** - Professional price chart visualization
   - **Implementation:** Embedded TradingView widget on Analyzer page
