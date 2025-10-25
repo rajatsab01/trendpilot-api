@@ -25,25 +25,29 @@ State management uses TanStack Query for server state and React Context API for 
 ### Symbol Validation & Autocomplete System (October 25, 2025)
 - **🔍 Real-time Symbol Validation** - Prevents analysis failures from incorrect symbols
   - **Auto-validation flow:**
-    - User types symbol (2+ characters) → 800ms debounce → validate against selected market
-    - Backend validates using Yahoo Finance (stocks/forex/commodities/bonds) or Binance (crypto)
-    - Visual feedback: Yellow hourglass (validating), Green checkmark (valid), Red error (invalid)
+    - User selects market → enters symbol → Backend validates immediately
+    - Backend validates using Yahoo Finance (stocks/forex/commodities/bonds) or CoinGecko (crypto)
+    - **CRITICAL FIX**: Binance API blocked (HTTP 451) on Replit servers → CoinGecko fallback implemented
   - **Autocomplete suggestions:**
-    - If symbol not found, show dropdown with similar symbols
+    - If symbol not found, show modal with similar symbols
     - Each suggestion shows: Symbol name, ticker, current price
-    - Click to auto-fill with correct symbol
+    - Click suggestion → Auto-validates → User confirms → Enlighten Me button enabled
   - **Implementation:**
-    - `server/symbolValidator.ts`: Validation logic for all markets
+    - `server/symbolValidator.ts`: Validation logic with CoinGecko fallback for crypto
     - `/api/symbols/validate` endpoint: POST { symbol, market } → validation result
-    - Dashboard: Real-time validation UI with status indicators & dropdown
+    - Dashboard: Modal-based validation with confirmation flow
   - **Market-specific validation:**
-    - Cryptocurrency: Validates against Binance USDT pairs, provides top 5 matches
-    - Stocks/Forex/Commodities: Yahoo Finance lookup with automatic symbol formatting
+    - **Cryptocurrency**: CoinGecko API for 15 popular cryptos (BTC, ETH, BNB, XRP, SOL, ADA, DOGE, etc.)
+    - **Stocks/Forex/Commodities/Bonds**: Yahoo Finance lookup with automatic symbol formatting
+  - **Crypto symbol handling:**
+    - User enters "BTC", "BTCUSD", or "BTCUSDT" → All convert to "BTCUSDT" ✅
+    - Supports 15 major cryptocurrencies with real-time CoinGecko prices
+    - Automatic USD/USDT suffix removal and normalization
   - **Benefits:**
     - ✅ Eliminates "Symbol not found" errors during analysis
-    - ✅ Provides instant feedback before user spends tokens
+    - ✅ Works reliably despite Binance API regional restrictions
     - ✅ Shows current price during validation (builds confidence)
-    - ✅ Prevents issues like "ETH → $3" from incorrect symbols
+    - ✅ Two-step confirmation prevents accidental token spending
 
 ### Perplexity Enhanced Research (October 25, 2025)
 - **🌐 Market-Specific Research Sources** - AI searches specialized sites per market

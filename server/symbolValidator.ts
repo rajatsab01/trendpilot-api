@@ -19,6 +19,34 @@ interface SymbolValidationResult {
 }
 
 /**
+ * Simple in-memory cache for crypto prices to avoid CoinGecko rate limits
+ */
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const priceCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60000; // 60 seconds
+
+function getCachedPrice(coinGeckoId: string): number | null {
+  const cached = priceCache.get(coinGeckoId);
+  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+    console.log(`[Cache HIT] ${coinGeckoId}: $${cached.data}`);
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedPrice(coinGeckoId: string, price: number): void {
+  priceCache.set(coinGeckoId, {
+    data: price,
+    timestamp: Date.now(),
+  });
+  console.log(`[Cache SET] ${coinGeckoId}: $${price}`);
+}
+
+/**
  * Validate cryptocurrency symbol and get suggestions
  */
 async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationResult> {
@@ -49,6 +77,10 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
           assetName: cleanSymbol, // Will be enriched by Perplexity
           currentPrice: parseFloat(data.price),
         };
+      } else if (response.status === 451) {
+        // Binance blocked by region - try alternative approach using CoinGecko API
+        console.log(`[validateCrypto] ⚠️ Binance blocked (451). Trying alternative...`);
+        return await validateCryptoAlternative(cleanSymbol, binanceSymbol);
       } else {
         console.log(`[validateCrypto] ❌ Binance response not OK: ${response.status} ${response.statusText}`);
       }
@@ -83,6 +115,91 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
 }
 
 /**
+ * Alternative crypto validation using CoinGecko (when Binance is blocked)
+ */
+async function validateCryptoAlternative(cleanSymbol: string, binanceSymbol: string): Promise<SymbolValidationResult> {
+  try {
+    // Use CoinGecko for popular cryptocurrencies
+    const coinGeckoMap: Record<string, string> = {
+      'BTC': 'bitcoin',
+      'ETH': 'ethereum',
+      'BNB': 'binancecoin',
+      'XRP': 'ripple',
+      'SOL': 'solana',
+      'ADA': 'cardano',
+      'DOGE': 'dogecoin',
+      'MATIC': 'matic-network',
+      'DOT': 'polkadot',
+      'AVAX': 'avalanche-2',
+      'LINK': 'chainlink',
+      'UNI': 'uniswap',
+      'ATOM': 'cosmos',
+      'LTC': 'litecoin',
+      'BCH': 'bitcoin-cash',
+    };
+    
+    const baseSymbol = cleanSymbol
+      .replace(/USDT$/g, "")
+      .replace(/USD$/g, "");
+    
+    const coinGeckoId = coinGeckoMap[baseSymbol];
+    
+    if (coinGeckoId) {
+      // Check cache first
+      const cachedPrice = getCachedPrice(coinGeckoId);
+      if (cachedPrice) {
+        return {
+          isValid: true,
+          correctedSymbol: binanceSymbol,
+          assetName: cleanSymbol,
+          currentPrice: cachedPrice,
+        };
+      }
+      
+      // Fetch from CoinGecko if not cached
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const price = data[coinGeckoId]?.usd;
+        
+        if (price) {
+          console.log(`[validateCrypto] ✅ Found on CoinGecko:`, data);
+          setCachedPrice(coinGeckoId, price);
+          return {
+            isValid: true,
+            correctedSymbol: binanceSymbol,
+            assetName: cleanSymbol,
+            currentPrice: price,
+          };
+        }
+      } else {
+        console.log(`[validateCrypto] ⚠️ CoinGecko error: ${response.status}`);
+      }
+    }
+    
+    // If not found, return basic validation with popular crypto suggestions
+    return {
+      isValid: false,
+      error: `Cryptocurrency "${cleanSymbol}" validation unavailable. Try: BTC, ETH, BNB, SOL, ADA`,
+      suggestions: Object.keys(coinGeckoMap).slice(0, 5).map(sym => ({
+        symbol: `${sym}USDT`,
+        name: sym,
+        price: undefined,
+      })),
+    };
+  } catch (error) {
+    console.error("CoinGecko validation error:", error);
+    return {
+      isValid: false,
+      error: `Cryptocurrency symbol validation failed. Please try common symbols like BTC, ETH, BNB.`,
+    };
+  }
+}
+
+/**
  * Fetch cryptocurrency suggestions based on partial symbol
  */
 async function fetchCryptoSuggestions(partialSymbol: string): Promise<Array<{ symbol: string; name: string; price?: number }>> {
@@ -95,7 +212,27 @@ async function fetchCryptoSuggestions(partialSymbol: string): Promise<Array<{ sy
     
     // Fetch all USDT trading pairs from Binance
     const response = await fetch("https://api.binance.com/api/v3/ticker/price");
+    
+    if (!response.ok) {
+      // Binance blocked - return popular crypto suggestions
+      console.log(`[fetchCryptoSuggestions] Binance blocked, returning popular cryptos`);
+      const popular = ['BTC', 'ETH', 'BNB', 'SOL', 'ADA'];
+      return popular
+        .filter(sym => sym.includes(baseSymbol) || baseSymbol.includes(sym))
+        .map(sym => ({
+          symbol: `${sym}USDT`,
+          name: sym,
+          price: undefined,
+        }));
+    }
+    
     const allTickers = await response.json();
+    
+    // Ensure it's an array
+    if (!Array.isArray(allTickers)) {
+      console.error(`[fetchCryptoSuggestions] Binance did not return array:`, allTickers);
+      return [];
+    }
     
     // Filter USDT pairs that match the base symbol
     const matches = allTickers
