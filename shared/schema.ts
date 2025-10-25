@@ -58,6 +58,10 @@ export const analyses = pgTable("analyses", {
   trailingStopStrategy: text("trailing_stop_strategy"), // e.g., "Book 50% at TP1, trail remainder to TP2"
   probabilityScore: integer("probability_score"), // 0-100 confidence probability
   explanatoryNotes: text("explanatory_notes"), // Detailed notes and disclaimers from Perplexity
+  // Saved analyses tracking
+  isSaved: integer("is_saved").notNull().default(0), // 0 = not saved, 1 = saved by user
+  tradeStatus: text("trade_status").default("active"), // 'won', 'lost', 'active', 'expired'
+  actualProfit: text("actual_profit"), // Calculated profit/loss percentage (e.g., "+2.5%" or "-1.8%")
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -28,7 +28,10 @@ export interface IStorage {
   // Analyses
   getAnalysis(id: string): Promise<Analysis | undefined>;
   getAnalysesByUser(userId: string): Promise<Analysis[]>;
+  getSavedAnalysesByUser(userId: string): Promise<Analysis[]>;
   createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
+  toggleSaveAnalysis(id: string): Promise<Analysis | undefined>;
+  updateAnalysisStatus(id: string, status: string, profit: string | null): Promise<Analysis | undefined>;
 
   // Brokers
   getBroker(id: string): Promise<Broker | undefined>;
@@ -168,11 +171,38 @@ export class MemStorage implements IStorage {
       trailingStopStrategy: insertAnalysis.trailingStopStrategy ?? null,
       probabilityScore: insertAnalysis.probabilityScore ?? null,
       explanatoryNotes: insertAnalysis.explanatoryNotes ?? null,
+      isSaved: insertAnalysis.isSaved ?? 0,
+      tradeStatus: insertAnalysis.tradeStatus ?? "active",
+      actualProfit: insertAnalysis.actualProfit ?? null,
       id,
       createdAt: new Date(),
     };
     this.analyses.set(id, analysis);
     return analysis;
+  }
+
+  async getSavedAnalysesByUser(userId: string): Promise<Analysis[]> {
+    return Array.from(this.analyses.values()).filter(
+      (analysis) => analysis.userId === userId && analysis.isSaved === 1
+    );
+  }
+
+  async toggleSaveAnalysis(id: string): Promise<Analysis | undefined> {
+    const analysis = this.analyses.get(id);
+    if (!analysis) return undefined;
+
+    const updatedAnalysis = { ...analysis, isSaved: analysis.isSaved === 1 ? 0 : 1 };
+    this.analyses.set(id, updatedAnalysis);
+    return updatedAnalysis;
+  }
+
+  async updateAnalysisStatus(id: string, status: string, profit: string | null): Promise<Analysis | undefined> {
+    const analysis = this.analyses.get(id);
+    if (!analysis) return undefined;
+
+    const updatedAnalysis = { ...analysis, tradeStatus: status, actualProfit: profit };
+    this.analyses.set(id, updatedAnalysis);
+    return updatedAnalysis;
   }
 
   // Brokers
@@ -310,6 +340,31 @@ export class PgStorage implements IStorage {
 
   async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
     const result = await this.db.insert(analyses).values(insertAnalysis).returning();
+    return result[0];
+  }
+
+  async getSavedAnalysesByUser(userId: string): Promise<Analysis[]> {
+    return await this.db
+      .select()
+      .from(analyses)
+      .where(and(eq(analyses.userId, userId), eq(analyses.isSaved, 1)));
+  }
+
+  async toggleSaveAnalysis(id: string): Promise<Analysis | undefined> {
+    const result = await this.db
+      .update(analyses)
+      .set({ isSaved: sql`CASE WHEN ${analyses.isSaved} = 1 THEN 0 ELSE 1 END` })
+      .where(eq(analyses.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateAnalysisStatus(id: string, status: string, profit: string | null): Promise<Analysis | undefined> {
+    const result = await this.db
+      .update(analyses)
+      .set({ tradeStatus: status, actualProfit: profit })
+      .where(eq(analyses.id, id))
+      .returning();
     return result[0];
   }
 
