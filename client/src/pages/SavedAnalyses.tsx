@@ -152,7 +152,7 @@ export default function SavedAnalyses() {
               return (
                 <div
                   key={analysis.id}
-                  onClick={() => setLocation(`/analyzer?analysisId=${analysis.id}`)}
+                  onClick={() => setLocation(`/analyzer?analysisId=${analysis.id}&fromSaved=true`)}
                   className="bg-[#1c2620] border border-[#29382f] rounded-xl p-3 cursor-pointer hover:border-[#38e07b] transition-colors"
                   data-testid={`card-saved-analysis-${analysis.id}`}
                 >

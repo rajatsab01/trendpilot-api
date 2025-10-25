@@ -14,6 +14,7 @@ export default function Analyzer() {
   const { toast } = useToast();
   const searchParams = new URLSearchParams(window.location.search);
   const analysisId = searchParams.get("analysisId");
+  const fromSaved = searchParams.get("fromSaved") === "true";
 
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
@@ -78,6 +79,15 @@ export default function Analyzer() {
       });
     },
   });
+
+  const handleSaveClick = (analysis: Analysis) => {
+    // If opened from saved page and currently saved, show confirmation before unsaving
+    if (fromSaved && analysis.isSaved === 1) {
+      const confirmed = window.confirm("Are you sure you want to unsave this analysis? It will be removed from your saved list.");
+      if (!confirmed) return;
+    }
+    saveMutation.mutate(analysis.id);
+  };
 
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
@@ -632,7 +642,7 @@ export default function Analyzer() {
             {/* Analyse More and Save Buttons */}
             <div className="mt-8 flex gap-3">
               <button
-                onClick={() => saveMutation.mutate(analysis.id)}
+                onClick={() => handleSaveClick(analysis)}
                 disabled={saveMutation.isPending}
                 className="flex-1 flex items-center justify-center gap-2 bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] font-bold py-4 rounded-full text-center text-lg hover:bg-[#38e07b] hover:text-[#111714] transition-colors disabled:opacity-50"
                 data-testid="button-save-analysis"
