@@ -92,6 +92,29 @@ export default function Analyzer() {
     const isBullish = analysis.sentiment === "Bullish";
     const sentimentColor = isBullish ? "text-[#38e07b]" : "text-red-500";
 
+    // Map timeframe to TradingView interval format
+    const getTradingViewInterval = (timeframe?: string, duration?: string): string => {
+      if (!timeframe) {
+        // Fallback based on duration
+        if (duration === 'scalping') return '15';
+        if (duration === 'short_term') return '60';
+        if (duration === 'long_term') return 'D';
+        return 'D'; // Default to daily
+      }
+      
+      const tf = timeframe.toLowerCase();
+      // Map common timeframe formats to TradingView intervals
+      if (tf.includes('15m') || tf.includes('15min') || tf.includes('15-min') || tf.includes('15 min')) return '15';
+      if (tf.includes('1h') || tf.includes('1hr') || tf.includes('1hour')) return '60';
+      if (tf.includes('4h') || tf.includes('4hr') || tf.includes('4hour')) return '240';
+      if (tf.includes('1d') || tf.includes('1day') || tf.includes('daily')) return 'D';
+      if (tf.includes('1w') || tf.includes('1week') || tf.includes('weekly')) return 'W';
+      
+      return 'D'; // Default to daily if unknown
+    };
+
+    const chartInterval = getTradingViewInterval(analysis.timeframe ?? undefined, analysis.duration ?? undefined);
+
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
         <div className="flex-grow">
@@ -112,7 +135,7 @@ export default function Analyzer() {
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
               <iframe
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(analysis.correctedSymbol || analysis.symbol)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`}
+                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(analysis.correctedSymbol || analysis.symbol)}&interval=${chartInterval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`}
                 style={{ width: '100%', height: '300px', border: 'none' }}
                 title="TradingView Chart"
               />

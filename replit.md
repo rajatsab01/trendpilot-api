@@ -20,6 +20,41 @@ Trend Pilot supports 12 languages and a token-based usage model. It provides adv
 ### System Design Choices
 State management uses TanStack Query for server state and React Context API for global state. Wouter handles client-side routing with protected routes. Neon serverless PostgreSQL is the primary database, with Drizzle ORM for type-safe operations. The data model includes `Users`, `Analyses`, and `Brokers`, using UUIDs for primary keys. Authentication uses Phone.Email for phone number verification, and authorization is `userId`-based. Security measures include SSRF protection, HTTPS enforcement, Zod input validation, and Drizzle ORM for SQL injection protection. Perplexity AI automatically detects market type and ensures mandatory candle close prices with duration-specific timeframes for accurate analysis.
 
+## Recent Changes
+
+### Chart Visualization & Timestamp Display (October 25, 2025)
+- **📊 TradingView Chart Integration** - Professional price chart visualization
+  - **Implementation:** Embedded TradingView widget on Analyzer page
+  - **Dynamic timeframe matching:**
+    - Scalping analysis → 15-minute chart
+    - Short-term analysis → 1-hour or 4-hour chart (matches analysis timeframe)
+    - Long-term analysis → Daily or weekly chart (matches analysis timeframe)
+  - **Features:** Dark theme, interactive controls, save image option
+  - **Placement:** Chart displayed at top of analysis results, above symbol/price section
+  - **Automatic symbol detection:** Uses Perplexity-corrected symbol for accurate chart display
+- **🕒 Timestamp & Timeframe Display** - Shows candle close time with current price
+  - **Database fields added:**
+    - `candleCloseTime`: Timestamp of candle close (e.g., "2024-10-25 11:30 UTC")
+    - `timeframe`: Candle timeframe used (e.g., "15min", "1hr", "1day")
+  - **Display:** Shows below current price as badge + timestamp
+  - **Example:** "15min candle" badge with "2024-10-25 11:30 UTC" timestamp
+  - **Backend integration:** Fields propagated from Perplexity response → database → frontend
+- **Benefits:**
+  - ✅ Visual price context with professional chart
+  - ✅ Chart timeframe matches analysis period automatically
+  - ✅ Transparent data timing - users see exact candle close time
+  - ✅ Builds user trust with clear data provenance
+  - ✅ Chart matches trading style (scalping/short/long)
+
+### Duration-Based Candle Timeframes (October 25, 2025)
+- **Correct timeframe mapping** (fixed from incorrect 5-minute hardcoding):
+  - **Scalping** → Analysis uses **15-minute candle** (trades executed on 5min, analysis on 15min)
+  - **Short-term** → Analysis uses **1-hour or 4-hour candle**
+  - **Long-term** → Analysis uses **1-day or 1-week candle**
+- **Implementation:** Dynamic timeframe selection in Perplexity prompts based on duration parameter
+- **Validation:** 3-layer validation system checks timeframe matches expected duration
+- **Token cap security:** 10-token maximum during Razorpay test period prevents exploitation
+
 ## External Dependencies
 *   **AI Service & Market Data:** Perplexity AI (sonar-pro model)
 *   **Database Service:** Neon PostgreSQL (`@neondatabase/serverless`)
