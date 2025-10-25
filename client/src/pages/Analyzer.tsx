@@ -634,7 +634,7 @@ export default function Analyzer() {
               <button
                 onClick={() => saveMutation.mutate(analysis.id)}
                 disabled={saveMutation.isPending}
-                className="flex items-center justify-center gap-2 bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] font-bold py-4 px-6 rounded-full text-center text-lg hover:bg-[#38e07b] hover:text-[#111714] transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#1a2d24] text-[#38e07b] border-2 border-[#38e07b] font-bold py-4 rounded-full text-center text-lg hover:bg-[#38e07b] hover:text-[#111714] transition-colors disabled:opacity-50"
                 data-testid="button-save-analysis"
               >
                 {analysis.isSaved === 1 ? (
