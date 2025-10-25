@@ -118,6 +118,8 @@ Respond with JSON in this exact format:
   "marketType": "AUTO-DETECTED market type - one of: 'cryptocurrency', 'stock_equities', 'commodity', 'forex', 'derivatives_futures', or 'bond'",
   "currentPrice": "LAST CLOSED PRICE OF 5-MINUTE CANDLE as found via web search (just the number, e.g., '111140.50' for $111,140.50) - use this standardized price for accurate market entry",
   "priceSource": "Where you found this 5min candle close price (e.g., 'CoinMarketCap 5m chart', 'TradingView 5m candle', 'Yahoo Finance 5m data', 'Binance 5m close')",
+  "candleCloseTime": "OPTIONAL: Timestamp or time of the 5-minute candle close (e.g., '2024-10-25 11:30 UTC', '11:30 AM', or 'Latest 5m close'). Include if available from your data source.",
+  "timeframe": "MUST be '5min' or '5m' to confirm this is 5-minute candle data",
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
@@ -201,20 +203,52 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
     }
 
-    // VALIDATION: Verify price source mentions 5-minute candle data for accuracy
+    // VALIDATION: Verify 5-minute candle data accuracy using multiple checks
     const priceSource = data.priceSource?.toLowerCase() || '';
-    const has5MinReference = priceSource.includes('5m') || 
-                            priceSource.includes('5min') || 
-                            priceSource.includes('5-min') ||
-                            priceSource.includes('5 min') ||
-                            priceSource.includes('five min');
+    const timeframe = data.timeframe?.toLowerCase() || '';
+    const candleCloseTime = data.candleCloseTime || 'Not provided';
     
-    if (!has5MinReference) {
-      console.warn(`⚠️  Price source validation: "${data.priceSource}" does not explicitly mention 5-minute candle data. Price accuracy may vary.`);
-      console.warn(`   Symbol: ${data.correctedSymbol}, Current Price: ${data.currentPrice}`);
-      // Don't throw error - log warning and continue, as some sources may be valid but not mention timeframe explicitly
+    // Check 1: Timeframe field (strongest validation)
+    const hasTimeframeConfirmation = timeframe === '5m' || timeframe === '5min';
+    
+    // Check 2: Price source mentions 5-minute
+    const has5MinInSource = priceSource.includes('5m') || 
+                           priceSource.includes('5min') || 
+                           priceSource.includes('5-min') ||
+                           priceSource.includes('5 min') ||
+                           priceSource.includes('five min');
+    
+    // Check 3: Validate currentPrice is numeric
+    const currentPrice = parseFloat(data.currentPrice);
+    const isPriceValid = !isNaN(currentPrice) && currentPrice > 0;
+    
+    if (!isPriceValid) {
+      console.error(`❌ PRICE VALIDATION FAILED: currentPrice "${data.currentPrice}" is not a valid number for ${data.correctedSymbol}`);
+      throw new Error(`Invalid price data received from Perplexity. Price must be a positive number.`);
+    }
+    
+    // Log validation results
+    if (hasTimeframeConfirmation && has5MinInSource) {
+      console.log(`✅ FULL VALIDATION PASSED for ${data.correctedSymbol}:`);
+      console.log(`   • Timeframe: "${data.timeframe}" ✓`);
+      console.log(`   • Price Source: "${data.priceSource}" ✓`);
+      console.log(`   • Current Price: ${data.currentPrice} ✓`);
+      console.log(`   • Candle Close Time: ${candleCloseTime}`);
+    } else if (hasTimeframeConfirmation || has5MinInSource) {
+      console.warn(`⚠️  PARTIAL VALIDATION for ${data.correctedSymbol}:`);
+      console.warn(`   • Timeframe: "${data.timeframe}" ${hasTimeframeConfirmation ? '✓' : '✗'}`);
+      console.warn(`   • Price Source: "${data.priceSource}" ${has5MinInSource ? '✓' : '✗'}`);
+      console.warn(`   • Current Price: ${data.currentPrice} ✓`);
+      console.warn(`   • Candle Close Time: ${candleCloseTime}`);
+      console.warn(`   → Price accuracy may vary - not all validation checks passed`);
     } else {
-      console.log(`✅ Price source validated: "${data.priceSource}" confirms 5-minute candle data for ${data.correctedSymbol}`);
+      console.error(`❌ VALIDATION WARNING for ${data.correctedSymbol}:`);
+      console.error(`   • Timeframe: "${data.timeframe}" ✗ (expected '5m' or '5min')`);
+      console.error(`   • Price Source: "${data.priceSource}" ✗ (no 5-minute reference found)`);
+      console.error(`   • Current Price: ${data.currentPrice} ✓`);
+      console.error(`   • Candle Close Time: ${candleCloseTime}`);
+      console.error(`   → HIGH RISK: Response does not confirm 5-minute candle data!`);
+      // Continue anyway but flag for monitoring - this helps identify when AI deviates from requirements
     }
     
     // Store auto-detected market type for database

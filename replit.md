@@ -35,6 +35,49 @@ The design emphasizes a clean, simple analyzer form. The application features a 
 *   **Payment Gateway:** Razorpay
 ## Recent Changes
 
+### 5-Minute Candle Price Accuracy & Testing Period Token Cap (October 25, 2025)
+- **🔒 CRITICAL SECURITY: Token cap during Razorpay testing** - Prevents financial loss from test token accumulation
+  - **Problem solved:** Users could accumulate 20,000+ "free" test tokens during Razorpay test mode, causing major financial loss when switching to live payments
+  - **Implementation:** 10-token maximum cap enforced server-side across all token-granting endpoints
+  - **Configuration:** `TEST_MODE_ACTIVE = true` and `TEST_MODE_TOKEN_CAP = 10` in `server/routes.ts`
+  - **Protected endpoints:**
+    - `/api/payment/verify` - Token purchases (both demo and real Razorpay)
+    - `/api/claim-install-bonus` - PWA installation bonus (+5 tokens)
+    - `/api/watch-ad` - Ad watching rewards (+2 tokens)
+  - **User experience:** Clear error message explains testing period limit and that cap will be removed at launch
+  - **Benefits:**
+    - ✅ Prevents exploitation during test period
+    - ✅ Protects business from financial loss
+    - ✅ Easy to disable by setting `TEST_MODE_ACTIVE = false` when going live
+    - ✅ Transparent communication with users about temporary limitation
+
+- **📊 Enhanced Price Accuracy: 5-Minute Candle Close Prices** - Addresses user complaints about price differences
+  - **Problem solved:** Users reported inconsistent prices and differences between analyses
+  - **Root cause:** Perplexity was returning various price types (tick prices, 1m candles, live bid/ask) causing inconsistency
+  - **Solution:** Mandatory 5-minute candle close price as standardized data source
+  - **Implementation in `server/perplexity.ts`:**
+    - **Prompt strengthening (3 layers):**
+      - User prompt: "MANDATORY PRICE REQUIREMENT" with explicit instructions on what to look for/avoid
+      - System message: Reinforces 5-minute candle requirement
+      - JSON field descriptions: Updated currentPrice, priceSource, entry to specify 5min candle close
+    - **New metadata fields in Perplexity JSON response:**
+      - `candleCloseTime`: Optional timestamp of 5-minute candle close
+      - `timeframe`: Must be "5m" or "5min" to confirm data source
+    - **3-layer validation system:**
+      - **Layer 1:** Timeframe field check - Must be "5m" or "5min" (strongest validation)
+      - **Layer 2:** Price source check - Must mention 5-minute data in description
+      - **Layer 3:** Numeric validation - Throws error if price is not valid positive number
+    - **Comprehensive logging:**
+      - ✅ FULL VALIDATION PASSED - Both timeframe and price source confirm 5-minute data
+      - ⚠️ PARTIAL VALIDATION - Only one validation check passes
+      - ❌ VALIDATION WARNING - Neither check passes (flags for monitoring but doesn't block)
+  - **Benefits:**
+    - ✅ Standardized pricing across all markets (crypto, stocks, forex, commodities)
+    - ✅ Consistent data source for reliable entry points
+    - ✅ Better user trust with confirmed 5-minute candle closes
+    - ✅ Monitoring capability to track when AI deviates from requirements
+    - ✅ Reduces price discrepancy complaints
+
 ### Complete Application Localization (October 25, 2025)
 - **Added 18 new translation keys across all 12 languages** - Completed comprehensive localization of user-facing UI elements
   - Translation keys added: `pinToHomeScreen`, `quickAccessDesc`, `aiTradingAssistant`, `tokensAdded`, `earnedTokensFromAd`, `dailyLimitReached`, `adSkipped`, `watchFullAd`, `bonusClaimed`, `bonusClaimedDesc`, `failedToClaimBonus`, `failedToAnalyze`, `enterSymbolError`, `failedToVerifyPhone`, `failedToLogin`, `error`
