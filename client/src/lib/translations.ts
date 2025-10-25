@@ -214,6 +214,36 @@ export const translations = {
     story4Content: "Kabir, a young analyst, started sending free financial lessons online every Sunday. He believed knowledge should circulate like wealth. One day, a follower he'd never met invested in his startup idea — the same idea he once feared to launch. When you share what you know, the universe shares what you need.",
     story5Title: "🌙 5. The Candle in the Chart",
     story5Content: "A small trader named Meena used to light a candle before starting her day — not for luck, but gratitude. Whenever she made profit, she donated to feed stray animals. Years later, she built a fund called The Karma Portfolio, where every gain lit another home. She discovered that the brightest candles aren't on charts — they're in hearts.",
+    
+    // PDF Export Feature
+    sharePDF: "Share PDF",
+    exportingPDF: "Exporting PDF...",
+    pdfExported: "PDF Exported",
+    pdfExportedDesc: "Your analysis has been saved as PDF",
+    pdfExportFailed: "PDF export failed",
+    
+    // Delete Feature
+    deleteAnalysis: "Delete analysis",
+    deleteConfirm: "Are you sure you want to delete {symbol} analysis? This action cannot be undone.",
+    deleted: "Deleted",
+    analysisDeleted: "Analysis deleted successfully",
+    failedToDeleteAnalysis: "Failed to delete analysis",
+    
+    // Dual Price Display
+    currentMarketPrice: "Current Market Price",
+    analysisBasedOn: "Analysis Based On",
+    nextCandleCloses: "Next candle closes at",
+    closedCandleExplanation: "Analysis uses closed candle prices for accuracy. Current live price may differ.",
+    
+    // Saved Analyses Page
+    saved: "Saved",
+    totalSaved: "Total Saved",
+    wonTrades: "Won",
+    lostTrades: "Lost",
+    activeTrades: "Active",
+    expiredTrades: "Expired",
+    noSavedAnalyses: "No saved analyses yet",
+    saveAnalysesToTrack: "Save analyses to track your trading performance",
   },
   hi: {
     // Language Selection
@@ -428,6 +458,36 @@ export const translations = {
     story4Content: "कबीर, एक युवा विश्लेषक, हर रविवार को मुफ्त वित्तीय पाठ ऑनलाइन भेजना शुरू किया। उनका मानना था कि ज्ञान को धन की तरह परिचालित करना चाहिए। एक दिन, एक अनुयायी जिसे उसने कभी नहीं मिला था, उसके स्टार्टअप विचार में निवेश किया — वही विचार जिसे उसने एक बार लॉन्च करने से डरा था। जब आप जो जानते हैं उसे साझा करते हैं, तो ब्रह्मांड आपको जो चाहिए वह साझा करता है।",
     story5Title: "🌙 5. चार्ट में मोमबत्ती",
     story5Content: "मीना नाम की एक छोटी व्यापारी अपने दिन की शुरुआत से पहले एक मोमबत्ती जलाती थी — भाग्य के लिए नहीं, बल्कि कृतज्ञता के लिए। जब भी उसे लाभ होता था, वह आवारा जानवरों को खिलाने के लिए दान करती थी। वर्षों बाद, उसने द कर्मा पोर्टफोलियो नामक एक फंड बनाया, जहां हर लाभ एक और घर को रोशन करता था। उसने पाया कि सबसे चमकीली मोमबत्तियां चार्ट पर नहीं हैं — वे दिलों में हैं।",
+    
+    // PDF Export Feature
+    sharePDF: "PDF साझा करें",
+    exportingPDF: "PDF निर्यात हो रहा है...",
+    pdfExported: "PDF निर्यात किया गया",
+    pdfExportedDesc: "आपका विश्लेषण PDF के रूप में सहेजा गया है",
+    pdfExportFailed: "PDF निर्यात विफल",
+    
+    // Delete Feature
+    deleteAnalysis: "विश्लेषण हटाएं",
+    deleteConfirm: "क्या आप वाकई {symbol} विश्लेषण हटाना चाहते हैं? इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+    deleted: "हटाया गया",
+    analysisDeleted: "विश्लेषण सफलतापूर्वक हटाया गया",
+    failedToDeleteAnalysis: "विश्लेषण हटाने में विफल",
+    
+    // Dual Price Display
+    currentMarketPrice: "वर्तमान बाजार मूल्य",
+    analysisBasedOn: "इस पर आधारित विश्लेषण",
+    nextCandleCloses: "अगली कैंडल बंद होगी",
+    closedCandleExplanation: "सटीकता के लिए विश्लेषण बंद कैंडल मूल्यों का उपयोग करता है। वर्तमान लाइव मूल्य भिन्न हो सकता है।",
+    
+    // Saved Analyses Page
+    saved: "सहेजा गया",
+    totalSaved: "कुल सहेजे गए",
+    wonTrades: "जीते",
+    lostTrades: "हारे",
+    activeTrades: "सक्रिय",
+    expiredTrades: "समाप्त",
+    noSavedAnalyses: "अभी तक कोई सहेजा गया विश्लेषण नहीं",
+    saveAnalysesToTrack: "अपने ट्रेडिंग प्रदर्शन को ट्रैक करने के लिए विश्लेषण सहेजें",
   },
   es: {
     // Spanish
@@ -627,6 +687,36 @@ export const translations = {
     story4Content: "Kabir, un joven analista, comenzó a enviar lecciones financieras gratuitas en línea cada domingo. Creía que el conocimiento debería circular como la riqueza. Un día, un seguidor que nunca había conocido invirtió en su idea de startup — la misma idea que una vez temió lanzar. Cuando compartes lo que sabes, el universo comparte lo que necesitas.",
     story5Title: "🌙 5. La Vela en el Gráfico",
     story5Content: "Una pequeña trader llamada Meena solía encender una vela antes de comenzar su día — no por suerte, sino por gratitud. Cada vez que obtenía ganancias, donaba para alimentar animales callejeros. Años después, construyó un fondo llamado El Portafolio Karma, donde cada ganancia iluminaba otro hogar. Descubrió que las velas más brillantes no están en los gráficos — están en los corazones.",
+    
+    // PDF Export Feature
+    sharePDF: "Compartir PDF",
+    exportingPDF: "Exportando PDF...",
+    pdfExported: "PDF Exportado",
+    pdfExportedDesc: "Su análisis se ha guardado como PDF",
+    pdfExportFailed: "Error al exportar PDF",
+    
+    // Delete Feature
+    deleteAnalysis: "Eliminar análisis",
+    deleteConfirm: "¿Está seguro de que desea eliminar el análisis de {symbol}? Esta acción no se puede deshacer.",
+    deleted: "Eliminado",
+    analysisDeleted: "Análisis eliminado exitosamente",
+    failedToDeleteAnalysis: "Error al eliminar análisis",
+    
+    // Dual Price Display
+    currentMarketPrice: "Precio Actual del Mercado",
+    analysisBasedOn: "Análisis Basado En",
+    nextCandleCloses: "Próxima vela cierra a las",
+    closedCandleExplanation: "El análisis utiliza precios de velas cerradas para mayor precisión. El precio en vivo actual puede diferir.",
+    
+    // Saved Analyses Page
+    saved: "Guardado",
+    totalSaved: "Total Guardado",
+    wonTrades: "Ganadas",
+    lostTrades: "Perdidas",
+    activeTrades: "Activas",
+    expiredTrades: "Expiradas",
+    noSavedAnalyses: "Aún no hay análisis guardados",
+    saveAnalysesToTrack: "Guarde análisis para realizar un seguimiento de su rendimiento comercial",
   },
   zh: {
     // Chinese (Simplified)
@@ -826,6 +916,36 @@ export const translations = {
     story4Content: "卡比尔是一位年轻的分析师，他开始每周日在线发送免费的财务课程。他相信知识应该像财富一样流通。有一天，一位他从未见过的追随者投资了他的创业想法——正是他曾经害怕推出的想法。当你分享你所知道的，宇宙会分享你所需要的。",
     story5Title: "🌙 5. 图表中的蜡烛",
     story5Content: "一位名叫米娜的小交易者习惯在开始一天之前点燃蜡烛——不是为了运气，而是为了感恩。每当她获利时，她都会捐款喂养流浪动物。多年后，她建立了一个名为因果报应投资组合的基金，每一笔收益都点亮了另一个家。她发现最亮的蜡烛不在图表上——而在心中。",
+    
+    // PDF Export Feature
+    sharePDF: "分享 PDF",
+    exportingPDF: "正在导出 PDF...",
+    pdfExported: "PDF 已导出",
+    pdfExportedDesc: "您的分析已保存为 PDF",
+    pdfExportFailed: "PDF 导出失败",
+    
+    // Delete Feature
+    deleteAnalysis: "删除分析",
+    deleteConfirm: "您确定要删除 {symbol} 分析吗？此操作无法撤消。",
+    deleted: "已删除",
+    analysisDeleted: "分析删除成功",
+    failedToDeleteAnalysis: "删除分析失败",
+    
+    // Dual Price Display
+    currentMarketPrice: "当前市场价格",
+    analysisBasedOn: "分析基于",
+    nextCandleCloses: "下一根K线收盘时间",
+    closedCandleExplanation: "分析使用已收盘K线价格以确保准确性。当前实时价格可能有所不同。",
+    
+    // Saved Analyses Page
+    saved: "已保存",
+    totalSaved: "总保存数",
+    wonTrades: "盈利",
+    lostTrades: "亏损",
+    activeTrades: "活跃",
+    expiredTrades: "过期",
+    noSavedAnalyses: "尚无保存的分析",
+    saveAnalysesToTrack: "保存分析以跟踪您的交易表现",
   },
   de: {
     // German
@@ -1025,6 +1145,36 @@ export const translations = {
     story4Content: "Kabir, ein junger Analyst, begann jeden Sonntag kostenlose Finanzlektionen online zu versenden. Er glaubte, dass Wissen wie Wohlstand zirkulieren sollte. Eines Tages investierte ein Follower, den er nie getroffen hatte, in seine Startup-Idee — dieselbe Idee, die er einst fürchtete zu starten. Wenn Sie teilen, was Sie wissen, teilt das Universum, was Sie brauchen.",
     story5Title: "🌙 5. Die Kerze im Chart",
     story5Content: "Eine kleine Händlerin namens Meena zündete jeden Tag eine Kerze an, bevor sie begann — nicht für Glück, sondern aus Dankbarkeit. Wann immer sie Gewinn machte, spendete sie, um streunende Tiere zu füttern. Jahre später baute sie einen Fonds namens Das Karma-Portfolio auf, wo jeder Gewinn ein weiteres Zuhause erleuchtete. Sie entdeckte, dass die hellsten Kerzen nicht auf Charts sind — sie sind in Herzen.",
+    
+    // PDF Export Feature
+    sharePDF: "PDF teilen",
+    exportingPDF: "PDF wird exportiert...",
+    pdfExported: "PDF exportiert",
+    pdfExportedDesc: "Ihre Analyse wurde als PDF gespeichert",
+    pdfExportFailed: "PDF-Export fehlgeschlagen",
+    
+    // Delete Feature
+    deleteAnalysis: "Analyse löschen",
+    deleteConfirm: "Möchten Sie die {symbol}-Analyse wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    deleted: "Gelöscht",
+    analysisDeleted: "Analyse erfolgreich gelöscht",
+    failedToDeleteAnalysis: "Analyse konnte nicht gelöscht werden",
+    
+    // Dual Price Display
+    currentMarketPrice: "Aktueller Marktpreis",
+    analysisBasedOn: "Analyse basiert auf",
+    nextCandleCloses: "Nächste Kerze schließt um",
+    closedCandleExplanation: "Die Analyse verwendet geschlossene Kerzenkurse für Genauigkeit. Der aktuelle Live-Preis kann abweichen.",
+    
+    // Saved Analyses Page
+    saved: "Gespeichert",
+    totalSaved: "Gesamt gespeichert",
+    wonTrades: "Gewonnen",
+    lostTrades: "Verloren",
+    activeTrades: "Aktiv",
+    expiredTrades: "Abgelaufen",
+    noSavedAnalyses: "Noch keine gespeicherten Analysen",
+    saveAnalysesToTrack: "Speichern Sie Analysen, um Ihre Handelsleistung zu verfolgen",
   },
   fr: {
     // French
@@ -1224,6 +1374,36 @@ export const translations = {
     story4Content: "Kabir, un jeune analyste, a commencé à envoyer des leçons financières gratuites en ligne chaque dimanche. Il croyait que la connaissance devrait circuler comme la richesse. Un jour, un follower qu'il n'avait jamais rencontré a investi dans son idée de startup — la même idée qu'il craignait autrefois de lancer. Quand vous partagez ce que vous savez, l'univers partage ce dont vous avez besoin.",
     story5Title: "🌙 5. La Bougie dans le Graphique",
     story5Content: "Une petite trader nommée Meena avait l'habitude d'allumer une bougie avant de commencer sa journée — non pour la chance, mais pour la gratitude. Chaque fois qu'elle réalisait un profit, elle faisait un don pour nourrir les animaux errants. Des années plus tard, elle a créé un fonds appelé Le Portefeuille Karma, où chaque gain éclairait une autre maison. Elle a découvert que les bougies les plus brillantes ne sont pas sur les graphiques — elles sont dans les cœurs.",
+    
+    // PDF Export Feature
+    sharePDF: "Partager le PDF",
+    exportingPDF: "Export PDF en cours...",
+    pdfExported: "PDF exporté",
+    pdfExportedDesc: "Votre analyse a été enregistrée en PDF",
+    pdfExportFailed: "Échec de l'export PDF",
+    
+    // Delete Feature
+    deleteAnalysis: "Supprimer l'analyse",
+    deleteConfirm: "Êtes-vous sûr de vouloir supprimer l'analyse {symbol}? Cette action ne peut pas être annulée.",
+    deleted: "Supprimé",
+    analysisDeleted: "Analyse supprimée avec succès",
+    failedToDeleteAnalysis: "Échec de la suppression de l'analyse",
+    
+    // Dual Price Display
+    currentMarketPrice: "Prix Actuel du Marché",
+    analysisBasedOn: "Analyse Basée Sur",
+    nextCandleCloses: "Prochaine bougie se ferme à",
+    closedCandleExplanation: "L'analyse utilise les prix des bougies fermées pour plus de précision. Le prix en direct actuel peut différer.",
+    
+    // Saved Analyses Page
+    saved: "Enregistré",
+    totalSaved: "Total Enregistré",
+    wonTrades: "Gagnées",
+    lostTrades: "Perdues",
+    activeTrades: "Actives",
+    expiredTrades: "Expirées",
+    noSavedAnalyses: "Aucune analyse enregistrée pour le moment",
+    saveAnalysesToTrack: "Enregistrez des analyses pour suivre vos performances de trading",
   },
   ar: {
     // Arabic
@@ -1423,6 +1603,36 @@ export const translations = {
     story4Content: "كابير، محلل شاب، بدأ في إرسال دروس مالية مجانية عبر الإنترنت كل يوم أحد. كان يعتقد أن المعرفة يجب أن تتداول مثل الثروة. في يوم من الأيام، استثمر متابع لم يلتق به أبدًا في فكرة شركته الناشئة — نفس الفكرة التي كان يخشى إطلاقها ذات مرة. عندما تشارك ما تعرفه، يشارك الكون ما تحتاجه.",
     story5Title: "🌙 5. الشمعة في الرسم البياني",
     story5Content: "كانت متداولة صغيرة تدعى مينا تشعل شمعة قبل بدء يومها — ليس من أجل الحظ، بل من أجل الامتنان. كلما حققت ربحًا، كانت تتبرع لإطعام الحيوانات الضالة. بعد سنوات، أنشأت صندوقًا يسمى محفظة الكارما، حيث كل مكسب يضيء منزلًا آخر. اكتشفت أن الشموع الأكثر إشراقًا ليست على الرسوم البيانية — بل في القلوب.",
+    
+    // PDF Export Feature
+    sharePDF: "مشاركة PDF",
+    exportingPDF: "جاري تصدير PDF...",
+    pdfExported: "تم تصدير PDF",
+    pdfExportedDesc: "تم حفظ تحليلك بصيغة PDF",
+    pdfExportFailed: "فشل تصدير PDF",
+    
+    // Delete Feature
+    deleteAnalysis: "حذف التحليل",
+    deleteConfirm: "هل أنت متأكد من رغبتك في حذف تحليل {symbol}؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleted: "تم الحذف",
+    analysisDeleted: "تم حذف التحليل بنجاح",
+    failedToDeleteAnalysis: "فشل حذف التحليل",
+    
+    // Dual Price Display
+    currentMarketPrice: "سعر السوق الحالي",
+    analysisBasedOn: "التحليل مبني على",
+    nextCandleCloses: "الشمعة التالية تغلق في",
+    closedCandleExplanation: "يستخدم التحليل أسعار الشموع المغلقة للدقة. قد يختلف السعر المباشر الحالي.",
+    
+    // Saved Analyses Page
+    saved: "محفوظ",
+    totalSaved: "إجمالي المحفوظ",
+    wonTrades: "رابحة",
+    lostTrades: "خاسرة",
+    activeTrades: "نشطة",
+    expiredTrades: "منتهية",
+    noSavedAnalyses: "لا توجد تحليلات محفوظة بعد",
+    saveAnalysesToTrack: "احفظ التحليلات لتتبع أداء تداولك",
   },
   pt: {
     // Portuguese
@@ -1622,6 +1832,36 @@ export const translations = {
     story4Content: "Kabir, um jovem analista, começou a enviar lições financeiras gratuitas online todos os domingos. Ele acreditava que o conhecimento deveria circular como a riqueza. Um dia, um seguidor que ele nunca conheceu investiu em sua ideia de startup — a mesma ideia que ele uma vez teve medo de lançar. Quando você compartilha o que sabe, o universo compartilha o que você precisa.",
     story5Title: "🌙 5. A Vela no Gráfico",
     story5Content: "Uma pequena trader chamada Meena costumava acender uma vela antes de começar seu dia — não por sorte, mas por gratidão. Sempre que obtinha lucro, doava para alimentar animais de rua. Anos depois, ela construiu um fundo chamado O Portfólio Karma, onde cada ganho iluminava outra casa. Ela descobriu que as velas mais brilhantes não estão nos gráficos — estão nos corações.",
+    
+    // PDF Export Feature
+    sharePDF: "Compartilhar PDF",
+    exportingPDF: "Exportando PDF...",
+    pdfExported: "PDF Exportado",
+    pdfExportedDesc: "Sua análise foi salva como PDF",
+    pdfExportFailed: "Falha ao exportar PDF",
+    
+    // Delete Feature
+    deleteAnalysis: "Excluir análise",
+    deleteConfirm: "Tem certeza de que deseja excluir a análise de {symbol}? Esta ação não pode ser desfeita.",
+    deleted: "Excluído",
+    analysisDeleted: "Análise excluída com sucesso",
+    failedToDeleteAnalysis: "Falha ao excluir análise",
+    
+    // Dual Price Display
+    currentMarketPrice: "Preço Atual do Mercado",
+    analysisBasedOn: "Análise Baseada Em",
+    nextCandleCloses: "Próxima vela fecha às",
+    closedCandleExplanation: "A análise usa preços de velas fechadas para precisão. O preço ao vivo atual pode diferir.",
+    
+    // Saved Analyses Page
+    saved: "Salvo",
+    totalSaved: "Total Salvo",
+    wonTrades: "Ganhas",
+    lostTrades: "Perdidas",
+    activeTrades: "Ativas",
+    expiredTrades: "Expiradas",
+    noSavedAnalyses: "Ainda não há análises salvas",
+    saveAnalysesToTrack: "Salve análises para acompanhar seu desempenho de trading",
   },
   ru: {
     // Russian
@@ -1821,6 +2061,36 @@ export const translations = {
     story4Content: "Кабир, молодой аналитик, начал отправлять бесплатные финансовые уроки онлайн каждое воскресенье. Он верил, что знания должны циркулировать, как богатство. Однажды последователь, которого он никогда не встречал, инвестировал в его идею стартапа — ту же идею, которую он когда-то боялся запустить. Когда вы делитесь тем, что знаете, вселенная делится тем, что вам нужно.",
     story5Title: "🌙 5. Свеча в Графике",
     story5Content: "Маленький трейдер по имени Мина зажигала свечу перед началом своего дня — не для удачи, а для благодарности. Всякий раз, когда она получала прибыль, она жертвовала на кормление бездомных животных. Спустя годы она создала фонд под названием Портфель Кармы, где каждая прибыль освещала другой дом. Она обнаружила, что самые яркие свечи не на графиках — они в сердцах.",
+    
+    // PDF Export Feature
+    sharePDF: "Поделиться PDF",
+    exportingPDF: "Экспорт PDF...",
+    pdfExported: "PDF экспортирован",
+    pdfExportedDesc: "Ваш анализ сохранен как PDF",
+    pdfExportFailed: "Не удалось экспортировать PDF",
+    
+    // Delete Feature
+    deleteAnalysis: "Удалить анализ",
+    deleteConfirm: "Вы уверены, что хотите удалить анализ {symbol}? Это действие нельзя отменить.",
+    deleted: "Удалено",
+    analysisDeleted: "Анализ успешно удален",
+    failedToDeleteAnalysis: "Не удалось удалить анализ",
+    
+    // Dual Price Display
+    currentMarketPrice: "Текущая Рыночная Цена",
+    analysisBasedOn: "Анализ Основан На",
+    nextCandleCloses: "Следующая свеча закрывается в",
+    closedCandleExplanation: "Анализ использует цены закрытых свечей для точности. Текущая живая цена может отличаться.",
+    
+    // Saved Analyses Page
+    saved: "Сохранено",
+    totalSaved: "Всего сохранено",
+    wonTrades: "Выигранные",
+    lostTrades: "Проигранные",
+    activeTrades: "Активные",
+    expiredTrades: "Истекшие",
+    noSavedAnalyses: "Пока нет сохраненных анализов",
+    saveAnalysesToTrack: "Сохраните анализы, чтобы отслеживать эффективность торговли",
   },
   ja: {
     // Japanese
@@ -2020,6 +2290,36 @@ export const translations = {
     story4Content: "カビールという若いアナリストは、毎週日曜日に無料の金融レッスンをオンラインで送り始めました。彼は知識が富のように循環すべきだと信じていました。ある日、彼が会ったことのないフォロワーが彼のスタートアップのアイデアに投資しました — かつて立ち上げることを恐れていたまさにそのアイデアでした。あなたが知っていることを共有すると、宇宙はあなたが必要とするものを共有します。",
     story5Title: "🌙 5. チャートのキャンドル",
     story5Content: "ミーナという小さなトレーダーは、一日を始める前にキャンドルを灯していました — 幸運のためではなく、感謝のためでした。利益を得るたびに、彼女は野良動物に餌を与えるために寄付しました。何年も後、彼女はカルマ・ポートフォリオというファンドを設立し、すべての利益が別の家を照らしました。彼女は、最も明るいキャンドルはチャート上にはなく、心の中にあることを発見しました。",
+    
+    // PDF Export Feature
+    sharePDF: "PDFを共有",
+    exportingPDF: "PDFをエクスポート中...",
+    pdfExported: "PDFエクスポート完了",
+    pdfExportedDesc: "分析がPDFとして保存されました",
+    pdfExportFailed: "PDFエクスポート失敗",
+    
+    // Delete Feature
+    deleteAnalysis: "分析を削除",
+    deleteConfirm: "{symbol}分析を削除してもよろしいですか？この操作は元に戻せません。",
+    deleted: "削除されました",
+    analysisDeleted: "分析が正常に削除されました",
+    failedToDeleteAnalysis: "分析の削除に失敗しました",
+    
+    // Dual Price Display
+    currentMarketPrice: "現在の市場価格",
+    analysisBasedOn: "分析の基準",
+    nextCandleCloses: "次のローソク足が閉じる時刻",
+    closedCandleExplanation: "分析は精度のために閉じたローソク足価格を使用します。現在のライブ価格は異なる場合があります。",
+    
+    // Saved Analyses Page
+    saved: "保存済み",
+    totalSaved: "合計保存数",
+    wonTrades: "勝ち",
+    lostTrades: "負け",
+    activeTrades: "アクティブ",
+    expiredTrades: "期限切れ",
+    noSavedAnalyses: "まだ保存された分析はありません",
+    saveAnalysesToTrack: "取引パフォーマンスを追跡するために分析を保存",
   },
   ko: {
     // Korean
@@ -2219,6 +2519,36 @@ export const translations = {
     story4Content: "카비르라는 젊은 분석가는 매주 일요일마다 온라인으로 무료 금융 수업을 보내기 시작했습니다. 그는 지식이 부처럼 순환해야 한다고 믿었습니다. 어느 날, 그가 만난 적 없는 팔로워가 그의 스타트업 아이디어에 투자했습니다 — 그가 한때 출시를 두려워했던 바로 그 아이디어였습니다. 당신이 아는 것을 공유하면, 우주는 당신이 필요한 것을 공유합니다.",
     story5Title: "🌙 5. 차트 속 양초",
     story5Content: "미나라는 작은 트레이더는 하루를 시작하기 전에 양초를 켜곤 했습니다 — 행운을 위해서가 아니라 감사를 위해서였습니다. 이익을 얻을 때마다 그녀는 길고양이를 먹이기 위해 기부했습니다. 몇 년 후, 그녀는 카르마 포트폴리오라는 펀드를 만들었고, 모든 이익이 또 다른 집을 밝혔습니다. 그녀는 가장 밝은 양초가 차트에 있지 않고 마음속에 있다는 것을 발견했습니다.",
+    
+    // PDF Export Feature
+    sharePDF: "PDF 공유",
+    exportingPDF: "PDF 내보내는 중...",
+    pdfExported: "PDF 내보내기 완료",
+    pdfExportedDesc: "분석이 PDF로 저장되었습니다",
+    pdfExportFailed: "PDF 내보내기 실패",
+    
+    // Delete Feature
+    deleteAnalysis: "분석 삭제",
+    deleteConfirm: "{symbol} 분석을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+    deleted: "삭제됨",
+    analysisDeleted: "분석이 성공적으로 삭제되었습니다",
+    failedToDeleteAnalysis: "분석 삭제 실패",
+    
+    // Dual Price Display
+    currentMarketPrice: "현재 시장 가격",
+    analysisBasedOn: "분석 기준",
+    nextCandleCloses: "다음 캔들 종료 시간",
+    closedCandleExplanation: "분석은 정확성을 위해 종료된 캔들 가격을 사용합니다. 현재 실시간 가격은 다를 수 있습니다.",
+    
+    // Saved Analyses Page
+    saved: "저장됨",
+    totalSaved: "총 저장 수",
+    wonTrades: "수익",
+    lostTrades: "손실",
+    activeTrades: "활성",
+    expiredTrades: "만료됨",
+    noSavedAnalyses: "아직 저장된 분석이 없습니다",
+    saveAnalysesToTrack: "거래 성과를 추적하기 위해 분석 저장",
   },
   it: {
     // Italian
@@ -2418,6 +2748,36 @@ export const translations = {
     story4Content: "Kabir, un giovane analista, ha iniziato a inviare lezioni finanziarie gratuite online ogni domenica. Credeva che la conoscenza dovesse circolare come la ricchezza. Un giorno, un follower che non aveva mai incontrato ha investito nella sua idea di startup — la stessa idea che una volta temeva di lanciare. Quando condividi ciò che sai, l'universo condivide ciò di cui hai bisogno.",
     story5Title: "🌙 5. La Candela nel Grafico",
     story5Content: "Una piccola trader di nome Meena era solita accendere una candela prima di iniziare la sua giornata — non per fortuna, ma per gratitudine. Ogni volta che otteneva un profitto, donava per nutrire gli animali randagi. Anni dopo, ha costruito un fondo chiamato Il Portafoglio Karma, dove ogni guadagno illuminava un'altra casa. Ha scoperto che le candele più luminose non sono sui grafici — sono nei cuori.",
+    
+    // PDF Export Feature
+    sharePDF: "Condividi PDF",
+    exportingPDF: "Esportazione PDF...",
+    pdfExported: "PDF esportato",
+    pdfExportedDesc: "La tua analisi è stata salvata come PDF",
+    pdfExportFailed: "Esportazione PDF fallita",
+    
+    // Delete Feature
+    deleteAnalysis: "Elimina analisi",
+    deleteConfirm: "Sei sicuro di voler eliminare l'analisi {symbol}? Questa azione non può essere annullata.",
+    deleted: "Eliminato",
+    analysisDeleted: "Analisi eliminata con successo",
+    failedToDeleteAnalysis: "Eliminazione dell'analisi fallita",
+    
+    // Dual Price Display
+    currentMarketPrice: "Prezzo di Mercato Attuale",
+    analysisBasedOn: "Analisi Basata Su",
+    nextCandleCloses: "La prossima candela si chiude alle",
+    closedCandleExplanation: "L'analisi utilizza i prezzi delle candele chiuse per accuratezza. Il prezzo live corrente potrebbe essere diverso.",
+    
+    // Saved Analyses Page
+    saved: "Salvato",
+    totalSaved: "Totale salvato",
+    wonTrades: "Vinte",
+    lostTrades: "Perse",
+    activeTrades: "Attive",
+    expiredTrades: "Scadute",
+    noSavedAnalyses: "Nessuna analisi salvata ancora",
+    saveAnalysesToTrack: "Salva le analisi per monitorare le prestazioni di trading",
   },
 };
 
