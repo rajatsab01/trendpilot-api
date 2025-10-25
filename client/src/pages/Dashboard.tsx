@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [validationResult, setValidationResult] = useState<any>(null);
   const [symbolSuggestions, setSymbolSuggestions] = useState<Array<{symbol: string; name: string; price?: number}>>([]);
   const [validatedData, setValidatedData] = useState<{symbol: string; name: string; market: string} | null>(null);
+  const [isValidationConfirmed, setIsValidationConfirmed] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -258,25 +259,6 @@ export default function Dashboard() {
   });
 
   const handleEnlightenMe = () => {
-    // Validate inputs before showing validation modal
-    if (!symbol.trim()) {
-      toast({
-        title: t.error,
-        description: t.enterSymbolError,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!market) {
-      toast({
-        title: t.error,
-        description: "Please select a market type",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!user || user.tokens < 2) {
       toast({
         title: t.insufficientTokensTitle,
@@ -286,24 +268,22 @@ export default function Dashboard() {
       return;
     }
 
-    // Trigger validation and show popup
-    validateSymbolMutation.mutate({ symbol: symbol.trim(), market });
+    // Start analysis with validated data
+    analyzeMutation.mutate();
   };
 
   const handleConfirmValidation = () => {
     setShowValidationModal(false);
-    // Proceed with analysis using validated data
-    analyzeMutation.mutate();
+    setIsValidationConfirmed(true);
+    // Don't start analysis yet - just enable the Enlighten Me button
   };
 
   const handleSelectSuggestion = (suggestion: {symbol: string; name: string; price?: number}) => {
-    setValidatedData({
-      symbol: suggestion.symbol,
-      name: suggestion.name,
-      market: market,
-    });
-    setSymbol(suggestion.name);
-    setSymbolSuggestions([]);
+    // Update symbol with selected suggestion
+    setSymbol(suggestion.symbol);
+    
+    // Re-validate with the selected symbol to show confirmation popup
+    validateSymbolMutation.mutate({ symbol: suggestion.symbol, market });
   };
 
   const handleLanguageChange = (lang: Language) => {
@@ -401,7 +381,10 @@ export default function Dashboard() {
                 className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
                 placeholder={t.symbolPlaceholder}
                 value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setSymbol(e.target.value.toUpperCase());
+                  setIsValidationConfirmed(false); // Reset confirmation when symbol changes
+                }}
                 data-testid="input-symbol"
               />
             </label>
@@ -446,6 +429,7 @@ export default function Dashboard() {
                 onChange={(e) => {
                   const newMarket = e.target.value;
                   setMarket(newMarket);
+                  setIsValidationConfirmed(false); // Reset confirmation when market changes
                   
                   // Trigger validation immediately when market is selected (if symbol entered)
                   if (symbol.trim().length >= 2 && newMarket) {
@@ -482,16 +466,12 @@ export default function Dashboard() {
           <div className="space-y-4">
             <button
               onClick={handleEnlightenMe}
-              disabled={!symbol.trim() || !market || analyzeMutation.isPending || validateSymbolMutation.isPending}
+              disabled={!isValidationConfirmed || analyzeMutation.isPending}
               className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-6 bg-[#38e07b] text-[#111714] text-base font-bold leading-normal tracking-[0.015em] hover:bg-opacity-90 transition-opacity disabled:opacity-50"
               data-testid="button-enlighten"
             >
               <span className="truncate">
-                {validateSymbolMutation.isPending 
-                  ? "Validating..." 
-                  : analyzeMutation.isPending 
-                  ? "Analyzing..." 
-                  : t.enlightenMe}
+                {analyzeMutation.isPending ? "Analyzing..." : t.enlightenMe}
               </span>
             </button>
             <p className="text-[#9eb7a8] text-xs font-normal leading-normal text-center">
@@ -715,10 +695,10 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={handleConfirmValidation}
-                  disabled={analyzeMutation.isPending}
-                  className="flex-1 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors disabled:opacity-50"
+                  className="flex-1 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors"
+                  data-testid="button-confirm-validation"
                 >
-                  {analyzeMutation.isPending ? "Analyzing..." : "Confirm & Analyze"}
+                  Confirm
                 </button>
               </div>
             </div>

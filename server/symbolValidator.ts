@@ -26,10 +26,12 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
     const cleanSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
     
     // Try direct Binance lookup
-    let binanceSymbol = cleanSymbol;
-    if (!binanceSymbol.includes("USDT")) {
-      binanceSymbol = `${cleanSymbol}USDT`;
-    }
+    // Remove USD/USDT suffix first, then add USDT properly
+    let baseSymbol = cleanSymbol
+      .replace(/USDT$/g, "")  // Remove USDT suffix
+      .replace(/USD$/g, "");   // Remove USD suffix
+    
+    let binanceSymbol = `${baseSymbol}USDT`;
     
     try {
       const tickerUrl = `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`;
@@ -76,15 +78,27 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
  */
 async function fetchCryptoSuggestions(partialSymbol: string): Promise<Array<{ symbol: string; name: string; price?: number }>> {
   try {
+    // Clean the input and extract base symbol
+    const cleanInput = partialSymbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const baseSymbol = cleanInput
+      .replace(/USDT$/g, "")
+      .replace(/USD$/g, "");
+    
     // Fetch all USDT trading pairs from Binance
     const response = await fetch("https://api.binance.com/api/v3/ticker/price");
     const allTickers = await response.json();
     
-    // Filter USDT pairs that match the partial symbol
+    // Filter USDT pairs that match the base symbol
     const matches = allTickers
       .filter((ticker: any) => {
         const sym = ticker.symbol;
-        return sym.includes("USDT") && sym.includes(partialSymbol);
+        if (!sym.endsWith("USDT")) return false;
+        
+        // Extract base from ticker (e.g., "BTCUSDT" -> "BTC")
+        const tickerBase = sym.replace("USDT", "");
+        
+        // Match if ticker base starts with user input or contains it
+        return tickerBase.startsWith(baseSymbol) || tickerBase.includes(baseSymbol);
       })
       .slice(0, 5) // Limit to 5 suggestions
       .map((ticker: any) => ({
