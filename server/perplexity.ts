@@ -339,8 +339,29 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     const isPriceValid = !isNaN(currentPrice) && currentPrice > 0;
     
     if (!isPriceValid) {
-      console.error(`❌ PRICE VALIDATION FAILED: currentPrice "${data.currentPrice}" is not a valid number for ${data.correctedSymbol}`);
-      throw new Error(`Invalid price data received from Perplexity. Price must be a positive number.`);
+      console.error(`❌ PRICE VALIDATION FAILED for ${data.correctedSymbol}`);
+      console.error(`   • Raw currentPrice: "${data.currentPrice}" (type: ${typeof data.currentPrice})`);
+      console.error(`   • Parsed value: ${currentPrice}`);
+      console.error(`   • livePrice: "${data.livePrice}"`);
+      console.error(`   • candleClosePrice: "${data.candleClosePrice}"`);
+      console.error(`   • Full Perplexity response:`, JSON.stringify(data, null, 2));
+      
+      // Try to use alternate price fields if available
+      if (data.livePrice) {
+        const livePriceNum = parseFloat(data.livePrice);
+        if (!isNaN(livePriceNum) && livePriceNum > 0) {
+          console.warn(`⚠️  Using livePrice as fallback: ${data.livePrice}`);
+          data.currentPrice = data.livePrice;
+        }
+      } else if (data.candleClosePrice) {
+        const candlePriceNum = parseFloat(data.candleClosePrice);
+        if (!isNaN(candlePriceNum) && candlePriceNum > 0) {
+          console.warn(`⚠️  Using candleClosePrice as fallback: ${data.candleClosePrice}`);
+          data.currentPrice = data.candleClosePrice;
+        }
+      } else {
+        throw new Error(`Invalid price data received from Perplexity. Price must be a positive number.`);
+      }
     }
     
     // Log validation results
