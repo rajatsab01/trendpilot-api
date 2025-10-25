@@ -31,6 +31,18 @@ export const translations = {
     disclaimer: "Disclaimer",
     disclaimerText: "Trading involves risk of loss and is not suitable for all investors. Past performance is not indicative of future results. Trend Pilot provides AI-guided analysis for informational purposes only and should not be considered financial advice. Always consult with a qualified financial advisor before making any investment decisions.",
     iAgree: "I Agree",
+    
+    // PWA Installation
+    installAppTitle: "Get the Best Experience",
+    installAppSubtitle: "Install Trend Pilot for instant access",
+    installAppBenefits: "✓ Launch instantly from home screen\n✓ Works offline for viewing history\n✓ Faster than browser\n✓ Get 5 bonus tokens!",
+    installNow: "Install Now",
+    maybeLater: "Maybe Later",
+    skipForNow: "Skip for Now",
+    installBonus: "🎁 Install App & Get 5 Free Tokens!",
+    installBonusDesc: "Install Trend Pilot on your home screen and receive 5 bonus tokens instantly!",
+    installReminderTitle: "Install for Better Experience",
+    installReminderDesc: "Install Trend Pilot for instant access. Plus, earn 5 free tokens!",
 
     // Dashboard
     home: "Home",

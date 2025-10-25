@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [showInstallBonus, setShowInstallBonus] = useState(false);
+  const [bonusTokensClaimed, setBonusTokensClaimed] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -50,6 +52,47 @@ export default function Dashboard() {
       window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
+
+  // Phase 2: Show bonus install card after first analysis (if not installed)
+  useEffect(() => {
+    const isAppInstalled = localStorage.getItem("pwaInstalled") === "true";
+    const bonusClaimed = localStorage.getItem("installBonusClaimed") === "true";
+    const analysisCount = parseInt(localStorage.getItem("analysisCount") || "0");
+    const installBonusDismissed = localStorage.getItem("installBonusDismissed") === "true";
+    
+    // Show bonus card if: user has done at least 1 analysis, app not installed, bonus not claimed, and not dismissed
+    if (analysisCount >= 1 && !isAppInstalled && !bonusClaimed && !installBonusDismissed && isInstallable) {
+      setShowInstallBonus(true);
+    }
+  }, [user, isInstallable]);
+
+  // Phase 3: Gentle reminder toast after 5+ analyses (once per week)
+  useEffect(() => {
+    const isAppInstalled = localStorage.getItem("pwaInstalled") === "true";
+    const analysisCount = parseInt(localStorage.getItem("analysisCount") || "0");
+    const lastReminderDate = localStorage.getItem("lastInstallReminder");
+    const now = Date.now();
+    const oneWeek = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    
+    // Show reminder if: 5+ analyses, not installed, and either never shown or shown over a week ago
+    if (analysisCount >= 5 && !isAppInstalled && isInstallable) {
+      if (!lastReminderDate || (now - parseInt(lastReminderDate)) >= oneWeek) {
+        // Show toast reminder (only after analysis complete, not on initial load)
+        const analysisJustCompleted = sessionStorage.getItem("analysisJustCompleted");
+        if (analysisJustCompleted === "true") {
+          sessionStorage.removeItem("analysisJustCompleted");
+          
+          toast({
+            title: t.installReminderTitle || "Install for Better Experience",
+            description: t.installReminderDesc || "Install Trend Pilot for instant access. Plus, earn 5 free tokens!",
+            duration: 8000,
+          });
+          
+          localStorage.setItem("lastInstallReminder", now.toString());
+        }
+      }
+    }
+  }, [user, isInstallable, toast, t]);
 
   // Countdown timer for ad
   useEffect(() => {
@@ -112,6 +155,35 @@ export default function Dashboard() {
     });
   };
 
+  const claimInstallBonusMutation = useMutation({
+    mutationFn: async () => {
+      const result = await apiRequest("POST", "/api/claim-install-bonus", { userId });
+      if (!result.ok) {
+        const errorData = await result.json();
+        throw new Error(errorData.error || "Failed to claim bonus");
+      }
+      return await result.json();
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("installBonusClaimed", "true");
+      setBonusTokensClaimed(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+      setTokenAnimation(true);
+      setTimeout(() => setTokenAnimation(false), 1000);
+      toast({
+        title: "Bonus Claimed! 🎉",
+        description: `You received 5 bonus tokens! New balance: ${data.newBalance}/${data.maxTokens}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to claim bonus",
+        variant: "destructive",
+      });
+    },
+  });
+
   const analyzeMutation = useMutation({
     mutationFn: async () => {
       const result = await apiRequest("POST", "/api/analyze", {
@@ -122,6 +194,13 @@ export default function Dashboard() {
       return await result.json();
     },
     onSuccess: (data) => {
+      // Increment analysis count for install reminder logic
+      const currentCount = parseInt(localStorage.getItem("analysisCount") || "0");
+      localStorage.setItem("analysisCount", (currentCount + 1).toString());
+      
+      // Mark that analysis just completed (for Phase 3 reminder timing)
+      sessionStorage.setItem("analysisJustCompleted", "true");
+      
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
       setLocation(`/analyzer?analysisId=${data.analysisId}`);
     },
@@ -165,15 +244,32 @@ export default function Dashboard() {
     });
   };
 
-  const handleInstallApp = async () => {
+  const handleInstallApp = async (fromBonusCard = false) => {
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     
+    if (outcome === 'accepted') {
+      localStorage.setItem("pwaInstalled", "true");
+      
+      if (fromBonusCard) {
+        // Claim bonus tokens via API
+        await claimInstallBonusMutation.mutateAsync();
+      }
+      
+      setShowInstallBonus(false);
+      setShowSettings(false);
+    }
+    
     // Always clear the prompt regardless of outcome to prevent reuse
     setDeferredPrompt(null);
     setIsInstallable(false);
+  };
+
+  const handleDismissInstallBonus = () => {
+    localStorage.setItem("installBonusDismissed", "true");
+    setShowInstallBonus(false);
   };
 
   const languages = [
@@ -295,6 +391,36 @@ export default function Dashboard() {
               {t.tokenFee}
             </p>
           </div>
+
+          {/* Phase 2: Bonus Install Card - Shows after first analysis */}
+          {showInstallBonus && (
+            <div className="bg-gradient-to-r from-[#38e07b] to-[#2ac96c] rounded-2xl p-4 shadow-lg relative">
+              <button
+                onClick={handleDismissInstallBonus}
+                className="absolute top-2 right-2 text-[#111714] hover:opacity-70"
+                data-testid="button-dismiss-bonus"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+              
+              <h3 className="text-lg font-bold text-[#111714] mb-2">
+                {t.installBonus}
+              </h3>
+              <p className="text-sm text-[#111714]/80 mb-4">
+                {t.installBonusDesc}
+              </p>
+              
+              <button
+                onClick={() => handleInstallApp(true)}
+                disabled={claimInstallBonusMutation.isPending}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#111714] text-[#38e07b] font-bold hover:bg-opacity-90 transition-colors disabled:opacity-50"
+                data-testid="button-claim-bonus"
+              >
+                <span className="material-symbols-outlined">download</span>
+                <span>{claimInstallBonusMutation.isPending ? "Installing..." : t.installNow}</span>
+              </button>
+            </div>
+          )}
 
           <div className="flex flex-col gap-4">
             <button

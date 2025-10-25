@@ -47,13 +47,32 @@ The design emphasizes a clean, simple analyzer form. The application features a 
 - **Token display system overhaul** - Changed from fixed "current/20" to dynamic "current/max" display
   - Added `maxTokens` field to users table to track highest token count ever owned
   - System now displays actual capacity based on tokens purchased (e.g., if user bought 100 tokens with 2 free remaining, shows 102/102)
-  - `maxTokens` automatically increases when tokens are added (purchases, ad watching, donations)
+  - `maxTokens` automatically increases when tokens are added (purchases, ad watching, donations, PWA install bonus)
   - `maxTokens` stays constant when tokens are spent (analysis costs)
   - Benefits: Users see their true token capacity, not a misleading fixed denominator
 - **Ad watching restrictions** - Limited to 2 ads per 24-hour period with user-friendly error messaging
   - Backend tracks ad watch history per user (count + first watch timestamp)
   - Soft error message: "You've reached the daily limit of 2 ads. Please try again in X hours."
   - Resets automatically after 24 hours from first watch
+- **Comprehensive PWA Installation Strategy** - Multi-phase approach to encourage app installation without being pushy
+  - **Phase 1 (Soft Introduction):** Optional PWA install prompt after accepting terms on Welcome screen
+    - Shows benefits: instant access, offline history, faster performance, + 5 bonus tokens
+    - Prominent "Skip for Now" option - respects user choice
+  - **Phase 2 (Incentive After Engagement):** Bonus token card appears on Dashboard after first analysis
+    - Offers 5 free tokens for installing the app
+    - Card is dismissible and won't show again if dismissed
+    - API endpoint `/api/claim-install-bonus` credits tokens automatically upon installation
+  - **Phase 3 (Gentle Reminder):** After 5+ analyses, shows toast notification once per week maximum
+    - Only appears after completing an analysis (not on page load)
+    - Soft reminder with bonus token incentive
+    - Never blocks core functionality
+  - **Best Practices Implemented:**
+    - Never blocks core features - users can always analyze markets without installing
+    - "Skip" buttons always visible and prominent
+    - Timed correctly - prompts appear at natural points (after terms, after analysis)
+    - Clear benefits explained - instant access, bonus tokens, faster performance
+    - Respects dismissal - once dismissed, won't nag again (except weekly gentle reminder after 5+ analyses)
+    - Tracks installation status in localStorage to prevent repeated prompts
 
 ### Market Type Auto-Detection (October 24, 2025)
 - **Removed market type dropdown** - Perplexity AI now automatically detects market type via real-time web search

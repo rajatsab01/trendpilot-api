@@ -372,6 +372,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Structure: Map<userId, { count: number, firstWatchToday: number }>
   const adWatchHistory = new Map<string, { count: number, firstWatchToday: number }>();
 
+  // Claim Install Bonus - Add 5 free tokens for installing PWA (ONE-TIME ONLY)
+  app.post("/api/claim-install-bonus", async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // SERVER-SIDE CHECK: Verify bonus hasn't been claimed already
+      if (user.pwaInstallBonusClaimed === 1) {
+        return res.status(400).json({ 
+          error: "Install bonus already claimed",
+          alreadyClaimed: true
+        });
+      }
+
+      // Add 5 tokens for installing the app
+      const newTokenBalance = user.tokens + 5;
+      await storage.updateUserTokens(userId, newTokenBalance);
+
+      // Mark bonus as claimed in database
+      await storage.markInstallBonusClaimed(userId);
+
+      console.log(`User ${userId} installed PWA and received 5 bonus tokens (FIRST TIME). New balance: ${newTokenBalance}`);
+
+      // Get updated user with maxTokens
+      const updatedUser = await storage.getUser(userId);
+
+      res.json({ 
+        success: true, 
+        tokensAdded: 5,
+        newBalance: newTokenBalance,
+        maxTokens: updatedUser?.maxTokens ?? newTokenBalance
+      });
+    } catch (error: any) {
+      console.error("Claim install bonus error:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
   // Watch Ad - Add 2 free tokens for watching an ad
   // Limit: 2 ads per 24 hours per user
   app.post("/api/watch-ad", async (req, res) => {

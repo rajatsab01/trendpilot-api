@@ -15,6 +15,7 @@ export default function Welcome() {
   const [, setLocation] = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const [showSettings, setShowSettings] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
 
@@ -33,6 +34,20 @@ export default function Welcome() {
   }, []);
 
   const handleAgree = () => {
+    // Check if already installed or browser doesn't support PWA
+    const isAppInstalled = localStorage.getItem("pwaInstalled") === "true";
+    
+    if (isInstallable && !isAppInstalled) {
+      // Show install prompt modal
+      setShowInstallPrompt(true);
+    } else {
+      // Go directly to dashboard
+      setLocation("/dashboard");
+    }
+  };
+  
+  const handleSkipInstall = () => {
+    setShowInstallPrompt(false);
     setLocation("/dashboard");
   };
 
@@ -51,6 +66,12 @@ export default function Welcome() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      localStorage.setItem("pwaInstalled", "true");
+      setShowInstallPrompt(false);
+      setLocation("/dashboard");
+    }
     
     // Always clear the prompt regardless of outcome to prevent reuse
     setDeferredPrompt(null);
@@ -166,6 +187,45 @@ export default function Welcome() {
               </p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Phase 1: Optional PWA Install Prompt (Onboarding) */}
+      <Dialog open={showInstallPrompt} onOpenChange={setShowInstallPrompt}>
+        <DialogContent className="bg-[#1c2620] border-[#38e07b]/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-[#38e07b] text-center">
+              {t.installAppTitle}
+            </DialogTitle>
+            <DialogDescription className="text-[#9eb7a8] text-center mt-2">
+              {t.installAppSubtitle}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="bg-[#29382f] rounded-xl p-4 mb-4">
+              <div className="whitespace-pre-line text-sm text-white leading-relaxed">
+                {t.installAppBenefits}
+              </div>
+            </div>
+            
+            <button
+              onClick={handleInstallApp}
+              className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold text-lg hover:bg-opacity-90 transition-colors mb-3"
+              data-testid="button-install-onboarding"
+            >
+              <span className="material-symbols-outlined">download</span>
+              <span>{t.installNow}</span>
+            </button>
+            
+            <button
+              onClick={handleSkipInstall}
+              className="w-full py-3 text-[#9eb7a8] text-sm hover:text-white transition-colors"
+              data-testid="button-skip-install"
+            >
+              {t.skipForNow}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

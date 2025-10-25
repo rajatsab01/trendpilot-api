@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
   tokens: integer("tokens").notNull().default(20),
   maxTokens: integer("max_tokens").notNull().default(20), // Tracks the highest token count ever owned
+  pwaInstallBonusClaimed: integer("pwa_install_bonus_claimed").notNull().default(0), // 0 = not claimed, 1 = claimed
   createdAt: timestamp("created_at").defaultNow(),
 });
 
