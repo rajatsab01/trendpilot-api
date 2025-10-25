@@ -22,7 +22,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState("short_term");
-  const [market, setMarket] = useState("cryptocurrency");
+  const [market, setMarket] = useState("");
   const [showAdModal, setShowAdModal] = useState(false);
   const [adCountdown, setAdCountdown] = useState(60);
   const [tokenAnimation, setTokenAnimation] = useState(false);
@@ -31,9 +31,10 @@ export default function Dashboard() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [showInstallBonus, setShowInstallBonus] = useState(false);
   const [bonusTokensClaimed, setBonusTokensClaimed] = useState(false);
-  const [validationState, setValidationState] = useState<"idle" | "validating" | "valid" | "invalid">("idle");
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
   const [symbolSuggestions, setSymbolSuggestions] = useState<Array<{symbol: string; name: string; price?: number}>>([]);
-  const [validatedSymbol, setValidatedSymbol] = useState<string | null>(null);
+  const [validatedData, setValidatedData] = useState<{symbol: string; name: string; market: string} | null>(null);
 
   const userId = localStorage.getItem("userId");
 
@@ -111,20 +112,7 @@ export default function Dashboard() {
     }
   }, [showAdModal, adCountdown]);
 
-  // Auto-validate symbol when user types or changes market
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (symbol.trim().length >= 2 && market) {
-        setValidationState("validating");
-        validateSymbolMutation.mutate({ symbol: symbol.trim(), market });
-      } else {
-        setValidationState("idle");
-        setSymbolSuggestions([]);
-      }
-    }, 800); // Debounce: wait 800ms after user stops typing
-
-    return () => clearTimeout(timer);
-  }, [symbol, market]);
+  // No auto-validation - validation happens only when user clicks Enlighten Me
 
   const watchAdMutation = useMutation({
     mutationFn: async () => {
@@ -213,35 +201,24 @@ export default function Dashboard() {
       return await result.json();
     },
     onSuccess: (data) => {
+      setValidationResult(data);
+      setShowValidationModal(true);
+      
       if (data.isValid) {
-        setValidationState("valid");
-        setValidatedSymbol(data.correctedSymbol || symbol);
-        setSymbolSuggestions([]);
-        toast({
-          title: "✅ Symbol Validated",
-          description: `${data.assetName} - $${data.currentPrice?.toFixed(2)}`,
+        setValidatedData({
+          symbol: data.correctedSymbol || symbol,
+          name: data.assetName,
+          market: market,
         });
+        setSymbolSuggestions([]);
       } else {
-        setValidationState("invalid");
-        setValidatedSymbol(null);
+        setValidatedData(null);
         if (data.suggestions && data.suggestions.length > 0) {
           setSymbolSuggestions(data.suggestions);
-          toast({
-            title: "⚠️ Symbol Not Found",
-            description: data.error || "Please select from suggestions below",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "❌ Invalid Symbol",
-            description: data.error || "Please check the symbol and try again",
-            variant: "destructive",
-          });
         }
       }
     },
     onError: (error: any) => {
-      setValidationState("invalid");
       toast({
         title: "Validation Error",
         description: error.message || "Failed to validate symbol",
