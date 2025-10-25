@@ -101,6 +101,47 @@ async function fetchCryptoSuggestions(partialSymbol: string): Promise<Array<{ sy
 }
 
 /**
+ * Fetch stock/forex/commodity suggestions from Yahoo Finance
+ */
+async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ symbol: string; name: string; price?: number }>> {
+  try {
+    // Use Yahoo Finance autocomplete/search API
+    const searchUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(partialSymbol)}&quotesCount=5&newsCount=0`;
+    const response = await fetch(searchUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    if (!data.quotes || data.quotes.length === 0) {
+      return [];
+    }
+    
+    // Return top 5 matches with symbol, name, and price
+    // Accept results with either longname or shortname for broader coverage
+    const suggestions = data.quotes
+      .filter((quote: any) => quote.symbol && (quote.longname || quote.shortname))
+      .slice(0, 5)
+      .map((quote: any) => ({
+        symbol: quote.symbol,
+        name: quote.longname || quote.shortname || quote.symbol,
+        price: quote.regularMarketPrice || undefined,
+      }));
+    
+    return suggestions;
+  } catch (error) {
+    console.error("Error fetching Yahoo suggestions:", error);
+    return [];
+  }
+}
+
+/**
  * Validate stock/forex/commodity symbol using Yahoo Finance
  */
 async function validateYahooSymbol(symbol: string, market: string): Promise<SymbolValidationResult> {
@@ -132,6 +173,17 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     });
     
     if (!response.ok) {
+      // Symbol not found - fetch suggestions
+      const suggestions = await fetchYahooSuggestions(symbol);
+      
+      if (suggestions.length > 0) {
+        return {
+          isValid: false,
+          suggestions,
+          error: `Symbol "${symbol}" not found. Did you mean one of these?`,
+        };
+      }
+      
       return {
         isValid: false,
         error: `Symbol "${symbol}" not found in ${market} market. Please verify the symbol.`,
@@ -141,6 +193,17 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     const data = await response.json();
     
     if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
+      // No data available - fetch suggestions
+      const suggestions = await fetchYahooSuggestions(symbol);
+      
+      if (suggestions.length > 0) {
+        return {
+          isValid: false,
+          suggestions,
+          error: `No data available for symbol "${symbol}". Did you mean one of these?`,
+        };
+      }
+      
       return {
         isValid: false,
         error: `No data available for symbol "${symbol}".`,
