@@ -102,6 +102,7 @@ export async function analyzeMarketWithPerplexity(
     const durationContext = durationConfig.context;
     const requiredTimeframe = durationConfig.timeframe;
     const timeframeDescription = durationConfig.description;
+    const isScalping = duration === "scalping";
 
     const languageName = languageMap[language] || "English";
 
@@ -119,7 +120,7 @@ CRITICAL REQUIREMENTS:
    b. **Live Current Price**: ALSO fetch the ACTUAL CURRENT LIVE MARKET PRICE (spot/ticker price) so users see the latest market value.
    c. **Next Candle Close**: Calculate when the NEXT ${timeframeDescription} candle will close (for re-analysis recommendation).
 4. Calculate REALISTIC technical indicator values based on current market data and recent price action
-5. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
+5. ${isScalping ? "**SCALPING SPECIAL**: Use LIVE CURRENT PRICE for entry/TP/SL calculations (NOT closed candle price). Scalping needs immediate actionable levels near current market price." : "Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio"}
 6. Provide your ENTIRE analysis in ${languageName}
 7. Calculate MULTIPLE take profit targets (TP1, TP2, TP3) with INCREASING risk-reward:
    - TP1: Conservative target (1:1 risk-reward) - book 50% profit here
@@ -162,12 +163,12 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as a number (same as candleClosePrice field above - this is your recommended entry price for analysis)",
-  "takeProfit": "final take profit price (same as tp3)",
-  "stopLoss": "realistic stop loss price with tight risk control",
-  "tp1": "Take Profit 1 - Conservative 1:1 RR (book 50% profit here)",
-  "tp2": "Take Profit 2 - Medium 1:2 RR (trail stop to breakeven)",
-  "tp3": "Take Profit 3 - Aggressive 1:3 RR (maximize remaining position)",
+  "entry": "${isScalping ? 'LIVE CURRENT PRICE (same as livePrice field) - scalping needs entry near current market price' : `LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as a number (same as candleClosePrice field above - this is your recommended entry price for analysis)`}",
+  "takeProfit": "${isScalping ? 'realistic take profit based on live price with tight scalping targets' : 'final take profit price (same as tp3)'}",
+  "stopLoss": "${isScalping ? 'realistic stop loss based on live price with tight scalping risk control' : 'realistic stop loss price with tight risk control'}",
+  "tp1": "${isScalping ? 'Take Profit 1 - Based on LIVE PRICE with tight scalping targets (1:1 RR)' : 'Take Profit 1 - Conservative 1:1 RR (book 50% profit here)'}",
+  "tp2": "${isScalping ? 'Take Profit 2 - Based on LIVE PRICE (1:2 RR)' : 'Take Profit 2 - Medium 1:2 RR (trail stop to breakeven)'}",
+  "tp3": "${isScalping ? 'Take Profit 3 - Based on LIVE PRICE (1:3 RR)' : 'Take Profit 3 - Aggressive 1:3 RR (maximize remaining position)'}",
   "s1": "Support Level 1 - Nearest support below current price",
   "s2": "Support Level 2 - Medium support below current price",
   "s3": "Support Level 3 - Strong support below current price",
@@ -192,7 +193,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst with access to real-time market data and news. CRITICAL: For ${duration.toUpperCase()} analysis, always use the LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLES for currentPrice and entry fields - never use tick prices or shorter timeframes. Your timeframe field MUST be one of: ${durationConfig.variants.join(', ')} and priceSource field must mention the ${timeframeDescription} timeframe to confirm the data source. Return responses in valid JSON format only.`,
+            content: `You are an expert financial analyst with access to real-time market data and news. ${isScalping ? `CRITICAL FOR SCALPING: Use LIVE CURRENT PRICE for entry/TP/SL calculations - not closed candle price. Scalping traders need actionable levels near current market price. Still fetch ${timeframeDescription} closed candle data for technical indicators (RSI, MACD, etc.) but bracket orders must be based on live price.` : `CRITICAL: For ${duration.toUpperCase()} analysis, always use the LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLES for currentPrice and entry fields - never use tick prices or shorter timeframes.`} Your timeframe field MUST be one of: ${durationConfig.variants.join(', ')} and priceSource field must mention the ${timeframeDescription} timeframe to confirm the data source. Return responses in valid JSON format only.`,
           },
           { role: "user", content: prompt },
         ],
