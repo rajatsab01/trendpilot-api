@@ -11,10 +11,13 @@ interface MarketAnalysisResult {
   correctedSymbol: string;
   assetName: string;
   marketType: string; // Auto-detected market type from Perplexity
-  currentPrice: string;
+  currentPrice: string; // DEPRECATED: Use candleClosePrice instead
+  livePrice: string; // Actual current live market price
+  candleClosePrice: string; // Price at the closed candle used for analysis
   priceSource: string;
   candleCloseTime?: string; // Optional timestamp of candle close
   timeframe?: string; // Candle timeframe (e.g., "15min", "1hr", "1day")
+  nextCandleCloseTime?: string; // When the next candle closes (for re-analysis recommendation)
   instrumentName: string | null; // For backward compatibility
   indicators: {
     rsi: string;
@@ -111,7 +114,10 @@ export async function analyzeMarketWithPerplexity(
 CRITICAL REQUIREMENTS:
 1. VALIDATE AND CORRECT THE SYMBOL: Even if user provides misspelled/incorrect symbol like "btcusdt.p" or "etherium", use your web search to find the CORRECT standard symbol (e.g., "BTC" for Bitcoin, "ETH" for Ethereum)
 2. Research the LATEST news, trends, and price action for this asset
-3. **MANDATORY PRICE REQUIREMENT FOR ${duration.toUpperCase()}**: Use your real-time web search to find the LAST CLOSED PRICE OF THE ${timeframeDescription.toUpperCase()} CANDLE as the current price. This is CRITICAL for accurate analysis matching the ${durationContext}. Look for "${requiredTimeframe} candle close", "${timeframeDescription} close price", or "last ${timeframeDescription} bar close" in your data sources. DO NOT use tick prices, shorter timeframe candles, or live bid/ask spreads.
+3. **MANDATORY DUAL PRICE REQUIREMENT**:
+   a. **Candle Close Price**: Find the LAST CLOSED PRICE OF THE ${timeframeDescription.toUpperCase()} CANDLE for analysis accuracy. Look for "${requiredTimeframe} candle close", "${timeframeDescription} close price", or "last ${timeframeDescription} bar close".
+   b. **Live Current Price**: ALSO fetch the ACTUAL CURRENT LIVE MARKET PRICE (spot/ticker price) so users see the latest market value.
+   c. **Next Candle Close**: Calculate when the NEXT ${timeframeDescription} candle will close (for re-analysis recommendation).
 4. Calculate REALISTIC technical indicator values based on current market data and recent price action
 5. Generate PROFESSIONAL bracket order prices with MINIMUM 1:2 or 1:3 risk-reward ratio
 6. Provide your ENTIRE analysis in ${languageName}
@@ -139,10 +145,13 @@ Respond with JSON in this exact format:
   "correctedSymbol": "CORRECTED standard ticker symbol (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
   "assetName": "Full official name of the asset (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
   "marketType": "AUTO-DETECTED market type - one of: 'cryptocurrency', 'stock_equities', 'commodity', 'forex', 'derivatives_futures', or 'bond'",
-  "currentPrice": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as found via web search (just the number, e.g., '111140.50' for $111,140.50) - use this standardized price for accurate analysis",
-  "priceSource": "Where you found this ${timeframeDescription} candle close price (e.g., 'CoinMarketCap ${requiredTimeframe} chart', 'TradingView ${requiredTimeframe} candle', 'Yahoo Finance ${requiredTimeframe} data')",
-  "candleCloseTime": "OPTIONAL: Timestamp or time of the ${timeframeDescription} candle close (e.g., '2024-10-25 11:30 UTC', '11:30 AM', or 'Latest ${requiredTimeframe} close'). Include if available from your data source.",
-  "timeframe": "MUST match the required timeframe for ${duration}: '${requiredTimeframe}' or acceptable variants to confirm this is ${timeframeDescription} candle data",
+  "currentPrice": "DEPRECATED - Use candleClosePrice instead",
+  "livePrice": "ACTUAL CURRENT LIVE MARKET PRICE right now (spot/ticker price, e.g., '111655.00' for $111,655.00) - THIS IS WHAT USERS SEE AS 'CURRENT PRICE'",
+  "candleClosePrice": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE for analysis (e.g., '111140.50' for $111,140.50) - use this for technical analysis calculations",
+  "priceSource": "Where you found these prices (e.g., 'CoinMarketCap live ticker and ${requiredTimeframe} chart')",
+  "candleCloseTime": "Timestamp of the ${timeframeDescription} candle close (e.g., '2025-10-25 13:00:00 UTC'). REQUIRED.",
+  "timeframe": "MUST match: '${requiredTimeframe}' (the timeframe of the closed candle used for analysis)",
+  "nextCandleCloseTime": "When the NEXT ${timeframeDescription} candle will close (e.g., '2025-10-25 14:00:00 UTC' for 1hr, '2025-10-25 13:15:00 UTC' for 15min). Calculate from candleCloseTime + timeframe duration.",
   "recommendation": "BUY" or "SELL",
   "confidence": number between 1-100,
   "sentiment": "Bullish" or "Bearish",
@@ -153,7 +162,7 @@ Respond with JSON in this exact format:
   "macd": "actual MACD value (e.g., 0.12 or -0.15)",
   "stochastic": "actual Stochastic value (e.g., 60.5)",
   "bollingerBands": "actual Bollinger Band width (e.g., 20.3)",
-  "entry": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as a number (same as currentPrice field above - this is your recommended entry price)",
+  "entry": "LAST CLOSED PRICE OF ${timeframeDescription.toUpperCase()} CANDLE as a number (same as candleClosePrice field above - this is your recommended entry price for analysis)",
   "takeProfit": "final take profit price (same as tp3)",
   "stopLoss": "realistic stop loss price with tight risk control",
   "tp1": "Take Profit 1 - Conservative 1:1 RR (book 50% profit here)",
@@ -170,7 +179,7 @@ Respond with JSON in this exact format:
   "explanatoryNotes": "Detailed explanatory notes in ${languageName} about the trade setup, key levels, market context, and risk disclaimers (3-5 sentences, like: 'This ${durationContext} setup is based on current price action at [price] with tight risk control. Key support at [level] and resistance at [level]. Market conditions favor [direction] momentum. Trade with strict discipline and manage position size according to your risk tolerance. Past performance does not guarantee future results.')"
 }
 
-IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol, assetName, marketType, currentPrice, and priceSource fields are MANDATORY and must be accurate based on your web research.`;
+IMPORTANT: Return ONLY valid JSON, no additional text before or after. The correctedSymbol, assetName, marketType, livePrice, candleClosePrice, candleCloseTime, nextCandleCloseTime, timeframe, and priceSource fields are MANDATORY and must be accurate based on your web research.`;
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -306,10 +315,13 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       correctedSymbol: data.correctedSymbol,
       assetName: data.assetName,
       marketType: detectedMarket, // Auto-detected market type from Perplexity
-      currentPrice: data.currentPrice,
+      currentPrice: data.currentPrice || data.candleClosePrice, // Backward compatibility
+      livePrice: data.livePrice, // Actual current live market price
+      candleClosePrice: data.candleClosePrice, // Price at closed candle for analysis
       priceSource: data.priceSource,
-      candleCloseTime: data.candleCloseTime, // Optional timestamp
+      candleCloseTime: data.candleCloseTime, // Timestamp of candle close
       timeframe: data.timeframe, // Candle timeframe used
+      nextCandleCloseTime: data.nextCandleCloseTime, // When next candle closes
       instrumentName: data.assetName, // For backward compatibility
       indicators: {
         rsi: data.rsi,

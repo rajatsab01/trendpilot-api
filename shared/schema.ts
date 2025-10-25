@@ -23,10 +23,13 @@ export const analyses = pgTable("analyses", {
   correctedSymbol: text("corrected_symbol"), // Perplexity-validated correct symbol
   assetName: text("asset_name"), // Perplexity-validated full asset name
   instrumentName: text("instrument_name"), // Full name of the instrument (for backward compatibility)
-  currentPrice: text("current_price"), // Perplexity-validated current price
+  currentPrice: text("current_price"), // DEPRECATED: Use candleClosePrice instead
+  livePrice: text("live_price"), // Actual current live market price (spot/ticker)
+  candleClosePrice: text("candle_close_price"), // Price at closed candle used for analysis
   priceSource: text("price_source"), // Where Perplexity found the price (e.g., "CoinMarketCap", "Bloomberg")
-  candleCloseTime: text("candle_close_time"), // Timestamp of candle close (e.g., "2024-10-25 11:30 UTC")
+  candleCloseTime: text("candle_close_time"), // Timestamp of candle close (e.g., "2025-10-25 13:00:00 UTC")
   timeframe: text("timeframe"), // Candle timeframe used for analysis (e.g., "15min", "1hr", "1day")
+  nextCandleCloseTime: text("next_candle_close_time"), // When next candle closes for re-analysis (e.g., "2025-10-25 14:00:00 UTC")
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
   market: text("market").notNull(), // 'stock_equities', 'commodity', 'forex', 'derivatives_futures', 'bond', 'cryptocurrency'
   recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name

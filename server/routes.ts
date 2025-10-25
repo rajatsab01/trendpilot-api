@@ -622,10 +622,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         correctedSymbol: analysisResult.correctedSymbol, // Perplexity-corrected symbol
         assetName: analysisResult.assetName, // Perplexity-validated full name
         instrumentName: analysisResult.instrumentName, // For backward compatibility
-        currentPrice: analysisResult.currentPrice, // Perplexity-validated price
+        currentPrice: analysisResult.currentPrice, // DEPRECATED: Use candleClosePrice instead
+        livePrice: analysisResult.livePrice, // Actual current live market price
+        candleClosePrice: analysisResult.candleClosePrice, // Price at closed candle for analysis
         priceSource: analysisResult.priceSource, // Where Perplexity found the price
         candleCloseTime: analysisResult.candleCloseTime, // Timestamp of candle close
         timeframe: analysisResult.timeframe, // Candle timeframe (e.g., "15min", "1hr", "1day")
+        nextCandleCloseTime: analysisResult.nextCandleCloseTime, // When next candle closes
         duration,
         market: analysisResult.marketType as "stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency", // Auto-detected by Perplexity
         recommendation: analysisResult.recommendation,
