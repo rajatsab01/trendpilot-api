@@ -232,7 +232,6 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       'correctedSymbol', 
       'assetName', 
       'marketType', 
-      'currentPrice',  // Must have at least one price
       'priceSource'
     ];
     const missingFields = requiredFields.filter(field => !data[field]);
@@ -241,14 +240,28 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       throw new Error(`Perplexity response missing required fields: ${missingFields.join(', ')}. This indicates Perplexity could not validate the symbol or find market data.`);
     }
 
-    // Fallback: If new price fields are missing, use currentPrice for both
-    if (!data.livePrice) {
-      data.livePrice = data.currentPrice;
-      console.warn(`⚠️  livePrice not provided by Perplexity, using currentPrice: ${data.currentPrice}`);
+    // Validate we have at least one price field
+    if (!data.livePrice && !data.candleClosePrice && !data.currentPrice) {
+      throw new Error(`Perplexity response missing price data. Need at least one of: livePrice, candleClosePrice, or currentPrice.`);
     }
-    if (!data.candleClosePrice) {
+
+    // Fallback: Ensure we have both new price fields
+    if (!data.livePrice && !data.candleClosePrice) {
+      // Use currentPrice for both if new fields are missing
+      data.livePrice = data.currentPrice;
       data.candleClosePrice = data.currentPrice;
-      console.warn(`⚠️  candleClosePrice not provided by Perplexity, using currentPrice: ${data.currentPrice}`);
+      console.warn(`⚠️  New price fields not provided, using currentPrice: ${data.currentPrice}`);
+    } else if (!data.livePrice) {
+      data.livePrice = data.candleClosePrice;
+      console.warn(`⚠️  livePrice not provided, using candleClosePrice: ${data.candleClosePrice}`);
+    } else if (!data.candleClosePrice) {
+      data.candleClosePrice = data.livePrice;
+      console.warn(`⚠️  candleClosePrice not provided, using livePrice: ${data.livePrice}`);
+    }
+    
+    // Ensure currentPrice exists for backward compatibility
+    if (!data.currentPrice) {
+      data.currentPrice = data.candleClosePrice;
     }
 
     // VALIDATION: Verify candle data accuracy using multiple checks based on duration
