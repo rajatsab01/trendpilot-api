@@ -31,6 +31,9 @@ export default function Dashboard() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [showInstallBonus, setShowInstallBonus] = useState(false);
   const [bonusTokensClaimed, setBonusTokensClaimed] = useState(false);
+  const [validationState, setValidationState] = useState<"idle" | "validating" | "valid" | "invalid">("idle");
+  const [symbolSuggestions, setSymbolSuggestions] = useState<Array<{symbol: string; name: string; price?: number}>>([]);
+  const [validatedSymbol, setValidatedSymbol] = useState<string | null>(null);
 
   const userId = localStorage.getItem("userId");
 
@@ -107,6 +110,21 @@ export default function Dashboard() {
       handleAdComplete();
     }
   }, [showAdModal, adCountdown]);
+
+  // Auto-validate symbol when user types or changes market
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (symbol.trim().length >= 2 && market) {
+        setValidationState("validating");
+        validateSymbolMutation.mutate({ symbol: symbol.trim(), market });
+      } else {
+        setValidationState("idle");
+        setSymbolSuggestions([]);
+      }
+    }, 800); // Debounce: wait 800ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [symbol, market]);
 
   const watchAdMutation = useMutation({
     mutationFn: async () => {
@@ -185,11 +203,58 @@ export default function Dashboard() {
     },
   });
 
+  const validateSymbolMutation = useMutation({
+    mutationFn: async (data: { symbol: string; market: string }) => {
+      const result = await apiRequest("POST", "/api/symbols/validate", data);
+      if (!result.ok) {
+        const errorData = await result.json();
+        throw new Error(errorData.error || "Failed to validate symbol");
+      }
+      return await result.json();
+    },
+    onSuccess: (data) => {
+      if (data.isValid) {
+        setValidationState("valid");
+        setValidatedSymbol(data.correctedSymbol || symbol);
+        setSymbolSuggestions([]);
+        toast({
+          title: "✅ Symbol Validated",
+          description: `${data.assetName} - $${data.currentPrice?.toFixed(2)}`,
+        });
+      } else {
+        setValidationState("invalid");
+        setValidatedSymbol(null);
+        if (data.suggestions && data.suggestions.length > 0) {
+          setSymbolSuggestions(data.suggestions);
+          toast({
+            title: "⚠️ Symbol Not Found",
+            description: data.error || "Please select from suggestions below",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "❌ Invalid Symbol",
+            description: data.error || "Please check the symbol and try again",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    onError: (error: any) => {
+      setValidationState("invalid");
+      toast({
+        title: "Validation Error",
+        description: error.message || "Failed to validate symbol",
+        variant: "destructive",
+      });
+    },
+  });
+
   const analyzeMutation = useMutation({
     mutationFn: async () => {
       const result = await apiRequest("POST", "/api/analyze", {
         userId,
-        symbol,
+        symbol: validatedSymbol || symbol,
         duration,
         market,
       });
@@ -324,17 +389,83 @@ export default function Dashboard() {
 
         <main className="flex-1 px-4 py-6 space-y-6">
           <div className="space-y-4">
-            <label className="flex flex-col">
+            <label className="flex flex-col relative">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">
                 {t.financialSymbol}
               </span>
-              <input
-                className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
-                placeholder={t.symbolPlaceholder}
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                data-testid="input-symbol"
-              />
+              <div className="relative">
+                <input
+                  className={`flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 pr-12 text-base font-normal leading-normal ${
+                    validationState === "validating"
+                      ? "ring-2 ring-yellow-500"
+                      : validationState === "valid"
+                      ? "ring-2 ring-green-500"
+                      : validationState === "invalid"
+                      ? "ring-2 ring-red-500"
+                      : "focus:ring-[#38e07b]"
+                  }`}
+                  placeholder={t.symbolPlaceholder}
+                  value={symbol}
+                  onChange={(e) => {
+                    setSymbol(e.target.value.toUpperCase());
+                    setValidationState("idle");
+                    setSymbolSuggestions([]);
+                  }}
+                  data-testid="input-symbol"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {validationState === "validating" && (
+                    <span className="material-symbols-outlined text-yellow-500 animate-spin">
+                      hourglass_empty
+                    </span>
+                  )}
+                  {validationState === "valid" && (
+                    <span className="material-symbols-outlined text-green-500">
+                      check_circle
+                    </span>
+                  )}
+                  {validationState === "invalid" && (
+                    <span className="material-symbols-outlined text-red-500">
+                      error
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Symbol Suggestions Dropdown */}
+              {symbolSuggestions.length > 0 && (
+                <div 
+                  className="absolute top-full mt-2 w-full bg-[#1e2823] border border-[#38e07b]/30 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto"
+                  data-testid="symbol-suggestions"
+                >
+                  <div className="p-2 border-b border-[#38e07b]/20">
+                    <span className="text-xs text-[#9eb7a8]">Did you mean?</span>
+                  </div>
+                  {symbolSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSymbol(suggestion.name);
+                        setValidatedSymbol(suggestion.symbol);
+                        setValidationState("valid");
+                        setSymbolSuggestions([]);
+                      }}
+                      className="w-full px-4 py-3 flex items-center justify-between hover-elevate active-elevate-2 border-b border-[#38e07b]/10 last:border-b-0"
+                      data-testid={`suggestion-${idx}`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-white font-medium">{suggestion.name}</span>
+                        <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
+                      </div>
+                      {suggestion.price && (
+                        <span className="text-[#38e07b] font-medium">
+                          ${suggestion.price.toFixed(2)}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </label>
 
             <label className="flex flex-col">
