@@ -110,11 +110,15 @@ async function fetchCryptoSuggestions(partialSymbol: string): Promise<Array<{ sy
         return tickerBase.startsWith(baseSymbol) || tickerBase.includes(baseSymbol);
       })
       .slice(0, 5) // Limit to 5 suggestions
-      .map((ticker: any) => ({
-        symbol: ticker.symbol,
-        name: ticker.symbol.replace("USDT", ""),
-        price: parseFloat(ticker.price),
-      }));
+      .map((ticker: any) => {
+        const symbol = ticker.symbol; // e.g., "BNBUSDT"
+        const name = symbol.replace("USDT", ""); // e.g., "BNB"
+        return {
+          symbol: symbol, // Full Binance symbol: BNBUSDT
+          name: name, // Display name: BNB
+          price: parseFloat(ticker.price),
+        };
+      });
     
     return matches;
   } catch (error) {

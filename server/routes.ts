@@ -589,6 +589,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Validate symbol and provide suggestions
   app.post("/api/symbols/validate", async (req, res) => {
     try {
+      console.log(`📥 [/api/symbols/validate] Received request body:`, JSON.stringify(req.body));
+      
       const validateSchema = z.object({
         symbol: z.string().min(1),
         market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
@@ -596,6 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validationResult = validateSchema.safeParse(req.body);
       if (!validationResult.success) {
+        console.log(`❌ [/api/symbols/validate] Validation error:`, validationResult.error.errors);
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
