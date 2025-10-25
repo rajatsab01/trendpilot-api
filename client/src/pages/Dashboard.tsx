@@ -540,7 +540,7 @@ export default function Dashboard() {
           {isInstallable && (
             <div className="mt-6 pt-6 border-t border-[#38e07b]/20">
               <button
-                onClick={handleInstallApp}
+                onClick={() => handleInstallApp()}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors"
                 data-testid="button-install-app"
               >
