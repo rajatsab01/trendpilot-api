@@ -817,12 +817,39 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Demo Ad Content */}
+            {/* Sponsorship Information */}
             <div className="mb-6 p-4 bg-[#29382f] rounded-xl">
-              <p className="text-white text-sm mb-2">📢 Demo Ad</p>
-              <p className="text-[#9eb7a8] text-xs">
-                This is a simulated ad experience. In production, real ads from Google AdSense will be displayed here.
-              </p>
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-[#38e07b] text-sm">campaign</span>
+                <p className="text-[#38e07b] text-sm font-bold">Advertise Here!</p>
+              </div>
+              <div className="text-left space-y-2 mb-3">
+                <p className="text-white text-xs font-semibold">Monthly Rate Card:</p>
+                <div className="space-y-1">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#9eb7a8] text-xs mt-0.5">bolt</span>
+                    <p className="text-[#9eb7a8] text-xs">10 seconds - <span className="text-white font-bold">$50 USD/month</span></p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#9eb7a8] text-xs mt-0.5">bolt</span>
+                    <p className="text-[#9eb7a8] text-xs">30 seconds - <span className="text-white font-bold">$100 USD/month</span></p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#9eb7a8] text-xs mt-0.5">bolt</span>
+                    <p className="text-[#9eb7a8] text-xs">60 seconds - <span className="text-white font-bold">$200 USD/month</span></p>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-[#1c2620]">
+                <p className="text-[#9eb7a8] text-xs mb-1">Contact for sponsorship:</p>
+                <a 
+                  href="mailto:rockstarbaba.ut@gmail.com"
+                  className="text-[#38e07b] text-xs font-semibold hover:underline break-all"
+                  data-testid="link-sponsorship-email"
+                >
+                  rockstarbaba.ut@gmail.com
+                </a>
+              </div>
             </div>
 
             {adCountdown > 5 && (
