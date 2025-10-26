@@ -586,6 +586,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Intelligent instrument search by name
+  app.get("/api/search-instruments", async (req, res) => {
+    try {
+      const { query, market } = req.query;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ suggestions: [] });
+      }
+
+      const { searchInstruments, getPopularInstruments } = await import("./instrumentSearch.js");
+      
+      // If query is too short, return popular instruments
+      if (query.trim().length < 2) {
+        const popular = getPopularInstruments(market as string);
+        return res.json({ suggestions: popular });
+      }
+
+      // Search by name
+      const results = searchInstruments(query);
+      
+      // Filter by market if specified
+      const filtered = market 
+        ? results.filter(r => r.market === market)
+        : results;
+
+      res.json({ suggestions: filtered });
+    } catch (error: any) {
+      console.error("Instrument search error:", error);
+      res.status(500).json({ error: "Failed to search instruments", suggestions: [] });
+    }
+  });
+
   // Validate symbol and provide suggestions
   app.post("/api/symbols/validate", async (req, res) => {
     try {

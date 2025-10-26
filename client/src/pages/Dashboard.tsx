@@ -7,7 +7,6 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { User } from "@shared/schema";
-import logoImage from "@assets/trendpilot-logo.png";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +35,8 @@ export default function Dashboard() {
   const [symbolSuggestions, setSymbolSuggestions] = useState<Array<{symbol: string; name: string; price?: number}>>([]);
   const [validatedData, setValidatedData] = useState<{symbol: string; name: string; market: string} | null>(null);
   const [isValidationConfirmed, setIsValidationConfirmed] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<Array<{symbol: string; name: string; market: string; description?: string}>>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -278,12 +279,65 @@ export default function Dashboard() {
     // Don't start analysis yet - just enable the Enlighten Me button
   };
 
+  const handleStartOver = () => {
+    // Reset all form fields and state
+    setSymbol("");
+    setDuration("short_term");
+    setMarket("");
+    setValidationResult(null);
+    setSymbolSuggestions([]);
+    setValidatedData(null);
+    setIsValidationConfirmed(false);
+    setShowValidationModal(false);
+    
+    toast({
+      title: "Form Reset",
+      description: "You can now enter a new symbol",
+    });
+  };
+
   const handleSelectSuggestion = (suggestion: {symbol: string; name: string; price?: number}) => {
     // Update symbol with selected suggestion
     setSymbol(suggestion.symbol);
     
     // Re-validate with the selected symbol to show confirmation popup
     validateSymbolMutation.mutate({ symbol: suggestion.symbol, market });
+  };
+
+  const handleSelectSearchSuggestion = (suggestion: {symbol: string; name: string; market: string; description?: string}) => {
+    // Auto-fill symbol and market
+    setSymbol(suggestion.symbol);
+    setMarket(suggestion.market);
+    setShowSearchDropdown(false);
+    setSearchSuggestions([]);
+    
+    toast({
+      title: "Instrument Selected",
+      description: `${suggestion.name} - Click Enlighten Me to analyze`,
+    });
+  };
+
+  // Search for instruments as user types
+  const handleSymbolSearch = async (query: string) => {
+    setSymbol(query.toUpperCase());
+    setIsValidationConfirmed(false);
+    
+    if (query.trim().length < 2) {
+      setSearchSuggestions([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/search-instruments?query=${encodeURIComponent(query)}&market=${market || ''}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchSuggestions(data.suggestions || []);
+        setShowSearchDropdown(data.suggestions && data.suggestions.length > 0);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+    }
   };
 
   const handleLanguageChange = (lang: Language) => {
@@ -356,37 +410,64 @@ export default function Dashboard() {
               <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
-          <div className="flex flex-col items-center mb-2">
-            <div className="w-20 h-20 mb-2">
-              <img 
-                src={logoImage} 
-                alt="Trend Pilot Logo" 
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <h1 className="text-[#38e07b] text-2xl font-bold leading-tight tracking-tight">
-              Trend Pilot
-            </h1>
-          </div>
+          <h1 className="text-center text-[#38e07b] text-2xl font-bold leading-tight tracking-tight mb-1">
+            Trend Pilot
+          </h1>
           <p className="text-center text-xs text-[#9eb7a8]">{t.home}</p>
         </header>
 
         <main className="flex-1 px-4 py-6 space-y-6">
           <div className="space-y-4">
-            <label className="flex flex-col">
+            <label className="flex flex-col relative">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">
                 {t.financialSymbol}
               </span>
               <input
                 className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
-                placeholder={t.symbolPlaceholder}
+                placeholder="Type symbol or name (e.g., gold, bitcoin, AAPL)"
                 value={symbol}
-                onChange={(e) => {
-                  setSymbol(e.target.value.toUpperCase());
-                  setIsValidationConfirmed(false); // Reset confirmation when symbol changes
+                onChange={(e) => handleSymbolSearch(e.target.value)}
+                onFocus={() => {
+                  if (searchSuggestions.length > 0) {
+                    setShowSearchDropdown(true);
+                  }
                 }}
                 data-testid="input-symbol"
               />
+              
+              {/* Intelligent Search Dropdown */}
+              {showSearchDropdown && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1c2620] border border-[#38e07b]/20 rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
+                  <div className="p-2 space-y-1">
+                    <p className="text-xs text-[#9eb7a8] px-3 py-2">Suggestions:</p>
+                    {searchSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSelectSearchSuggestion(suggestion)}
+                        className="w-full px-3 py-3 bg-[#29382f] rounded-lg hover-elevate active-elevate-2 flex items-start justify-between group"
+                        data-testid={`search-suggestion-${idx}`}
+                      >
+                        <div className="flex flex-col items-start text-left flex-1">
+                          <span className="text-white font-medium text-sm">{suggestion.name}</span>
+                          <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
+                          {suggestion.description && (
+                            <span className="text-xs text-[#6a7f72] mt-0.5">{suggestion.description}</span>
+                          )}
+                        </div>
+                        <span className="text-xs text-[#38e07b] capitalize ml-2 mt-1">
+                          {suggestion.market.replace(/_/g, ' ')}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowSearchDropdown(false)}
+                    className="w-full px-3 py-2 text-xs text-[#9eb7a8] hover:text-white transition-colors border-t border-[#38e07b]/10"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </label>
 
             <label className="flex flex-col">
@@ -734,12 +815,21 @@ export default function Dashboard() {
                 </p>
               )}
 
-              <button
-                onClick={() => setShowValidationModal(false)}
-                className="w-full py-3 px-4 rounded-xl bg-[#29382f] text-white font-medium hover-elevate active-elevate-2"
-              >
-                Close
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleStartOver}
+                  className="flex-1 py-3 px-4 rounded-xl bg-[#29382f] text-white font-medium hover-elevate active-elevate-2"
+                  data-testid="button-start-over"
+                >
+                  Start Over
+                </button>
+                <button
+                  onClick={() => setShowValidationModal(false)}
+                  className="flex-1 py-3 px-4 rounded-xl bg-[#38e07b] text-[#111714] font-bold hover:bg-opacity-90 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           )}
         </DialogContent>

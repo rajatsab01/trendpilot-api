@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
-import logoImage from "@assets/trendpilot-logo.png";
 import {
   Dialog,
   DialogContent,
@@ -106,19 +105,6 @@ export default function Welcome() {
       </header>
 
       <main className="flex flex-1 flex-col justify-center px-6 text-center">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-32 h-32 mb-4">
-            <img 
-              src={logoImage} 
-              alt="Trend Pilot Logo" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <h1 className="text-3xl font-bold text-[#38e07b] tracking-tight">
-            Trend Pilot
-          </h1>
-        </div>
-
         <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
           {t.aiGuidedTrading}
         </h2>

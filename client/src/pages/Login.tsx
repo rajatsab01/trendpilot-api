@@ -4,7 +4,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import logoImage from "@assets/trendpilot-logo.png";
 
 declare global {
   interface Window {
@@ -113,20 +112,6 @@ export default function Login() {
 
       <main className="flex-grow flex flex-col justify-center px-6">
         <div className="w-full max-w-md mx-auto">
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-24 h-24 mb-3">
-              <img 
-                src={logoImage} 
-                alt="Trend Pilot Logo" 
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <h1 className="text-[#38e07b] text-2xl font-bold tracking-tight">
-              Trend Pilot
-            </h1>
-            <p className="text-[#9eb7a8] text-sm mt-1">{t.aiTradingAssistant}</p>
-          </div>
-
           <h2 className="text-white text-2xl font-bold tracking-tight text-center mb-8">
             {t.welcomeBack}
           </h2>
