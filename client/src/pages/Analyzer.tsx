@@ -9,6 +9,7 @@ import { Bookmark, BookmarkCheck, Share2, Download } from "lucide-react";
 import type { Analysis } from "@shared/schema";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import trendPilotLogo from "@assets/trendpilot-logo.png";
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
@@ -90,9 +91,9 @@ export default function Analyzer() {
     
     setIsExportingPDF(true);
     try {
-      const element = document.getElementById("analysis-content");
+      const element = document.getElementById("pdf-export-content");
       if (!element) {
-        throw new Error("Analysis content not found");
+        throw new Error("PDF export content not found");
       }
 
       toast({
@@ -130,7 +131,7 @@ export default function Analyzer() {
         heightLeft -= pageHeight;
       }
 
-      const fileName = `TrendPilot_${analysis.symbol}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `TrendPilot_${analysis.symbol}_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
       pdf.save(fileName);
 
       toast({
@@ -244,8 +245,23 @@ export default function Analyzer() {
             </div>
           </div>
 
-          {/* Symbol and Price Display - Perplexity Validated */}
-          <div className="px-4 pt-2 pb-2 space-y-3">
+          {/* PDF Export Section - Starts from here */}
+          <div id="pdf-export-content" className="bg-[#111714]">
+            {/* TrendPilot Branding Header for PDF */}
+            <div className="px-4 pt-6 pb-4 text-center border-b border-[#1c2620]">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <img 
+                  src={trendPilotLogo}
+                  alt="TrendPilot Logo"
+                  className="h-16 w-16 object-contain rounded-lg"
+                />
+                <h1 className="text-[#38e07b] text-3xl font-bold tracking-tight">TrendPilot</h1>
+              </div>
+              <p className="text-[#9eb7a8] text-sm">AI-Powered Trading Advisory</p>
+            </div>
+
+            {/* Symbol and Price Display - Perplexity Validated */}
+            <div className="px-4 pt-2 pb-2 space-y-3">
             {/* Symbol Display */}
             <div className="bg-[#1c2620] rounded-2xl p-6 text-center">
               {/* Show if symbol was corrected by Perplexity */}
@@ -747,6 +763,8 @@ export default function Analyzer() {
               </button>
             </div>
           </main>
+          </div>
+          {/* End of PDF Export Content */}
         </div>
 
         <BottomNav />
