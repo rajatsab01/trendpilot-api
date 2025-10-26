@@ -3,14 +3,16 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useLocation } from "wouter";
 import BottomNav from "@/components/BottomNav";
 import type { Analysis } from "@shared/schema";
-import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Trash2, Share2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useVersionGuard } from "@/hooks/useVersionGuard";
 
 export default function SavedAnalyses() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { guardAction, UpdateModal } = useVersionGuard();
   const userId = localStorage.getItem("userId");
 
   const { data: savedAnalysesRaw = [], isLoading } = useQuery<Analysis[]>({
@@ -39,12 +41,68 @@ export default function SavedAnalyses() {
     },
   });
 
+  const publishMutation = useMutation({
+    mutationFn: async (analysisId: string) => {
+      const result = await apiRequest("POST", `/api/community/publish/${analysisId}`, {});
+      return await result.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
+      toast({
+        title: "Published",
+        description: "Your analysis is now visible to your followers!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to publish analysis",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unpublishMutation = useMutation({
+    mutationFn: async (analysisId: string) => {
+      const result = await apiRequest("POST", `/api/community/unpublish/${analysisId}`, {});
+      return await result.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
+      toast({
+        title: "Unpublished",
+        description: "Analysis removed from community feed",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to unpublish analysis",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDelete = (e: React.MouseEvent, analysisId: string, symbolName: string) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete button
+    e.stopPropagation();
     
     const confirmed = window.confirm(`Are you sure you want to delete ${symbolName} analysis? This action cannot be undone.`);
     if (confirmed) {
       deleteMutation.mutate(analysisId);
+    }
+  };
+
+  const handleTogglePublish = async (e: React.MouseEvent, analysisId: string, isPublished: boolean) => {
+    e.stopPropagation();
+    
+    // VERSION CHECKPOINT
+    const versionOk = await guardAction();
+    if (!versionOk) return;
+
+    if (isPublished) {
+      unpublishMutation.mutate(analysisId);
+    } else {
+      publishMutation.mutate(analysisId);
     }
   };
 
@@ -214,6 +272,19 @@ export default function SavedAnalyses() {
                         </span>
                       </div>
                       <button
+                        onClick={(e) => handleTogglePublish(e, analysis.id, analysis.isPublished === 1)}
+                        disabled={publishMutation.isPending || unpublishMutation.isPending}
+                        className={`p-1.5 rounded-full border transition-colors disabled:opacity-50 ${
+                          analysis.isPublished === 1
+                            ? "bg-[#38e07b]/20 border-[#38e07b]/40 hover:bg-[#38e07b]/30"
+                            : "bg-gray-500/10 border-gray-500/30 hover:bg-gray-500/20"
+                        }`}
+                        data-testid={`button-publish-analysis-${analysis.id}`}
+                        title={analysis.isPublished === 1 ? "Unpublish from community" : "Publish to community"}
+                      >
+                        <Share2 className={`w-4 h-4 ${analysis.isPublished === 1 ? "text-[#38e07b]" : "text-gray-400"}`} />
+                      </button>
+                      <button
                         onClick={(e) => handleDelete(e, analysis.id, analysis.symbol)}
                         disabled={deleteMutation.isPending}
                         className="p-1.5 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
@@ -255,6 +326,7 @@ export default function SavedAnalyses() {
       </main>
 
       <BottomNav />
+      <UpdateModal />
     </div>
   );
 }

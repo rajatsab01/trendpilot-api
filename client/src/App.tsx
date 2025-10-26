@@ -15,6 +15,8 @@ import Analyzer from "@/pages/Analyzer";
 import BuyTokens from "@/pages/BuyTokens";
 import Charity from "@/pages/Charity";
 import SavedAnalyses from "@/pages/SavedAnalyses";
+import Community from "@/pages/Community";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
 function SmartRouter() {
@@ -48,6 +50,8 @@ function SmartRouter() {
       <Route path="/buy-tokens" component={BuyTokens} />
       <Route path="/charity" component={Charity} />
       <Route path="/saved" component={SavedAnalyses} />
+      <Route path="/community" component={Community} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -10,46 +10,87 @@ import {
 
 /**
  * Version Guard Hook - Blocks critical actions if version is outdated
+ * FAIL-CLOSED: Any version check failure blocks the action
  * Returns a guard function that checks version before allowing actions
  */
 export function useVersionGuard() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [serverVersion, setServerVersion] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isRetrying, setIsRetrying] = useState(false);
 
   /**
    * Guard function - Call this BEFORE any critical action
-   * Returns: true if version is OK, false if outdated (and shows modal)
+   * Returns: true if version is OK, false if outdated/error (and shows modal)
+   * SECURITY: Fail-closed - ANY error blocks the action
    */
   const guardAction = useCallback(async (): Promise<boolean> => {
     try {
       const response = await fetch("/api/version");
+      
+      // FAIL-CLOSED: Any non-OK response blocks action
       if (!response.ok) {
-        console.error("Version check failed");
-        // If version check fails, allow action to proceed (fail-open for UX)
-        return true;
+        console.error("Version check failed - HTTP error");
+        setErrorMessage("Unable to verify app version. Please check your connection.");
+        setShowUpdateModal(true);
+        return false; // BLOCK action
       }
 
       const data = await response.json();
       setServerVersion(data.version);
+      setErrorMessage(""); // Clear any previous errors
 
       // Check if versions match
       if (APP_VERSION !== data.version) {
         // Version mismatch - show mandatory update modal and block action
         setShowUpdateModal(true);
-        return false;
+        return false; // BLOCK action
       }
 
       // Version OK - allow action
       return true;
     } catch (error) {
+      // FAIL-CLOSED: Network errors or exceptions block action
       console.error("Version guard error:", error);
-      // On error, fail-open (allow action)
-      return true;
+      setErrorMessage("Connection error. Please check your internet and retry.");
+      setShowUpdateModal(true);
+      return false; // BLOCK action
     }
   }, []);
 
   const handleRefresh = () => {
     window.location.reload();
+  };
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    setErrorMessage("");
+    
+    try {
+      const response = await fetch("/api/version");
+      
+      if (!response.ok) {
+        setErrorMessage("Still unable to verify version. Please check your connection.");
+        setIsRetrying(false);
+        return;
+      }
+
+      const data = await response.json();
+      setServerVersion(data.version);
+
+      if (APP_VERSION === data.version) {
+        // Version matches now - close modal
+        setShowUpdateModal(false);
+        setErrorMessage("");
+      } else {
+        // Still version mismatch - keep modal open
+        setErrorMessage("");
+      }
+    } catch (error) {
+      setErrorMessage("Connection failed. Please check your internet.");
+    }
+    
+    setIsRetrying(false);
   };
 
   const UpdateModal = () => (
@@ -61,40 +102,59 @@ export function useVersionGuard() {
       >
         <DialogHeader>
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[#38e07b] text-3xl">block</span>
+            <span className="material-symbols-outlined text-[#38e07b] text-3xl">
+              {errorMessage ? "wifi_off" : "block"}
+            </span>
             <DialogTitle className="text-xl font-bold text-white">
-              Update Required to Continue
+              {errorMessage ? "Connection Issue" : "Update Required to Continue"}
             </DialogTitle>
           </div>
           <DialogDescription className="text-[#9eb7a8] text-center leading-relaxed">
-            You're using an older version. Please update to access this feature and continue using Trend Pilot.
+            {errorMessage || "You're using an older version. Please update to access this feature and continue using Trend Pilot."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Why This Update Matters */}
-          <div className="bg-gradient-to-br from-[#38e07b]/10 to-[#29382f] rounded-xl p-4 border border-[#38e07b]/30">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-[#38e07b] text-2xl mt-0.5">new_releases</span>
-              <div>
-                <p className="text-white font-semibold text-sm mb-2">What You're Missing:</p>
-                <ul className="text-[#9eb7a8] text-xs leading-relaxed space-y-1">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#38e07b] mt-0.5">•</span>
-                    <span>Latest features and improvements</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#38e07b] mt-0.5">•</span>
-                    <span>Enhanced chart reliability</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#38e07b] mt-0.5">•</span>
-                    <span>Critical bug fixes and stability</span>
-                  </li>
-                </ul>
+          {/* Error Alert - Show when connection fails */}
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-red-500 text-xl mt-0.5">error</span>
+                <div className="flex-1">
+                  <p className="text-red-400 font-semibold text-sm mb-1">Network Error</p>
+                  <p className="text-[#9eb7a8] text-xs leading-relaxed">
+                    {errorMessage}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Why This Update Matters - Only show when NOT an error */}
+          {!errorMessage && (
+            <div className="bg-gradient-to-br from-[#38e07b]/10 to-[#29382f] rounded-xl p-4 border border-[#38e07b]/30">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-[#38e07b] text-2xl mt-0.5">new_releases</span>
+                <div>
+                  <p className="text-white font-semibold text-sm mb-2">What You're Missing:</p>
+                  <ul className="text-[#9eb7a8] text-xs leading-relaxed space-y-1">
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#38e07b] mt-0.5">•</span>
+                      <span>Latest features and improvements</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#38e07b] mt-0.5">•</span>
+                      <span>Enhanced chart reliability</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#38e07b] mt-0.5">•</span>
+                      <span>Critical bug fixes and stability</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Token Safety - Most Important */}
           <div className="bg-[#29382f] rounded-xl p-4 space-y-2 border-2 border-[#38e07b]">
@@ -117,65 +177,85 @@ export function useVersionGuard() {
                   </div>
                 </div>
                 <p className="text-[#9eb7a8] text-xs mt-3 italic">
-                  Updating is safe and won't affect your data!
+                  {errorMessage ? "Retrying won't affect your data!" : "Updating is safe and won't affect your data!"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Version Info */}
-          <div className="bg-[#1a1f1c] rounded-lg p-3 border border-[#2a3530]">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[#6a7f72]">Your Version:</span>
-              <span className="text-red-400 font-mono">{APP_VERSION}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs mt-1">
-              <span className="text-[#6a7f72]">Latest Version:</span>
-              <span className="text-[#38e07b] font-mono font-semibold">{serverVersion}</span>
-            </div>
-          </div>
-
-          {/* Update Instructions */}
-          <div className="bg-[#29382f] rounded-xl p-4">
-            <p className="text-white font-semibold text-sm mb-3">How to Update:</p>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#38e07b] text-[#111714] flex items-center justify-center text-xs font-bold">
-                  1
-                </div>
-                <div>
-                  <p className="text-white text-xs font-medium mb-1">Mobile App Users</p>
-                  <p className="text-[#9eb7a8] text-xs leading-relaxed">
-                    Visit <span className="text-[#38e07b] font-semibold">trendpilot.replit.app</span> and redownload
-                  </p>
-                </div>
+          {/* Version Info - Only show when NOT an error */}
+          {!errorMessage && serverVersion && (
+            <div className="bg-[#1a1f1c] rounded-lg p-3 border border-[#2a3530]">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#6a7f72]">Your Version:</span>
+                <span className="text-red-400 font-mono">{APP_VERSION}</span>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#38e07b] text-[#111714] flex items-center justify-center text-xs font-bold">
-                  2
-                </div>
-                <div>
-                  <p className="text-white text-xs font-medium mb-1">Web Users</p>
-                  <p className="text-[#9eb7a8] text-xs leading-relaxed">
-                    Click the button below to refresh
-                  </p>
-                </div>
+              <div className="flex items-center justify-between text-xs mt-1">
+                <span className="text-[#6a7f72]">Latest Version:</span>
+                <span className="text-[#38e07b] font-mono font-semibold">{serverVersion}</span>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Single Update Button - No Cancel */}
-          <div className="pt-2">
-            <button
-              onClick={handleRefresh}
-              className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#38e07b]/20"
-              data-testid="button-update-now-guard"
-            >
-              <span className="material-symbols-outlined text-lg">refresh</span>
-              Update Now
-            </button>
-            <p className="text-center text-[#6a7f72] text-xs mt-3">
-              This will only take a moment!
+          {/* Update Instructions - Only show when NOT an error */}
+          {!errorMessage && (
+            <div className="bg-[#29382f] rounded-xl p-4">
+              <p className="text-white font-semibold text-sm mb-3">How to Update:</p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#38e07b] text-[#111714] flex items-center justify-center text-xs font-bold">
+                    1
+                  </div>
+                  <div>
+                    <p className="text-white text-xs font-medium mb-1">Mobile App Users</p>
+                    <p className="text-[#9eb7a8] text-xs leading-relaxed">
+                      Visit <span className="text-[#38e07b] font-semibold">trendpilot.replit.app</span> and redownload
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#38e07b] text-[#111714] flex items-center justify-center text-xs font-bold">
+                    2
+                  </div>
+                  <div>
+                    <p className="text-white text-xs font-medium mb-1">Web Users</p>
+                    <p className="text-[#9eb7a8] text-xs leading-relaxed">
+                      Click the button below to refresh
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="pt-2 space-y-2">
+            {errorMessage ? (
+              // Show Retry button when there's an error
+              <button
+                onClick={handleRetry}
+                disabled={isRetrying}
+                className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#38e07b]/20 disabled:opacity-50"
+                data-testid="button-retry-version-check"
+              >
+                <span className="material-symbols-outlined text-lg">
+                  {isRetrying ? "hourglass_empty" : "refresh"}
+                </span>
+                {isRetrying ? "Checking..." : "Retry Connection"}
+              </button>
+            ) : (
+              // Show Update button when version mismatch
+              <button
+                onClick={handleRefresh}
+                className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#38e07b]/20"
+                data-testid="button-update-now-guard"
+              >
+                <span className="material-symbols-outlined text-lg">refresh</span>
+                Update Now
+              </button>
+            )}
+            <p className="text-center text-[#6a7f72] text-xs">
+              {errorMessage ? "Please ensure you have internet access" : "This will only take a moment!"}
             </p>
           </div>
         </div>
