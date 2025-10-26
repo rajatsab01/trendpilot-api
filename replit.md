@@ -3,6 +3,10 @@
 ## Overview
 Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/sell recommendations and bracket order analysis across various financial markets (Stock, Commodity, Forex, Derivatives, Bond, Cryptocurrency). It uniquely leverages Perplexity AI with real-time web search for all market data validation, symbol correction, and price discovery, eliminating external market data API dependencies. The system supports 12 languages, multi-currency analysis with 20+ global currencies, and exchange/market preference selection (44+ countries/options) for precise symbol resolution. It operates on a token-based usage model and functions strictly as an ADVISORY-ONLY tool without trade execution capabilities. Its core ambition is to offer comprehensive, AI-driven financial guidance to enhance decision-making for traders and investors worldwide.
 
+## Recent Bug Fixes (October 26, 2025)
+- **Fixed Natural Gas Analysis Failure**: Resolved critical bug where commodity futures symbols (NG=F, CL=F, BZ=F) from autocomplete were being malformed to "NG=F=F" in priceData.ts, causing Yahoo Finance API failures. Now correctly preserves existing =F suffix.
+- **Honest Symbol Labeling**: Updated instrument database to accurately reflect Yahoo Finance futures symbols instead of misleading spot symbol claims. Energy commodities (Natural Gas, Crude Oil) correctly labeled as "Yahoo Finance futures symbol" since Yahoo Finance doesn't support true spot/CFD tickers for these commodities.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
