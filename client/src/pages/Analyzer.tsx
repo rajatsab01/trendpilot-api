@@ -218,6 +218,57 @@ export default function Analyzer() {
 
     const chartInterval = getTradingViewInterval(analysis.timeframe ?? undefined, analysis.duration ?? undefined);
 
+    // Convert exchange suffixes to TradingView format
+    // Maps common Yahoo Finance/API suffixes to TradingView exchange prefixes
+    const getTradingViewSymbol = (symbol: string, assetName?: string): string => {
+      const upperSymbol = symbol.toUpperCase();
+      
+      // Verified TradingView exchange prefix mappings
+      const exchangeMapping: Record<string, string> = {
+        // India
+        '.NS': 'NSE:',
+        '.BO': 'BSE:',
+        '.NE': 'NSE:',
+        
+        // Asia-Pacific
+        '.AX': 'ASX:',        // Australia
+        '.T': 'TSE:',         // Tokyo
+        '.HK': 'HKEX:',       // Hong Kong
+        '.SI': 'SGX:',        // Singapore
+        '.KS': 'KRX:',        // South Korea
+        
+        // Europe
+        '.L': 'LSE:',         // London
+        '.DE': 'XETR:',       // Germany Xetr a
+        '.PA': 'EURONEXT:',   // Paris
+        '.AS': 'EURONEXT:',   // Amsterdam
+        '.MI': 'MIL:',        // Milan
+        '.MC': 'BME:',        // Madrid
+        
+        // Americas
+        '.TO': 'TSX:',        // Toronto
+        '.V': 'TSXV:',        // TSX Venture
+        '.SN': 'BCS:',        // Santiago Chile
+        '.SA': 'BMFBOVESPA:', // Brazil São Paulo
+        '.MX': 'BMV:',        // Mexico
+      };
+      
+      // Check for matching suffix and convert to prefix
+      for (const [suffix, prefix] of Object.entries(exchangeMapping)) {
+        if (upperSymbol.endsWith(suffix)) {
+          const baseSymbol = upperSymbol.slice(0, -suffix.length);
+          return `${prefix}${baseSymbol}`;
+        }
+      }
+      
+      // For unmapped exchanges, just use the symbol as-is
+      // TradingView's symbol editor will help users find the right format
+      return symbol;
+    };
+
+    const tvSymbol = getTradingViewSymbol(analysis.correctedSymbol || analysis.symbol, analysis.assetName);
+    const tvChartUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(tvSymbol)}&interval=${chartInterval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`;
+
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
         <div className="flex-grow">
@@ -238,10 +289,27 @@ export default function Analyzer() {
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
               <iframe
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(analysis.correctedSymbol || analysis.symbol)}&interval=${chartInterval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`}
+                src={tvChartUrl}
                 style={{ width: '100%', height: '300px', border: 'none' }}
                 title="TradingView Chart"
               />
+              {/* Chart info note */}
+              <div className="p-2 text-center">
+                <p className="text-xs text-[#6a7f72]">
+                  Chart for: {tvSymbol} 
+                  {tvSymbol !== (analysis.correctedSymbol || analysis.symbol) && (
+                    <span className="text-[#9eb7a8]"> (simplified from {analysis.correctedSymbol || analysis.symbol})</span>
+                  )}
+                </p>
+                <a 
+                  href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#38e07b] hover:underline"
+                >
+                  Open full chart in TradingView →
+                </a>
+              </div>
             </div>
           </div>
 

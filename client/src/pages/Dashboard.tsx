@@ -319,15 +319,15 @@ export default function Dashboard() {
   };
 
   const handleSelectSearchSuggestion = (suggestion: {symbol: string; name: string; market: string; description?: string}) => {
-    // Auto-fill symbol and market
+    // Auto-fill symbol only (let user select market manually to maintain flow)
     setSymbol(suggestion.symbol);
-    setMarket(suggestion.market);
+    // Don't auto-fill market - exchange will be used with APIs for better results
     setShowSearchDropdown(false);
     setSearchSuggestions([]);
     
     toast({
       title: "Instrument Selected",
-      description: `${suggestion.name} - Click Enlighten Me to analyze`,
+      description: `${suggestion.name} selected. Please select market and click Enlighten Me.`,
     });
   };
 
