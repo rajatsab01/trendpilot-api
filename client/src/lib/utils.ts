@@ -117,10 +117,11 @@ export function convertToTradingViewSymbol(symbol: string, market: string): stri
     return `TSX:${base}`;
   }
   
-  // US stocks - no suffix, add NASDAQ or NYSE prefix
-  // For US stocks without suffix, try NASDAQ first (most common)
+  // US stocks - no suffix means US stock
+  // TradingView auto-detects exchange (NYSE/NASDAQ/ARCA) if we don't specify
+  // Just return the symbol without prefix for better compatibility
   if (!/\.[A-Z]+$/.test(upperSymbol)) {
-    return `NASDAQ:${upperSymbol}`;
+    return upperSymbol; // TradingView will auto-detect the correct exchange
   }
   
   // Fallback - return as-is

@@ -5,7 +5,30 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 ## Recent Bug Fixes (October 26, 2025)
 
-**Critical Fixes - Latest Session:**
+**LATEST CRITICAL FIXES (Session 2 - Tonight):**
+
+1. **Fixed Forex Pair Currency Conversion Bug** - CAD/USD now analyzes correctly as CAD/USD instead of being incorrectly converted to CAD/INR:
+   - Moved `getExchangeCurrency()` call BEFORE all conversion logic in perplexity.ts (line 457)
+   - Added `isForexPairSymbol` check that detects forex pairs (=X suffix, slash format, 6-letter currency codes) and skips conversion entirely
+   - Forex pairs now use 4 decimal precision (e.g., 1.3547 for CAD/USD exchange rate)
+   - The "price" of forex pairs IS the exchange rate itself, not a convertible price
+
+2. **Fixed Double Currency Conversion Regression** - TATAMOTORS.NS now shows ₹403.50 instead of ₹35,637:
+   - Added `isSameCurrency` check to detect when source currency matches target currency (lines 464-537)
+   - When Yahoo Finance returns INR prices and user currency is INR, prices are used as-is without conversion
+   - Previously: INR price (403.50) was treated as USD, then converted to INR (403.50 × 83.45 = 33,630) - DOUBLE CONVERSION BUG
+   - Now: If source=target currency, prices are formatted directly without conversion
+   - Conversion only happens when truly needed (e.g., USD stock price → INR for Indian user)
+
+3. **Improved TradingView Chart Compatibility** - Charts now work for all markets with better exchange detection:
+   - Removed forced NASDAQ: prefix for US stocks (line 127 in utils.ts)
+   - TradingView now auto-detects correct exchange (NYSE, NASDAQ, ARCA) for better compatibility
+   - Indian stocks: .NS → NSE:TATAMOTORS, .BO → BSE:RELIANCE
+   - Commodities: GC=F → TVC:GOLD, CL=F → TVC:USOIL
+   - Forex: CADUSD=X → FX_IDC:USDCAD
+   - Crypto: BTCUSDT → BINANCE:BTCUSDT
+
+**Critical Fixes - Previous Session:**
 
 1. **Fixed Critical Currency Conversion Math Error** - Resolved incorrect price conversion bug where TATAMOTORS.NS was showing ₹35,637 instead of ₹403.50. Issue was prices being multiplied by exchange rate instead of divided. Implemented smart currency conversion system:
    - Added `getExchangeCurrency()` function that maps exchange suffixes to native currencies (.NS/.BO→INR, US→USD, .L→GBP, .T→JPY, etc.)
