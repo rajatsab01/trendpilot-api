@@ -27,15 +27,10 @@ export default function VersionChecker() {
       const data = await response.json();
       setServerVersion(data.version);
 
-      // Compare versions - if client version is older than server version, show update modal
+      // Compare versions - if client version is older than server version, show mandatory update modal
       if (APP_VERSION !== data.version) {
-        // Check if user already dismissed this version update
-        const lastDismissedVersion = localStorage.getItem("dismissedUpdateVersion");
-        
-        // Only show modal if user hasn't dismissed this specific version
-        if (lastDismissedVersion !== data.version) {
-          setShowUpdateModal(true);
-        }
+        // Mandatory update - always show modal for version mismatch
+        setShowUpdateModal(true);
       }
     } catch (error) {
       console.error("Version check error:", error);
@@ -48,12 +43,6 @@ export default function VersionChecker() {
     window.location.reload();
   };
 
-  const handleDismiss = () => {
-    // Store dismissed version so we don't show again until next version
-    localStorage.setItem("dismissedUpdateVersion", serverVersion);
-    setShowUpdateModal(false);
-  };
-
   return (
     <Dialog open={showUpdateModal}>
       <DialogContent 
@@ -63,78 +52,128 @@ export default function VersionChecker() {
       >
         <DialogHeader>
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[#38e07b] text-2xl">update</span>
+            <span className="material-symbols-outlined text-[#38e07b] text-3xl">system_update</span>
             <DialogTitle className="text-xl font-bold text-white">
-              Update Available
+              Important Update Required
             </DialogTitle>
           </div>
-          <DialogDescription className="text-[#9eb7a8] text-center">
-            A new version of Trend Pilot is available!
+          <DialogDescription className="text-[#9eb7a8] text-center leading-relaxed">
+            We've made important improvements to enhance your experience. Please update to continue using Trend Pilot.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Version Info */}
-          <div className="bg-[#29382f] rounded-lg p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[#9eb7a8] text-sm">Current Version:</span>
-              <span className="text-white font-mono font-semibold text-sm">{APP_VERSION}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[#9eb7a8] text-sm">Latest Version:</span>
-              <span className="text-[#38e07b] font-mono font-semibold text-sm">{serverVersion}</span>
+          {/* Why This Update Matters */}
+          <div className="bg-gradient-to-br from-[#38e07b]/10 to-[#29382f] rounded-xl p-4 border border-[#38e07b]/30">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-[#38e07b] text-2xl mt-0.5">stars</span>
+              <div>
+                <p className="text-white font-semibold text-sm mb-2">What's New?</p>
+                <ul className="text-[#9eb7a8] text-xs leading-relaxed space-y-1">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#38e07b] mt-0.5">•</span>
+                    <span>Enhanced chart reliability with Yahoo Finance integration</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#38e07b] mt-0.5">•</span>
+                    <span>Improved stability and performance</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#38e07b] mt-0.5">•</span>
+                    <span>Bug fixes for better user experience</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
-          {/* Token Safety Reassurance */}
-          <div className="bg-[#29382f] rounded-lg p-4 space-y-2 border border-[#38e07b]/20">
-            <div className="flex items-start gap-2">
-              <span className="material-symbols-outlined text-[#38e07b] text-lg mt-0.5">verified</span>
+          {/* Token Safety - Most Important */}
+          <div className="bg-[#29382f] rounded-xl p-4 space-y-2 border-2 border-[#38e07b]">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-[#38e07b] text-2xl mt-0.5">verified_user</span>
               <div>
-                <p className="text-white font-semibold text-sm mb-1">Your Tokens Are Safe!</p>
-                <p className="text-[#9eb7a8] text-xs leading-relaxed">
-                  All your tokens and analysis history are securely linked to your mobile number. 
-                  Refreshing or redownloading the app won't affect your balance or data.
+                <p className="text-[#38e07b] font-bold text-base mb-2">Your Data is 100% Protected</p>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#38e07b] text-sm mt-0.5">check_circle</span>
+                    <p className="text-white text-xs leading-relaxed">
+                      All your <span className="font-semibold">tokens</span> are securely linked to your mobile number
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#38e07b] text-sm mt-0.5">check_circle</span>
+                    <p className="text-white text-xs leading-relaxed">
+                      Your <span className="font-semibold">analysis history</span> remains intact
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#38e07b] text-sm mt-0.5">check_circle</span>
+                    <p className="text-white text-xs leading-relaxed">
+                      Your <span className="font-semibold">saved analyses</span> are completely safe
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[#9eb7a8] text-xs mt-3 italic">
+                  Updating won't affect any of your data. It's completely safe!
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Update Instructions */}
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <span className="material-symbols-outlined text-[#38e07b] text-sm mt-0.5">smartphone</span>
-              <p className="text-[#9eb7a8] text-xs">
-                <span className="text-white font-semibold">For Mobile App Users:</span> Please redownload 
-                the latest version from trendpilot.replit.app
-              </p>
+          {/* Version Info */}
+          <div className="bg-[#1a1f1c] rounded-lg p-3 border border-[#2a3530]">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[#6a7f72]">Your Version:</span>
+              <span className="text-white font-mono">{APP_VERSION}</span>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="material-symbols-outlined text-[#38e07b] text-sm mt-0.5">web</span>
-              <p className="text-[#9eb7a8] text-xs">
-                <span className="text-white font-semibold">For Web Users:</span> Simply refresh this page 
-                to get the latest features and fixes
-              </p>
+            <div className="flex items-center justify-between text-xs mt-1">
+              <span className="text-[#6a7f72]">Latest Version:</span>
+              <span className="text-[#38e07b] font-mono font-semibold">{serverVersion}</span>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-2 pt-2">
+          {/* Update Instructions */}
+          <div className="bg-[#29382f] rounded-xl p-4">
+            <p className="text-white font-semibold text-sm mb-3">How to Update:</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#38e07b] text-[#111714] flex items-center justify-center text-xs font-bold">
+                  1
+                </div>
+                <div>
+                  <p className="text-white text-xs font-medium mb-1">Mobile App Users</p>
+                  <p className="text-[#9eb7a8] text-xs leading-relaxed">
+                    Visit <span className="text-[#38e07b] font-semibold">trendpilot.replit.app</span> and redownload the latest version
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#38e07b] text-[#111714] flex items-center justify-center text-xs font-bold">
+                  2
+                </div>
+                <div>
+                  <p className="text-white text-xs font-medium mb-1">Web Users</p>
+                  <p className="text-[#9eb7a8] text-xs leading-relaxed">
+                    Simply click the button below to refresh and get the latest version
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Single Update Button - No Cancel */}
+          <div className="pt-2">
             <button
               onClick={handleRefresh}
-              className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-              data-testid="button-refresh-now"
+              className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#38e07b]/20"
+              data-testid="button-update-now"
             >
-              <span className="material-symbols-outlined text-sm">refresh</span>
-              Refresh Now
+              <span className="material-symbols-outlined text-lg">refresh</span>
+              Update Now
             </button>
-            <button
-              onClick={handleDismiss}
-              className="w-full bg-transparent hover:bg-[#29382f] text-[#9eb7a8] font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-              data-testid="button-remind-later"
-            >
-              Remind Me Later
-            </button>
+            <p className="text-center text-[#6a7f72] text-xs mt-3">
+              Thank you for your patience and continued support!
+            </p>
           </div>
         </div>
       </DialogContent>
