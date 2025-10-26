@@ -20,6 +20,11 @@ function SmartRouter() {
   const [location, setLocation] = useLocation();
   
   useEffect(() => {
+    // Scroll to top on every route change
+    window.scrollTo(0, 0);
+  }, [location]);
+  
+  useEffect(() => {
     // Only run smart routing on initial load (when at root)
     if (location === "/") {
       const languageCompleted = localStorage.getItem("languageCompleted");

@@ -218,6 +218,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "Share PDF",
     exportingPDF: "Exporting PDF...",
+    pdfExportInProgressDesc: "Please wait while we create your analysis report",
     pdfExported: "PDF Exported",
     pdfExportedDesc: "Your analysis has been saved as PDF",
     pdfExportFailed: "PDF export failed",
@@ -236,7 +237,12 @@ export const translations = {
     closedCandleExplanation: "Analysis uses closed candle prices for accuracy. Current live price may differ.",
     
     // Saved Analyses Page
+    save: "Save",
     saved: "Saved",
+    analysisSaved: "Analysis saved successfully",
+    analysisUnsaved: "Analysis unsaved",
+    unsaveConfirm: "Are you sure you want to unsave this analysis? It will be removed from your saved list.",
+    failedToUpdateAnalysis: "Failed to update analysis",
     totalSaved: "Total Saved",
     wonTrades: "Won",
     lostTrades: "Lost",
@@ -462,6 +468,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "PDF साझा करें",
     exportingPDF: "PDF निर्यात हो रहा है...",
+    pdfExportInProgressDesc: "कृपया प्रतीक्षा करें जब हम आपकी विश्लेषण रिपोर्ट बनाते हैं",
     pdfExported: "PDF निर्यात किया गया",
     pdfExportedDesc: "आपका विश्लेषण PDF के रूप में सहेजा गया है",
     pdfExportFailed: "PDF निर्यात विफल",
@@ -480,7 +487,12 @@ export const translations = {
     closedCandleExplanation: "सटीकता के लिए विश्लेषण बंद कैंडल मूल्यों का उपयोग करता है। वर्तमान लाइव मूल्य भिन्न हो सकता है।",
     
     // Saved Analyses Page
+    save: "सहेजें",
     saved: "सहेजा गया",
+    analysisSaved: "विश्लेषण सफलतापूर्वक सहेजा गया",
+    analysisUnsaved: "विश्लेषण असहेजा गया",
+    unsaveConfirm: "क्या आप वाकई इस विश्लेषण को असहेजना चाहते हैं? इसे आपकी सहेजी गई सूची से हटा दिया जाएगा।",
+    failedToUpdateAnalysis: "विश्लेषण अपडेट करने में विफल",
     totalSaved: "कुल सहेजे गए",
     wonTrades: "जीते",
     lostTrades: "हारे",
@@ -691,6 +703,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "Compartir PDF",
     exportingPDF: "Exportando PDF...",
+    pdfExportInProgressDesc: "Por favor espere mientras creamos su informe de análisis",
     pdfExported: "PDF Exportado",
     pdfExportedDesc: "Su análisis se ha guardado como PDF",
     pdfExportFailed: "Error al exportar PDF",
@@ -709,7 +722,12 @@ export const translations = {
     closedCandleExplanation: "El análisis utiliza precios de velas cerradas para mayor precisión. El precio en vivo actual puede diferir.",
     
     // Saved Analyses Page
+    save: "Guardar",
     saved: "Guardado",
+    analysisSaved: "Análisis guardado exitosamente",
+    analysisUnsaved: "Análisis no guardado",
+    unsaveConfirm: "¿Está seguro de que desea desmarcar este análisis? Se eliminará de su lista guardada.",
+    failedToUpdateAnalysis: "No se pudo actualizar el análisis",
     totalSaved: "Total Guardado",
     wonTrades: "Ganadas",
     lostTrades: "Perdidas",
@@ -1149,6 +1167,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "PDF teilen",
     exportingPDF: "PDF wird exportiert...",
+    pdfExportInProgressDesc: "Bitte warten Sie, während wir Ihren Analysebericht erstellen",
     pdfExported: "PDF exportiert",
     pdfExportedDesc: "Ihre Analyse wurde als PDF gespeichert",
     pdfExportFailed: "PDF-Export fehlgeschlagen",
@@ -1167,7 +1186,12 @@ export const translations = {
     closedCandleExplanation: "Die Analyse verwendet geschlossene Kerzenkurse für Genauigkeit. Der aktuelle Live-Preis kann abweichen.",
     
     // Saved Analyses Page
+    save: "Speichern",
     saved: "Gespeichert",
+    analysisSaved: "Analyse erfolgreich gespeichert",
+    analysisUnsaved: "Analyse nicht gespeichert",
+    unsaveConfirm: "Sind Sie sicher, dass Sie diese Analyse nicht mehr speichern möchten? Sie wird aus Ihrer gespeicherten Liste entfernt.",
+    failedToUpdateAnalysis: "Analyse konnte nicht aktualisiert werden",
     totalSaved: "Gesamt gespeichert",
     wonTrades: "Gewonnen",
     lostTrades: "Verloren",
@@ -1396,7 +1420,12 @@ export const translations = {
     closedCandleExplanation: "L'analyse utilise les prix des bougies fermées pour plus de précision. Le prix en direct actuel peut différer.",
     
     // Saved Analyses Page
+    save: "Enregistrer",
     saved: "Enregistré",
+    analysisSaved: "Analyse enregistrée avec succès",
+    analysisUnsaved: "Analyse non enregistrée",
+    unsaveConfirm: "Êtes-vous sûr de vouloir supprimer cette analyse de vos favoris? Elle sera retirée de votre liste enregistrée.",
+    failedToUpdateAnalysis: "Échec de la mise à jour de l'analyse",
     totalSaved: "Total Enregistré",
     wonTrades: "Gagnées",
     lostTrades: "Perdues",
@@ -1625,7 +1654,12 @@ export const translations = {
     closedCandleExplanation: "يستخدم التحليل أسعار الشموع المغلقة للدقة. قد يختلف السعر المباشر الحالي.",
     
     // Saved Analyses Page
+    save: "حفظ",
     saved: "محفوظ",
+    analysisSaved: "تم حفظ التحليل بنجاح",
+    analysisUnsaved: "التحليل غير محفوظ",
+    unsaveConfirm: "هل أنت متأكد من أنك تريد إلغاء حفظ هذا التحليل؟ سيتم إزالته من قائمتك المحفوظة.",
+    failedToUpdateAnalysis: "فشل تحديث التحليل",
     totalSaved: "إجمالي المحفوظ",
     wonTrades: "رابحة",
     lostTrades: "خاسرة",
@@ -1836,6 +1870,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "Compartilhar PDF",
     exportingPDF: "Exportando PDF...",
+    pdfExportInProgressDesc: "Por favor aguarde enquanto criamos seu relatório de análise",
     pdfExported: "PDF Exportado",
     pdfExportedDesc: "Sua análise foi salva como PDF",
     pdfExportFailed: "Falha ao exportar PDF",
@@ -1854,7 +1889,12 @@ export const translations = {
     closedCandleExplanation: "A análise usa preços de velas fechadas para precisão. O preço ao vivo atual pode diferir.",
     
     // Saved Analyses Page
+    save: "Salvar",
     saved: "Salvo",
+    analysisSaved: "Análise salva com sucesso",
+    analysisUnsaved: "Análise não salva",
+    unsaveConfirm: "Tem certeza de que deseja desmarcar esta análise? Ela será removida da sua lista salva.",
+    failedToUpdateAnalysis: "Falha ao atualizar análise",
     totalSaved: "Total Salvo",
     wonTrades: "Ganhas",
     lostTrades: "Perdidas",
@@ -2065,6 +2105,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "Поделиться PDF",
     exportingPDF: "Экспорт PDF...",
+    pdfExportInProgressDesc: "Пожалуйста, подождите, пока мы создаем ваш отчет об анализе",
     pdfExported: "PDF экспортирован",
     pdfExportedDesc: "Ваш анализ сохранен как PDF",
     pdfExportFailed: "Не удалось экспортировать PDF",
@@ -2083,7 +2124,12 @@ export const translations = {
     closedCandleExplanation: "Анализ использует цены закрытых свечей для точности. Текущая живая цена может отличаться.",
     
     // Saved Analyses Page
+    save: "Сохранить",
     saved: "Сохранено",
+    analysisSaved: "Анализ успешно сохранен",
+    analysisUnsaved: "Анализ не сохранен",
+    unsaveConfirm: "Вы уверены, что хотите отменить сохранение этого анализа? Он будет удален из вашего списка сохраненных.",
+    failedToUpdateAnalysis: "Не удалось обновить анализ",
     totalSaved: "Всего сохранено",
     wonTrades: "Выигранные",
     lostTrades: "Проигранные",
@@ -2294,6 +2340,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "PDFを共有",
     exportingPDF: "PDFをエクスポート中...",
+    pdfExportInProgressDesc: "分析レポートを作成中です。お待ちください",
     pdfExported: "PDFエクスポート完了",
     pdfExportedDesc: "分析がPDFとして保存されました",
     pdfExportFailed: "PDFエクスポート失敗",
@@ -2312,7 +2359,12 @@ export const translations = {
     closedCandleExplanation: "分析は精度のために閉じたローソク足価格を使用します。現在のライブ価格は異なる場合があります。",
     
     // Saved Analyses Page
+    save: "保存",
     saved: "保存済み",
+    analysisSaved: "分析が正常に保存されました",
+    analysisUnsaved: "分析が未保存",
+    unsaveConfirm: "この分析の保存を解除してもよろしいですか？保存リストから削除されます。",
+    failedToUpdateAnalysis: "分析の更新に失敗しました",
     totalSaved: "合計保存数",
     wonTrades: "勝ち",
     lostTrades: "負け",
@@ -2523,6 +2575,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "PDF 공유",
     exportingPDF: "PDF 내보내는 중...",
+    pdfExportInProgressDesc: "분석 보고서를 생성하는 동안 잠시 기다려 주세요",
     pdfExported: "PDF 내보내기 완료",
     pdfExportedDesc: "분석이 PDF로 저장되었습니다",
     pdfExportFailed: "PDF 내보내기 실패",
@@ -2541,7 +2594,12 @@ export const translations = {
     closedCandleExplanation: "분석은 정확성을 위해 종료된 캔들 가격을 사용합니다. 현재 실시간 가격은 다를 수 있습니다.",
     
     // Saved Analyses Page
+    save: "저장",
     saved: "저장됨",
+    analysisSaved: "분석이 성공적으로 저장되었습니다",
+    analysisUnsaved: "분석 저장 취소됨",
+    unsaveConfirm: "이 분석의 저장을 취소하시겠습니까? 저장된 목록에서 제거됩니다.",
+    failedToUpdateAnalysis: "분석 업데이트 실패",
     totalSaved: "총 저장 수",
     wonTrades: "수익",
     lostTrades: "손실",
@@ -2752,6 +2810,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "Condividi PDF",
     exportingPDF: "Esportazione PDF...",
+    pdfExportInProgressDesc: "Attendere mentre creiamo il vostro rapporto di analisi",
     pdfExported: "PDF esportato",
     pdfExportedDesc: "La tua analisi è stata salvata come PDF",
     pdfExportFailed: "Esportazione PDF fallita",
@@ -2770,7 +2829,12 @@ export const translations = {
     closedCandleExplanation: "L'analisi utilizza i prezzi delle candele chiuse per accuratezza. Il prezzo live corrente potrebbe essere diverso.",
     
     // Saved Analyses Page
+    save: "Salva",
     saved: "Salvato",
+    analysisSaved: "Analisi salvata con successo",
+    analysisUnsaved: "Analisi non salvata",
+    unsaveConfirm: "Sei sicuro di voler rimuovere questa analisi dai salvati? Verrà rimossa dalla tua lista salvata.",
+    failedToUpdateAnalysis: "Aggiornamento analisi fallito",
     totalSaved: "Totale salvato",
     wonTrades: "Vinte",
     lostTrades: "Perse",

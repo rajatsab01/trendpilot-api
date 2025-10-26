@@ -72,14 +72,14 @@ export default function Analyzer() {
       queryClient.invalidateQueries({ queryKey: ["/api/analysis", analysisId] });
       queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
       toast({
-        title: "Success",
-        description: data.isSaved ? "Analysis saved successfully" : "Analysis unsaved",
+        title: t.success,
+        description: data.isSaved ? t.analysisSaved : t.analysisUnsaved,
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update analysis",
+        title: t.error,
+        description: t.failedToUpdateAnalysis,
         variant: "destructive",
       });
     },
@@ -96,8 +96,8 @@ export default function Analyzer() {
       }
 
       toast({
-        title: "Generating PDF...",
-        description: "Please wait while we create your analysis report",
+        title: t.exportingPDF,
+        description: t.pdfExportInProgressDesc,
       });
 
       const canvas = await html2canvas(element, {
@@ -134,14 +134,14 @@ export default function Analyzer() {
       pdf.save(fileName);
 
       toast({
-        title: "PDF Exported Successfully",
-        description: `Your analysis has been saved as ${fileName}`,
+        title: t.pdfExported,
+        description: t.pdfExportedDesc,
       });
     } catch (error) {
       console.error("PDF export error:", error);
       toast({
-        title: "Export Failed",
-        description: "Failed to generate PDF. Please try again.",
+        title: t.pdfExportFailed,
+        description: t.pdfExportFailed,
         variant: "destructive",
       });
     } finally {
@@ -152,7 +152,7 @@ export default function Analyzer() {
   const handleSaveClick = (analysis: Analysis) => {
     // If opened from saved page and currently saved, show confirmation before unsaving
     if (fromSaved && analysis.isSaved === 1) {
-      const confirmed = window.confirm("Are you sure you want to unsave this analysis? It will be removed from your saved list.");
+      const confirmed = window.confirm(t.unsaveConfirm);
       if (!confirmed) return;
     }
     saveMutation.mutate(analysis.id);
@@ -272,7 +272,7 @@ export default function Analyzer() {
             {/* Current Live Market Price */}
             {analysis.livePrice && parseFloat(analysis.livePrice) > 0 && (
               <div className="bg-[#1c2620] rounded-2xl p-6 text-center border-2 border-[#38e07b]">
-                <p className="text-[#9eb7a8] text-sm mb-1">💹 Current Market Price (Live)</p>
+                <p className="text-[#9eb7a8] text-sm mb-1">💹 {t.currentMarketPrice}</p>
                 <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-live-price">
                   ${parseFloat(analysis.livePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -282,7 +282,7 @@ export default function Analyzer() {
             {/* Analysis Price (Candle Close) */}
             {analysis.candleClosePrice && parseFloat(analysis.candleClosePrice) > 0 && (
               <div className="bg-[#1c2620] rounded-2xl p-4 text-center">
-                <p className="text-[#6a7f72] text-xs mb-1">📊 Analysis Based On</p>
+                <p className="text-[#6a7f72] text-xs mb-1">📊 {t.analysisBasedOn}</p>
                 <p className="text-white text-2xl font-bold tracking-tight" data-testid="text-analysis-price">
                   ${parseFloat(analysis.candleClosePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -308,11 +308,11 @@ export default function Analyzer() {
                 <span className="material-symbols-outlined text-[#38e07b] text-xl mt-0.5">info</span>
                 <div className="flex-1">
                   <p className="text-[#9eb7a8] text-sm leading-relaxed">
-                    <span className="text-white font-medium">Why closed candles?</span> We analyze the last <strong>closed {analysis.timeframe || ''} candle</strong> for accuracy and reliability. Live prices fluctuate constantly, making analysis unreliable.
+                    {t.closedCandleExplanation}
                   </p>
                   {analysis.nextCandleCloseTime && (
                     <p className="text-[#6a7f72] text-xs mt-2">
-                      <span className="text-[#38e07b]">⏰ Re-analyze after:</span> {analysis.nextCandleCloseTime}
+                      <span className="text-[#38e07b]">⏰ {t.nextCandleCloses}:</span> {analysis.nextCandleCloseTime}
                     </p>
                   )}
                 </div>
@@ -494,19 +494,19 @@ export default function Analyzer() {
                   <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
                     {(() => {
                       const entry = parseFloat(analysis.entry || "0");
-                      const takeProfit = parseFloat(analysis.takeProfit || "0");
+                      const tp3 = parseFloat(analysis.tp3 || "0");
                       const stopLoss = parseFloat(analysis.stopLoss || "0");
                       
                       let risk, reward;
                       if (analysis.recommendation === "BUY") {
                         risk = entry - stopLoss;
-                        reward = takeProfit - entry;
+                        reward = tp3 - entry;
                       } else {
                         risk = stopLoss - entry;
-                        reward = entry - takeProfit;
+                        reward = entry - tp3;
                       }
                       
-                      if (risk <= 0 || reward <= 0) return "N/A";
+                      if (risk <= 0 || reward <= 0 || isNaN(risk) || isNaN(reward)) return "N/A";
                       
                       const ratio = reward / risk;
                       return `1:${ratio.toFixed(2)}`;
@@ -726,7 +726,7 @@ export default function Analyzer() {
                   ) : (
                     <Bookmark className="w-6 h-6" />
                   )}
-                  <span>{analysis.isSaved === 1 ? "Saved ✓" : "Save"}</span>
+                  <span>{analysis.isSaved === 1 ? `${t.saved} ✓` : t.save}</span>
                 </button>
                 <button
                   onClick={handleExportPDF}
@@ -735,7 +735,7 @@ export default function Analyzer() {
                   data-testid="button-export-pdf"
                 >
                   <Download className="w-6 h-6" />
-                  <span>{isExportingPDF ? "Exporting..." : "Share PDF"}</span>
+                  <span>{isExportingPDF ? t.exportingPDF : t.sharePDF}</span>
                 </button>
               </div>
               <button
