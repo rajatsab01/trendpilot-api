@@ -62,22 +62,18 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "DOGEUSDT", name: "Dogecoin", market: "cryptocurrency", description: "Meme cryptocurrency" },
   ],
 
-  // Precious Metals (Commodities) - SPOT symbols recommended for analysis
+  // Precious Metals (Commodities) - Yahoo Finance only supports futures symbols
   "gold": [
-    { symbol: "XAUUSD", name: "Gold/USD SPOT", market: "commodity", description: "RECOMMENDED: Gold spot price for analysis" },
-    { symbol: "GC=F", name: "Gold Futures", market: "commodity", description: "Gold futures contract (not for spot analysis)" },
+    { symbol: "GC=F", name: "Gold Futures", market: "commodity", description: "Gold futures (Yahoo Finance symbol)" },
   ],
   "silver": [
-    { symbol: "XAGUSD", name: "Silver/USD SPOT", market: "commodity", description: "RECOMMENDED: Silver spot price for analysis" },
-    { symbol: "SI=F", name: "Silver Futures", market: "commodity", description: "Silver futures contract (not for spot analysis)" },
+    { symbol: "SI=F", name: "Silver Futures", market: "commodity", description: "Silver futures (Yahoo Finance symbol)" },
   ],
   "platinum": [
-    { symbol: "XPTUSD", name: "Platinum/USD SPOT", market: "commodity", description: "RECOMMENDED: Platinum spot price" },
-    { symbol: "PL=F", name: "Platinum Futures", market: "commodity", description: "Platinum futures (not for spot analysis)" },
+    { symbol: "PL=F", name: "Platinum Futures", market: "commodity", description: "Platinum futures (Yahoo Finance symbol)" },
   ],
   "palladium": [
-    { symbol: "XPDUSD", name: "Palladium/USD SPOT", market: "commodity", description: "RECOMMENDED: Palladium spot price" },
-    { symbol: "PA=F", name: "Palladium Futures", market: "commodity", description: "Palladium futures (not for spot analysis)" },
+    { symbol: "PA=F", name: "Palladium Futures", market: "commodity", description: "Palladium futures (Yahoo Finance symbol)" },
   ],
 
   // Energy Commodities - Yahoo Finance only supports futures symbols
@@ -255,7 +251,6 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
   ],
   "tata": [
     { symbol: "TATAMOTORS.NS", name: "Tata Motors Limited", market: "stock_equities", description: "Indian auto company (NSE)" },
-    { symbol: "TTM", name: "Tata Motors ADR", market: "stock_equities", description: "Indian auto company (US ADR)" },
   ],
 
   // UK Stocks

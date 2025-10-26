@@ -11,6 +11,7 @@
  */
 
 import { instrumentDatabase, type InstrumentSuggestion } from "./instrumentSearch.js";
+import { normalizeSymbolForAPI, type MarketType } from "./symbolRegistry.js";
 
 interface SymbolTestResult {
   symbol: string;
@@ -226,27 +227,9 @@ async function testYahooSymbol(
   const startTime = Date.now();
   
   try {
-    let yahooSymbol = symbol.toUpperCase();
-    
-    // Apply market-specific formatting if symbol doesn't already have a suffix
-    const hasExistingSuffix = yahooSymbol.includes('=') || yahooSymbol.includes('.');
-    
-    if (!hasExistingSuffix) {
-      if (market === 'forex') {
-        // Forex pairs need =X suffix
-        if (yahooSymbol.length === 6) {
-          yahooSymbol = `${yahooSymbol}=X`;
-        }
-      } else if (market === 'commodity') {
-        // Spot commodity symbols (XAUUSD, XAGUSD, XPTUSD, XPDUSD) need =X suffix
-        const isSpotSymbol = yahooSymbol.match(/^X[A-Z]{2}USD$/);
-        if (isSpotSymbol) {
-          yahooSymbol = `${yahooSymbol}=X`; // Gold spot, Silver spot, etc.
-        } else {
-          yahooSymbol = `${yahooSymbol}=F`; // Futures symbols
-        }
-      }
-    }
+    // Use unified symbol normalization from symbolRegistry
+    // This ensures test suite uses the same transformation logic as the rest of the app
+    const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
     
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
     const response = await fetch(url, {

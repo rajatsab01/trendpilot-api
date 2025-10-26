@@ -319,31 +319,13 @@ export function initializeSymbolRegistry(): void {
     });
   });
 
-  // Spot commodities (Yahoo Finance)
-  const spotCommodities: Array<{ symbol: string; name: string; description: string }> = [
-    { symbol: "XAUUSD", name: "Gold Spot", description: "Gold spot price (recommended over futures)" },
-    { symbol: "XAGUSD", name: "Silver Spot", description: "Silver spot price (recommended over futures)" },
-    { symbol: "XPTUSD", name: "Platinum Spot", description: "Platinum spot price" },
-    { symbol: "XPDUSD", name: "Palladium Spot", description: "Palladium spot price" },
-  ];
-
-  spotCommodities.forEach(({ symbol, name, description }) => {
-    symbolRegistry.register({
-      symbol,
-      name,
-      market: 'commodity',
-      classification: 'spot',
-      dataSource: 'yahoo',
-      apiSymbol: `${symbol}=X`,
-      status: 'verified',
-      description,
-      recommended: true,
-      lastTested: new Date(),
-    });
-  });
-
   // Commodity futures (Yahoo Finance)
+  // Note: Yahoo Finance only supports futures symbols for commodities, not spot symbols
   const commodityFutures: Array<{ symbol: string; name: string; description: string }> = [
+    { symbol: "GC=F", name: "Gold Futures", description: "Gold futures contract" },
+    { symbol: "SI=F", name: "Silver Futures", description: "Silver futures contract" },
+    { symbol: "PL=F", name: "Platinum Futures", description: "Platinum futures contract" },
+    { symbol: "PA=F", name: "Palladium Futures", description: "Palladium futures contract" },
     { symbol: "NG=F", name: "Natural Gas Futures", description: "Natural gas futures contract" },
     { symbol: "CL=F", name: "Crude Oil Futures", description: "WTI crude oil futures" },
     { symbol: "BZ=F", name: "Brent Oil Futures", description: "Brent crude oil futures" },
@@ -359,7 +341,7 @@ export function initializeSymbolRegistry(): void {
       apiSymbol: symbol,
       status: 'verified',
       description,
-      recommended: false,
+      recommended: true,
       lastTested: new Date(),
     });
   });
