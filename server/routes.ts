@@ -1412,6 +1412,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get symbol health statistics and last test results
+  app.get("/api/admin/symbol-health", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Verify admin status
+      const user = await storage.getUser(userId);
+      if (!user || user.isAdmin !== 1) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Get registry statistics
+      const allSymbols = symbolRegistry.getAll();
+      const stats = {
+        total: allSymbols.length,
+        verified: allSymbols.filter(s => s.status === 'verified').length,
+        byMarket: {} as Record<string, number>,
+        byClassification: {} as Record<string, number>,
+      };
+
+      allSymbols.forEach(symbol => {
+        stats.byMarket[symbol.market] = (stats.byMarket[symbol.market] || 0) + 1;
+        stats.byClassification[symbol.classification] = (stats.byClassification[symbol.classification] || 0) + 1;
+      });
+
+      // Try to read last test results from file
+      let lastTestResults = null;
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const reportPath = path.join(process.cwd(), 'symbol-test-report.json');
+        if (fs.existsSync(reportPath)) {
+          const reportData = fs.readFileSync(reportPath, 'utf-8');
+          lastTestResults = JSON.parse(reportData);
+        }
+      } catch (error) {
+        console.error("Error reading test results:", error);
+      }
+
+      res.json({
+        registryStats: stats,
+        lastTestResults,
+      });
+    } catch (error: any) {
+      console.error("Symbol health error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin: Run symbol tests
+  app.post("/api/admin/run-symbol-tests", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Verify admin status
+      const user = await storage.getUser(userId);
+      if (!user || user.isAdmin !== 1) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Import and run symbol tests
+      const { testAllSymbols } = await import("./symbolTester.js");
+      console.log("🧪 Admin triggered symbol test suite...");
+      const report = await testAllSymbols();
+
+      // Save report to file
+      const fs = await import('fs');
+      const path = await import('path');
+      const reportPath = path.join(process.cwd(), 'symbol-test-report.json');
+      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+
+      res.json({
+        success: true,
+        report,
+      });
+    } catch (error: any) {
+      console.error("Run symbol tests error:", error);
+      res.status(500).json({ error: "Failed to run tests" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
