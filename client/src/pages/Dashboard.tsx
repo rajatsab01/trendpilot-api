@@ -244,6 +244,7 @@ export default function Dashboard() {
         symbol: validatedData?.symbol || symbol,
         duration,
         market,
+        currency, // Pass user's preferred currency
       });
       return await result.json();
     },

@@ -68,6 +68,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      currency: insertUser.currency ?? "USD",
       maxTokens: insertUser.maxTokens ?? 20,
       pwaInstallBonusClaimed: insertUser.pwaInstallBonusClaimed ?? 0,
       createdAt: new Date(),
@@ -154,6 +155,7 @@ export class MemStorage implements IStorage {
       correctedSymbol: insertAnalysis.correctedSymbol ?? null,
       assetName: insertAnalysis.assetName ?? null,
       instrumentName: insertAnalysis.instrumentName ?? null,
+      currency: insertAnalysis.currency ?? "USD",
       currentPrice: insertAnalysis.currentPrice ?? null,
       livePrice: insertAnalysis.livePrice ?? null,
       candleClosePrice: insertAnalysis.candleClosePrice ?? null,

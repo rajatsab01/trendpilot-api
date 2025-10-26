@@ -22,6 +22,47 @@ State management uses TanStack Query for server state and React Context API for 
 
 ## Recent Changes
 
+### Multi-Currency Support (October 26, 2025)
+- **💱 Preferred Currency Selector** - Global currency preference for all analyses
+  - **Currency dropdown** above symbol input with 20 major world currencies
+  - **Supported currencies:** USD, INR (Indian Rupee), EUR, GBP, JPY, CNY, AUD, CAD, CHF, HKD, SGD, KRW, BRL, MXN, ZAR, RUB, TRY, SAR, AED, NZD
+  - **Default:** USD for all users
+  - **Auto-save:** Currency preference saved to user profile immediately on change
+  - **Database fields added:**
+    - `users.currency`: User's preferred currency (default: "USD")
+    - `analyses.currency`: Currency used for specific analysis
+  - **Analysis integration:** All price data, targets, and stop losses displayed in user's selected currency
+  - **Chart integration:** TradingView chart automatically displays in user's preferred currency
+  - **Use case:** Critical for analyzing non-US markets (e.g., Indian stocks in INR, UK stocks in GBP)
+  - **Implementation:** Frontend passes currency to /api/analyze → Perplexity returns analysis in that currency → Database stores currency with analysis
+- **Benefits:**
+  - ✅ Analyze Indian stocks in INR instead of USD
+  - ✅ European stocks in EUR for better price context
+  - ✅ Japanese stocks in JPY for accurate valuation
+  - ✅ Currency stored with each analysis for historical accuracy
+
+### Intelligent Instrument Search (October 26, 2025)
+- **🔍 Search by Instrument Name** - No need to memorize technical symbols
+  - **Search database:** 200+ instruments across all markets with common name mappings
+  - **Supported searches:**
+    - **Cryptocurrencies:** "bitcoin" → BTCUSDT, "ethereum" → ETHUSDT, "solana" → SOLUSDT
+    - **Commodities:** "gold" → GC=F (Gold Futures), "crude" → CL=F (WTI Crude Oil)
+    - **Forex:** "euro" → EURUSD=X, "pound" → GBPUSD=X
+    - **US Stocks:** "apple" → AAPL, "tesla" → TSLA, "microsoft" → MSFT
+    - **Indian Stocks:** "ndtv" → NDTV.NS, "reliance" → RELIANCE.NS, "tcs" → TCS.NS
+    - **International:** "toyota" → 7203.T (Japan), "alibaba" → BABA (China)
+  - **Autocomplete dropdown:** Real-time suggestions as user types (2+ characters)
+  - **Each suggestion shows:** Instrument name, symbol, market type, description
+  - **Auto-fill both fields:** Clicking suggestion fills symbol AND market type
+  - **"None of these? Proceed anyway"** button for unlisted symbols
+  - **Backend endpoint:** GET /api/search-instruments?query=<name>&market=<optional>
+  - **Search algorithms:** Exact match → Partial match (starts with) → Fuzzy match (contains)
+- **Benefits:**
+  - ✅ Beginner-friendly: Type "gold" instead of "GC=F"
+  - ✅ Prevents symbol typos and validation failures
+  - ✅ Faster analysis workflow (no manual market selection)
+  - ✅ Covers global markets (US, India, UK, Japan, China, Europe)
+
 ### Symbol Validation & Autocomplete System (October 25, 2025)
 - **🔍 Real-time Symbol Validation** - Prevents analysis failures from incorrect symbols
   - **Auto-validation flow:**
