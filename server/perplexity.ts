@@ -449,54 +449,104 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       }
     }
 
-    // 💱 CURRENCY CONVERSION: Fetch exchange rates ONCE and convert all USD prices to user's preferred currency
-    console.log(`💱 Converting prices from USD to ${currency}...`);
-    
-    // Fetch exchange rates once for this analysis
-    const exchangeData = currency === 'USD' ? null : await fetchExchangeRates('USD');
-    const exchangeRate = exchangeData?.rates[currency] || 1;
-    
-    if (currency !== 'USD' && !exchangeData?.rates[currency]) {
-      console.warn(`⚠️ Exchange rate not found for ${currency}, using 1:1 fallback`);
-    }
-    
-    // Helper to convert a price value, handling undefined/null/NaN gracefully
-    const convertPrice = (priceValue: any): string => {
-      if (priceValue === undefined || priceValue === null || priceValue === '') {
-        return '0.00';
-      }
-      const numValue = typeof priceValue === 'string' ? parseFloat(priceValue) : priceValue;
-      if (isNaN(numValue)) {
-        console.warn(`⚠️ Invalid price value: "${priceValue}"`);
-        return '0.00';
-      }
-      const converted = convertCurrencyWithRate(numValue, exchangeRate);
-      return converted.toFixed(2);
-    };
-    
-    // Convert all prices using the same exchange rate
-    const convertedLivePrice = convertPrice(data.livePrice);
-    const convertedCandleClosePrice = convertPrice(data.candleClosePrice);
-    const convertedCurrentPrice = convertPrice(data.currentPrice || data.candleClosePrice);
-    const convertedEntry = convertPrice(data.entry);
-    const convertedTakeProfit = convertPrice(takeProfit);
-    const convertedStopLoss = convertPrice(stopLoss);
-    const convertedTp1 = convertPrice(data.tp1);
-    const convertedTp2 = convertPrice(data.tp2);
-    const convertedTp3 = convertPrice(data.tp3);
-    const convertedS1 = convertPrice(data.s1);
-    const convertedS2 = convertPrice(data.s2);
-    const convertedS3 = convertPrice(data.s3);
-    const convertedR1 = convertPrice(data.r1);
-    const convertedR2 = convertPrice(data.r2);
-    const convertedR3 = convertPrice(data.r3);
-
-    console.log(`✅ Currency conversion complete to ${currency} (rate: ${exchangeRate})`);
-    console.log(`   Example: Live Price ${data.livePrice} USD → ${convertedLivePrice} ${currency}`);
-
-    // Determine the original currency from the exchange (before Perplexity normalizes to USD)
+    // 💱 Determine the original currency from the exchange FIRST
+    // CRITICAL: This must happen BEFORE any conversion logic
     const sourceCurrency = getExchangeCurrency(data.correctedSymbol, detectedMarket);
     console.log(`💱 Source currency for ${data.correctedSymbol}: ${sourceCurrency}`);
+    
+    // 🚨 FOREX PAIR DETECTION: Skip conversion entirely for forex pairs
+    // Forex pairs like CAD/USD represent an exchange rate, NOT a price to convert
+    const isForexPairSymbol = sourceCurrency === 'FOREX_PAIR';
+    
+    let convertedLivePrice: string;
+    let convertedCandleClosePrice: string;
+    let convertedCurrentPrice: string;
+    let convertedEntry: string;
+    let convertedTakeProfit: string;
+    let convertedStopLoss: string;
+    let convertedTp1: string;
+    let convertedTp2: string;
+    let convertedTp3: string;
+    let convertedS1: string;
+    let convertedS2: string;
+    let convertedS3: string;
+    let convertedR1: string;
+    let convertedR2: string;
+    let convertedR3: string;
+    
+    if (isForexPairSymbol) {
+      // 🎯 For forex pairs, use prices AS-IS without conversion
+      // The "price" of CAD/USD IS the exchange rate (e.g., 1.35 means 1 CAD = 1.35 USD)
+      console.log(`🔄 FOREX PAIR detected - skipping currency conversion`);
+      console.log(`   ${data.correctedSymbol} prices represent exchange rate, not convertible prices`);
+      
+      const formatPrice = (value: any): string => {
+        if (value === undefined || value === null || value === '') return '0.00';
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        return isNaN(numValue) ? '0.00' : numValue.toFixed(4); // 4 decimals for forex precision
+      };
+      
+      convertedLivePrice = formatPrice(data.livePrice);
+      convertedCandleClosePrice = formatPrice(data.candleClosePrice);
+      convertedCurrentPrice = formatPrice(data.currentPrice || data.candleClosePrice);
+      convertedEntry = formatPrice(data.entry);
+      convertedTakeProfit = formatPrice(takeProfit);
+      convertedStopLoss = formatPrice(stopLoss);
+      convertedTp1 = formatPrice(data.tp1);
+      convertedTp2 = formatPrice(data.tp2);
+      convertedTp3 = formatPrice(data.tp3);
+      convertedS1 = formatPrice(data.s1);
+      convertedS2 = formatPrice(data.s2);
+      convertedS3 = formatPrice(data.s3);
+      convertedR1 = formatPrice(data.r1);
+      convertedR2 = formatPrice(data.r2);
+      convertedR3 = formatPrice(data.r3);
+    } else {
+      // 💱 CURRENCY CONVERSION: For non-forex symbols, convert from USD to user's preferred currency
+      console.log(`💱 Converting prices from USD to ${currency}...`);
+      
+      // Fetch exchange rates once for this analysis
+      const exchangeData = currency === 'USD' ? null : await fetchExchangeRates('USD');
+      const exchangeRate = exchangeData?.rates[currency] || 1;
+      
+      if (currency !== 'USD' && !exchangeData?.rates[currency]) {
+        console.warn(`⚠️ Exchange rate not found for ${currency}, using 1:1 fallback`);
+      }
+      
+      // Helper to convert a price value, handling undefined/null/NaN gracefully
+      const convertPrice = (priceValue: any): string => {
+        if (priceValue === undefined || priceValue === null || priceValue === '') {
+          return '0.00';
+        }
+        const numValue = typeof priceValue === 'string' ? parseFloat(priceValue) : priceValue;
+        if (isNaN(numValue)) {
+          console.warn(`⚠️ Invalid price value: "${priceValue}"`);
+          return '0.00';
+        }
+        const converted = convertCurrencyWithRate(numValue, exchangeRate);
+        return converted.toFixed(2);
+      };
+      
+      // Convert all prices using the same exchange rate
+      convertedLivePrice = convertPrice(data.livePrice);
+      convertedCandleClosePrice = convertPrice(data.candleClosePrice);
+      convertedCurrentPrice = convertPrice(data.currentPrice || data.candleClosePrice);
+      convertedEntry = convertPrice(data.entry);
+      convertedTakeProfit = convertPrice(takeProfit);
+      convertedStopLoss = convertPrice(stopLoss);
+      convertedTp1 = convertPrice(data.tp1);
+      convertedTp2 = convertPrice(data.tp2);
+      convertedTp3 = convertPrice(data.tp3);
+      convertedS1 = convertPrice(data.s1);
+      convertedS2 = convertPrice(data.s2);
+      convertedS3 = convertPrice(data.s3);
+      convertedR1 = convertPrice(data.r1);
+      convertedR2 = convertPrice(data.r2);
+      convertedR3 = convertPrice(data.r3);
+
+      console.log(`✅ Currency conversion complete to ${currency} (rate: ${exchangeRate})`);
+      console.log(`   Example: Live Price ${data.livePrice} USD → ${convertedLivePrice} ${currency}`);
+    }
 
     return {
       recommendation: data.recommendation,
