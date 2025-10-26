@@ -1279,7 +1279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Get admin users
-      const adminUser = await storage.getUserByMobile("+917017215505"); // Your admin phone number
+      const adminUser = await storage.getUserByMobile("+919811209473"); // Your admin phone number
       
       if (adminUser) {
         // Notify admin about new report
