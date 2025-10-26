@@ -64,6 +64,7 @@ export const analyses = pgTable("analyses", {
   explanatoryNotes: text("explanatory_notes"), // Detailed notes and disclaimers from Perplexity
   // Saved analyses tracking
   isSaved: integer("is_saved").notNull().default(0), // 0 = not saved, 1 = saved by user
+  isPublished: integer("is_published").notNull().default(0), // 0 = private, 1 = published to community
   tradeStatus: text("trade_status").default("active"), // 'won', 'lost', 'active', 'expired'
   actualProfit: text("actual_profit"), // Calculated profit/loss percentage (e.g., "+2.5%" or "-1.8%")
   createdAt: timestamp("created_at").defaultNow(),
@@ -79,6 +80,34 @@ export const brokers = pgTable("brokers", {
   webhookMessage: text("webhook_message"), // JSON template with placeholders like {{ticker}}, {{strategy.order.action}}
   strategyId: text("strategy_id"), // Broker-provided strategy ID for webhook execution
   isConnected: integer("is_connected").notNull().default(1), // 1 for true, 0 for false
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Follows - tracks user follow relationships for community
+export const follows = pgTable("follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  followerId: varchar("follower_id").notNull(), // User who is following
+  followingId: varchar("following_id").notNull(), // User being followed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Blocks - tracks blocked users
+export const blocks = pgTable("blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  blockerId: varchar("blocker_id").notNull(), // User who blocked
+  blockedId: varchar("blocked_id").notNull(), // User who is blocked
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Notifications - stores notifications for community activities
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // User who receives the notification
+  actorId: varchar("actor_id").notNull(), // User who triggered the notification
+  type: text("type").notNull(), // 'new_analysis', 'follow', etc.
+  analysisId: varchar("analysis_id"), // Related analysis if applicable
+  message: text("message").notNull(), // Notification message
+  isRead: integer("is_read").notNull().default(0), // 0 = unread, 1 = read
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -123,14 +152,48 @@ export const insertBrokerSchema = createInsertSchema(brokers).omit({
   { message: "Either API key or webhook URL is required" }
 );
 
+export const insertFollowSchema = createInsertSchema(follows).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  followerId: z.string().min(1, "Follower ID is required"),
+  followingId: z.string().min(1, "Following ID is required"),
+});
+
+export const insertBlockSchema = createInsertSchema(blocks).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  blockerId: z.string().min(1, "Blocker ID is required"),
+  blockedId: z.string().min(1, "Blocked ID is required"),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+}).extend({
+  userId: z.string().min(1, "User ID is required"),
+  actorId: z.string().min(1, "Actor ID is required"),
+  type: z.enum(["new_analysis", "follow"]),
+  message: z.string().min(1, "Message is required"),
+  analysisId: z.string().nullable().optional(),
+});
+
 // Types derived from Drizzle tables
 export type User = typeof users.$inferSelect;
 export type Analysis = typeof analyses.$inferSelect;
 export type Broker = typeof brokers.$inferSelect;
+export type Follow = typeof follows.$inferSelect;
+export type Block = typeof blocks.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertAnalysis = z.infer<typeof insertAnalysisSchema>;
 export type InsertBroker = z.infer<typeof insertBrokerSchema>;
+export type InsertFollow = z.infer<typeof insertFollowSchema>;
+export type InsertBlock = z.infer<typeof insertBlockSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Trade duration options
 export const tradeDurations = ["long_term", "short_term", "scalping"] as const;

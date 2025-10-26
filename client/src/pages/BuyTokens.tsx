@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
+import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,7 @@ export default function BuyTokens() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { guardAction, UpdateModal } = useVersionGuard();
   const [loading, setLoading] = useState<string | null>(null);
 
   const plans = [
@@ -24,6 +26,13 @@ export default function BuyTokens() {
   ];
 
   const handlePurchase = async (packageId: string, tokens: number, price: number) => {
+    // VERSION CHECKPOINT: Check version before allowing purchase
+    const versionOk = await guardAction();
+    if (!versionOk) {
+      // Version mismatch - modal will show, block the action
+      return;
+    }
+    
     const userId = localStorage.getItem("userId");
     if (!userId) {
       toast({
@@ -227,6 +236,7 @@ export default function BuyTokens() {
       </div>
 
       <BottomNav />
+      <UpdateModal />
     </div>
   );
 }

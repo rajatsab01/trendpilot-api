@@ -4,6 +4,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import { Bookmark, BookmarkCheck, Share2, Download } from "lucide-react";
 import type { Analysis } from "@shared/schema";
@@ -15,6 +16,7 @@ export default function Analyzer() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { guardAction, UpdateModal } = useVersionGuard();
   const searchParams = new URLSearchParams(window.location.search);
   const analysisId = searchParams.get("analysisId");
   const fromSaved = searchParams.get("fromSaved") === "true";
@@ -151,7 +153,14 @@ export default function Analyzer() {
     }
   };
 
-  const handleSaveClick = (analysis: Analysis) => {
+  const handleSaveClick = async (analysis: Analysis) => {
+    // VERSION CHECKPOINT: Check version before allowing save
+    const versionOk = await guardAction();
+    if (!versionOk) {
+      // Version mismatch - modal will show, block the action
+      return;
+    }
+    
     // If opened from saved page and currently saved, show confirmation before unsaving
     if (fromSaved && analysis.isSaved === 1) {
       const confirmed = window.confirm(t.unsaveConfirm);
@@ -160,8 +169,16 @@ export default function Analyzer() {
     saveMutation.mutate(analysis.id);
   };
 
-  const handleAnalyze = (e: React.FormEvent) => {
+  const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // VERSION CHECKPOINT: Check version before allowing analysis
+    const versionOk = await guardAction();
+    if (!versionOk) {
+      // Version mismatch - modal will show, block the action
+      return;
+    }
+    
     if (!symbol.trim()) {
       toast({
         title: t.symbolRequired,
@@ -977,6 +994,7 @@ export default function Analyzer() {
       </div>
 
       <BottomNav />
+      <UpdateModal />
     </div>
   );
 }

@@ -5,9 +5,18 @@ import {
   type InsertAnalysis,
   type Broker,
   type InsertBroker,
+  type Follow,
+  type InsertFollow,
+  type Block,
+  type InsertBlock,
+  type Notification,
+  type InsertNotification,
   users,
   analyses,
   brokers,
+  follows,
+  blocks,
+  notifications,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -41,6 +50,30 @@ export interface IStorage {
   createBroker(broker: InsertBroker): Promise<Broker>;
   updateBroker(id: string, updates: Partial<Broker>): Promise<Broker | undefined>;
   deleteBroker(id: string): Promise<boolean>;
+
+  // Community - Follows
+  followUser(followerId: string, followingId: string): Promise<Follow>;
+  unfollowUser(followerId: string, followingId: string): Promise<boolean>;
+  getFollowers(userId: string): Promise<User[]>; // Get users who follow this user
+  getFollowing(userId: string): Promise<User[]>; // Get users this user follows
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+
+  // Community - Blocks
+  blockUser(blockerId: string, blockedId: string): Promise<Block>;
+  unblockUser(blockerId: string, blockedId: string): Promise<boolean>;
+  getBlockedUsers(userId: string): Promise<User[]>;
+  isBlocked(blockerId: string, blockedId: string): Promise<boolean>;
+
+  // Community - Notifications
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotifications(userId: string): Promise<Notification[]>;
+  markNotificationAsRead(id: string): Promise<Notification | undefined>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
+
+  // Community - Published Analyses
+  publishAnalysis(id: string): Promise<Analysis | undefined>;
+  unpublishAnalysis(id: string): Promise<Analysis | undefined>;
+  getPublishedAnalysesFeed(userId: string): Promise<Array<Analysis & { author: User }>>;
 }
 
 export class MemStorage implements IStorage {
