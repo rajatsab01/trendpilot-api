@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   tokens: integer("tokens").notNull().default(20),
   maxTokens: integer("max_tokens").notNull().default(20), // Tracks the highest token count ever owned
   pwaInstallBonusClaimed: integer("pwa_install_bonus_claimed").notNull().default(0), // 0 = not claimed, 1 = claimed
+  isAdmin: integer("is_admin").notNull().default(0), // 0 = regular user, 1 = admin
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -104,10 +105,21 @@ export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(), // User who receives the notification
   actorId: varchar("actor_id").notNull(), // User who triggered the notification
-  type: text("type").notNull(), // 'new_analysis', 'follow', etc.
+  type: text("type").notNull(), // 'new_analysis', 'follow', 'admin_report', etc.
   analysisId: varchar("analysis_id"), // Related analysis if applicable
   message: text("message").notNull(), // Notification message
   isRead: integer("is_read").notNull().default(0), // 0 = unread, 1 = read
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Reports - users can report issues or feedback to admin
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // User who submitted the report
+  type: text("type").notNull(), // 'bug', 'feedback', 'feature_request', 'abuse'
+  subject: text("subject").notNull(), // Report subject/title
+  message: text("message").notNull(), // Detailed message
+  status: text("status").notNull().default("pending"), // 'pending', 'reviewing', 'resolved', 'closed'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -175,9 +187,20 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 }).extend({
   userId: z.string().min(1, "User ID is required"),
   actorId: z.string().min(1, "Actor ID is required"),
-  type: z.enum(["new_analysis", "follow"]),
+  type: z.enum(["new_analysis", "follow", "admin_report"]),
   message: z.string().min(1, "Message is required"),
   analysisId: z.string().nullable().optional(),
+});
+
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+}).extend({
+  userId: z.string().min(1, "User ID is required"),
+  type: z.enum(["bug", "feedback", "feature_request", "abuse"]),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
 // Types derived from Drizzle tables
@@ -187,6 +210,7 @@ export type Broker = typeof brokers.$inferSelect;
 export type Follow = typeof follows.$inferSelect;
 export type Block = typeof blocks.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type Report = typeof reports.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertAnalysis = z.infer<typeof insertAnalysisSchema>;
@@ -194,6 +218,7 @@ export type InsertBroker = z.infer<typeof insertBrokerSchema>;
 export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type InsertBlock = z.infer<typeof insertBlockSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertReport = z.infer<typeof insertReportSchema>;
 
 // Trade duration options
 export const tradeDurations = ["long_term", "short_term", "scalping"] as const;

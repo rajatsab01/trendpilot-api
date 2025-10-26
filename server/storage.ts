@@ -11,12 +11,15 @@ import {
   type InsertBlock,
   type Notification,
   type InsertNotification,
+  type Report,
+  type InsertReport,
   users,
   analyses,
   brokers,
   follows,
   blocks,
   notifications,
+  reports,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -74,6 +77,11 @@ export interface IStorage {
   publishAnalysis(id: string): Promise<Analysis | undefined>;
   unpublishAnalysis(id: string): Promise<Analysis | undefined>;
   getPublishedAnalysesFeed(userId: string): Promise<Array<Analysis & { author: User }>>;
+
+  // Admin Reports
+  createReport(report: InsertReport): Promise<Report>;
+  getReports(userId?: string): Promise<Report[]>; // Admin gets all, users get their own
+  updateReportStatus(id: string, status: string): Promise<Report | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -297,6 +305,83 @@ export class MemStorage implements IStorage {
   async deleteBroker(id: string): Promise<boolean> {
     return this.brokers.delete(id);
   }
+
+  // Community methods - Not implemented in MemStorage (PostgreSQL only)
+  async followUser(): Promise<Follow> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async unfollowUser(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getFollowers(): Promise<User[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getFollowing(): Promise<User[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async isFollowing(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async blockUser(): Promise<Block> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async unblockUser(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getBlockedUsers(): Promise<User[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async isBlocked(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async createNotification(): Promise<Notification> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getNotifications(): Promise<Notification[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async markNotificationAsRead(): Promise<Notification | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getUnreadNotificationCount(): Promise<number> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async publishAnalysis(): Promise<Analysis | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async unpublishAnalysis(): Promise<Analysis | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getPublishedAnalysesFeed(): Promise<Array<Analysis & { author: User }>> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async createReport(): Promise<Report> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getReports(): Promise<Report[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async updateReportStatus(): Promise<Report | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
 }
 
 // PostgreSQL storage implementation
@@ -465,6 +550,296 @@ export class PgStorage implements IStorage {
   async deleteBroker(id: string): Promise<boolean> {
     const result = await this.db.delete(brokers).where(eq(brokers.id, id));
     return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Community - Follows
+  async followUser(followerId: string, followingId: string): Promise<Follow> {
+    const result = await this.db
+      .insert(follows)
+      .values({ followerId, followingId })
+      .returning();
+    return result[0];
+  }
+
+  async unfollowUser(followerId: string, followingId: string): Promise<boolean> {
+    const result = await this.db
+      .delete(follows)
+      .where(and(eq(follows.followerId, followerId), eq(follows.followingId, followingId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getFollowers(userId: string): Promise<User[]> {
+    // Get users who follow this user
+    const result = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        mobile: users.mobile,
+        language: users.language,
+        currency: users.currency,
+        exchange: users.exchange,
+        tokens: users.tokens,
+        maxTokens: users.maxTokens,
+        pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+      })
+      .from(follows)
+      .innerJoin(users, eq(follows.followerId, users.id))
+      .where(eq(follows.followingId, userId));
+    return result;
+  }
+
+  async getFollowing(userId: string): Promise<User[]> {
+    // Get users this user follows
+    const result = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        mobile: users.mobile,
+        language: users.language,
+        currency: users.currency,
+        exchange: users.exchange,
+        tokens: users.tokens,
+        maxTokens: users.maxTokens,
+        pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+      })
+      .from(follows)
+      .innerJoin(users, eq(follows.followingId, users.id))
+      .where(eq(follows.followerId, userId));
+    return result;
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const result = await this.db
+      .select()
+      .from(follows)
+      .where(and(eq(follows.followerId, followerId), eq(follows.followingId, followingId)));
+    return result.length > 0;
+  }
+
+  // Community - Blocks
+  async blockUser(blockerId: string, blockedId: string): Promise<Block> {
+    const result = await this.db
+      .insert(blocks)
+      .values({ blockerId, blockedId })
+      .returning();
+    return result[0];
+  }
+
+  async unblockUser(blockerId: string, blockedId: string): Promise<boolean> {
+    const result = await this.db
+      .delete(blocks)
+      .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getBlockedUsers(userId: string): Promise<User[]> {
+    const result = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        mobile: users.mobile,
+        language: users.language,
+        currency: users.currency,
+        exchange: users.exchange,
+        tokens: users.tokens,
+        maxTokens: users.maxTokens,
+        pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+      })
+      .from(blocks)
+      .innerJoin(users, eq(blocks.blockedId, users.id))
+      .where(eq(blocks.blockerId, userId));
+    return result;
+  }
+
+  async isBlocked(blockerId: string, blockedId: string): Promise<boolean> {
+    const result = await this.db
+      .select()
+      .from(blocks)
+      .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId)));
+    return result.length > 0;
+  }
+
+  // Community - Notifications
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const result = await this.db
+      .insert(notifications)
+      .values(insertNotification)
+      .returning();
+    return result[0];
+  }
+
+  async getNotifications(userId: string): Promise<Notification[]> {
+    return await this.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(sql`${notifications.createdAt} DESC`);
+  }
+
+  async markNotificationAsRead(id: string): Promise<Notification | undefined> {
+    const result = await this.db
+      .update(notifications)
+      .set({ isRead: 1 })
+      .where(eq(notifications.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, 0)));
+    return result[0]?.count || 0;
+  }
+
+  // Community - Published Analyses
+  async publishAnalysis(id: string): Promise<Analysis | undefined> {
+    const result = await this.db
+      .update(analyses)
+      .set({ isPublished: 1 })
+      .where(eq(analyses.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async unpublishAnalysis(id: string): Promise<Analysis | undefined> {
+    const result = await this.db
+      .update(analyses)
+      .set({ isPublished: 0 })
+      .where(eq(analyses.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getPublishedAnalysesFeed(userId: string): Promise<Array<Analysis & { author: User }>> {
+    // Get published analyses from users that the current user follows
+    // Exclude analyses from blocked users
+    const result = await this.db
+      .select({
+        // Analysis fields
+        id: analyses.id,
+        userId: analyses.userId,
+        symbol: analyses.symbol,
+        correctedSymbol: analyses.correctedSymbol,
+        assetName: analyses.assetName,
+        instrumentName: analyses.instrumentName,
+        currency: analyses.currency,
+        exchange: analyses.exchange,
+        currentPrice: analyses.currentPrice,
+        livePrice: analyses.livePrice,
+        candleClosePrice: analyses.candleClosePrice,
+        priceSource: analyses.priceSource,
+        candleCloseTime: analyses.candleCloseTime,
+        timeframe: analyses.timeframe,
+        nextCandleCloseTime: analyses.nextCandleCloseTime,
+        duration: analyses.duration,
+        market: analyses.market,
+        recommendation: analyses.recommendation,
+        confidence: analyses.confidence,
+        sentiment: analyses.sentiment,
+        marketSentiment: analyses.marketSentiment,
+        deepAnalysis: analyses.deepAnalysis,
+        analysis: analyses.analysis,
+        rsi: analyses.rsi,
+        macd: analyses.macd,
+        stochastic: analyses.stochastic,
+        bollingerBands: analyses.bollingerBands,
+        entry: analyses.entry,
+        takeProfit: analyses.takeProfit,
+        stopLoss: analyses.stopLoss,
+        tp1: analyses.tp1,
+        tp2: analyses.tp2,
+        tp3: analyses.tp3,
+        r1: analyses.r1,
+        r2: analyses.r2,
+        r3: analyses.r3,
+        s1: analyses.s1,
+        s2: analyses.s2,
+        s3: analyses.s3,
+        trailingStopStrategy: analyses.trailingStopStrategy,
+        probabilityScore: analyses.probabilityScore,
+        explanatoryNotes: analyses.explanatoryNotes,
+        isSaved: analyses.isSaved,
+        isPublished: analyses.isPublished,
+        tradeStatus: analyses.tradeStatus,
+        actualProfit: analyses.actualProfit,
+        createdAt: analyses.createdAt,
+        // Author fields
+        author: {
+          id: users.id,
+          name: users.name,
+          mobile: users.mobile,
+          language: users.language,
+          currency: users.currency,
+          exchange: users.exchange,
+          tokens: users.tokens,
+          maxTokens: users.maxTokens,
+          pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
+          isAdmin: users.isAdmin,
+          createdAt: users.createdAt,
+        },
+      })
+      .from(analyses)
+      .innerJoin(users, eq(analyses.userId, users.id))
+      .innerJoin(follows, eq(analyses.userId, follows.followingId))
+      .where(
+        and(
+          eq(follows.followerId, userId), // User follows this analyst
+          eq(analyses.isPublished, 1), // Analysis is published
+          // Exclude blocked users - subquery to check if blocked
+          sql`NOT EXISTS (
+            SELECT 1 FROM ${blocks}
+            WHERE ${blocks.blockerId} = ${userId}
+            AND ${blocks.blockedId} = ${analyses.userId}
+          )`
+        )
+      )
+      .orderBy(sql`${analyses.createdAt} DESC`)
+      .limit(50); // Limit to 50 most recent
+
+    return result as Array<Analysis & { author: User }>;
+  }
+
+  // Admin Reports
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    const result = await this.db
+      .insert(reports)
+      .values(insertReport)
+      .returning();
+    return result[0];
+  }
+
+  async getReports(userId?: string): Promise<Report[]> {
+    if (userId) {
+      // Get user's own reports
+      return await this.db
+        .select()
+        .from(reports)
+        .where(eq(reports.userId, userId))
+        .orderBy(sql`${reports.createdAt} DESC`);
+    } else {
+      // Admin gets all reports
+      return await this.db
+        .select()
+        .from(reports)
+        .orderBy(sql`${reports.createdAt} DESC`);
+    }
+  }
+
+  async updateReportStatus(id: string, status: string): Promise<Report | undefined> {
+    const result = await this.db
+      .update(reports)
+      .set({ status })
+      .where(eq(reports.id, id))
+      .returning();
+    return result[0];
   }
 }
 

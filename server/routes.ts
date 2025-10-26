@@ -1015,6 +1015,337 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================================
+  // COMMUNITY ROUTES
+  // ========================================
+
+  // Follow a user
+  app.post("/api/community/follow", async (req, res) => {
+    try {
+      const { followerId, followingId } = req.body;
+
+      if (!followerId || !followingId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (followerId === followingId) {
+        return res.status(400).json({ error: "Cannot follow yourself" });
+      }
+
+      const follow = await storage.followUser(followerId, followingId);
+      
+      // Create notification for the user being followed
+      await storage.createNotification({
+        userId: followingId,
+        actorId: followerId,
+        type: "follow",
+        message: "started following you",
+        analysisId: null,
+      });
+
+      res.json(follow);
+    } catch (error) {
+      console.error("Follow user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Unfollow a user
+  app.post("/api/community/unfollow", async (req, res) => {
+    try {
+      const { followerId, followingId } = req.body;
+
+      if (!followerId || !followingId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const success = await storage.unfollowUser(followerId, followingId);
+      res.json({ success });
+    } catch (error) {
+      console.error("Unfollow user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get followers
+  app.get("/api/community/followers/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const followers = await storage.getFollowers(userId);
+      res.json(followers);
+    } catch (error) {
+      console.error("Get followers error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get following
+  app.get("/api/community/following/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const following = await storage.getFollowing(userId);
+      res.json(following);
+    } catch (error) {
+      console.error("Get following error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Check if following
+  app.get("/api/community/is-following/:followerId/:followingId", async (req, res) => {
+    try {
+      const { followerId, followingId } = req.params;
+      const isFollowing = await storage.isFollowing(followerId, followingId);
+      res.json({ isFollowing });
+    } catch (error) {
+      console.error("Check following error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Block a user
+  app.post("/api/community/block", async (req, res) => {
+    try {
+      const { blockerId, blockedId } = req.body;
+
+      if (!blockerId || !blockedId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (blockerId === blockedId) {
+        return res.status(400).json({ error: "Cannot block yourself" });
+      }
+
+      const block = await storage.blockUser(blockerId, blockedId);
+      res.json(block);
+    } catch (error) {
+      console.error("Block user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Unblock a user
+  app.post("/api/community/unblock", async (req, res) => {
+    try {
+      const { blockerId, blockedId } = req.body;
+
+      if (!blockerId || !blockedId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const success = await storage.unblockUser(blockerId, blockedId);
+      res.json({ success });
+    } catch (error) {
+      console.error("Unblock user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get blocked users
+  app.get("/api/community/blocked/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const blocked = await storage.getBlockedUsers(userId);
+      res.json(blocked);
+    } catch (error) {
+      console.error("Get blocked users error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Publish analysis
+  app.post("/api/community/publish/:analysisId", async (req, res) => {
+    try {
+      const { analysisId } = req.params;
+      const analysis = await storage.publishAnalysis(analysisId);
+
+      if (!analysis) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+
+      // Get followers of the user who published the analysis
+      const followers = await storage.getFollowers(analysis.userId);
+
+      // Notify all followers about the new published analysis
+      for (const follower of followers) {
+        await storage.createNotification({
+          userId: follower.id,
+          actorId: analysis.userId,
+          type: "new_analysis",
+          message: `published a new ${analysis.duration} analysis for ${analysis.symbol}`,
+          analysisId: analysis.id,
+        });
+      }
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Publish analysis error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Unpublish analysis
+  app.post("/api/community/unpublish/:analysisId", async (req, res) => {
+    try {
+      const { analysisId } = req.params;
+      const analysis = await storage.unpublishAnalysis(analysisId);
+
+      if (!analysis) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Unpublish analysis error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get community feed (published analyses from followed users)
+  app.get("/api/community/feed/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const feed = await storage.getPublishedAnalysesFeed(userId);
+      res.json(feed);
+    } catch (error) {
+      console.error("Get feed error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get notifications
+  app.get("/api/notifications/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const notifications = await storage.getNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Mark notification as read
+  app.post("/api/notifications/:notificationId/read", async (req, res) => {
+    try {
+      const { notificationId } = req.params;
+      const notification = await storage.markNotificationAsRead(notificationId);
+
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+
+      res.json(notification);
+    } catch (error) {
+      console.error("Mark notification as read error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get unread notification count
+  app.get("/api/notifications/unread-count/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Get unread count error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ========================================
+  // ADMIN REPORT ROUTES
+  // ========================================
+
+  // Create a report
+  app.post("/api/reports", async (req, res) => {
+    try {
+      const { userId, type, subject, message } = req.body;
+
+      if (!userId || !type || !subject || !message) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (message.length < 10) {
+        return res.status(400).json({ error: "Message must be at least 10 characters" });
+      }
+
+      const report = await storage.createReport({
+        userId,
+        type,
+        subject,
+        message,
+      });
+
+      // Get admin users
+      const adminUser = await storage.getUserByMobile("+917017215505"); // Your admin phone number
+      
+      if (adminUser) {
+        // Notify admin about new report
+        await storage.createNotification({
+          userId: adminUser.id,
+          actorId: userId,
+          type: "admin_report",
+          message: `submitted a ${type} report: ${subject}`,
+          analysisId: null,
+        });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Create report error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get reports (user's own or all if admin)
+  app.get("/api/reports/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // If admin, get all reports; otherwise, get user's own reports
+      const reports = user.isAdmin === 1 
+        ? await storage.getReports() 
+        : await storage.getReports(userId);
+      
+      res.json(reports);
+    } catch (error) {
+      console.error("Get reports error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update report status (admin only)
+  app.patch("/api/reports/:reportId/status", async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      const { userId, status } = req.body;
+
+      const user = await storage.getUser(userId);
+
+      if (!user || user.isAdmin !== 1) {
+        return res.status(403).json({ error: "Unauthorized - Admin only" });
+      }
+
+      const report = await storage.updateReportStatus(reportId, status);
+
+      if (!report) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Update report status error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get app version - used for version checking and update notifications
   app.get("/api/version", async (req, res) => {
     try {
