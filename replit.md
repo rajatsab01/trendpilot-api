@@ -23,10 +23,17 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 3. **Improved TradingView Chart Compatibility** - Charts now work for all markets with better exchange detection:
    - Removed forced NASDAQ: prefix for US stocks (line 127 in utils.ts)
    - TradingView now auto-detects correct exchange (NYSE, NASDAQ, ARCA) for better compatibility
-   - Indian stocks: .NS → NSE:TATAMOTORS, .BO → BSE:RELIANCE
+   - Indian stocks: Use base symbol only (TATAMOTORS instead of NSE:TATAMOTORS) to let TradingView auto-detect exchange
    - Commodities: GC=F → TVC:GOLD, CL=F → TVC:USOIL
    - Forex: CADUSD=X → FX_IDC:USDCAD
    - Crypto: BTCUSDT → BINANCE:BTCUSDT
+
+4. **Added Comprehensive Forex Pair Autocomplete** - 80+ explicit forex pairs to prevent Yahoo Finance auto-conversion:
+   - All major pairs: EURUSD=X, GBPUSD=X, USDJPY=X, USDCHF=X, AUDUSD=X, NZDUSD=X, USDCAD=X
+   - Cross pairs: EURGBP=X, EURJPY=X, GBPJPY=X, EURAUD=X, GBPAUD=X, AUDJPY=X, etc.
+   - Emerging market pairs: USDINR=X, USDCNY=X, USDBRL=X, USDMXN=X, USDZAR=X, USDKRW=X, etc.
+   - Both directions: CADUSD=X (CAD/USD) AND USDCAD=X (USD/CAD) to cover all user preferences
+   - Updated server/instrumentSearch.ts with explicit 6-letter format (e.g., JPYGBP=X instead of ambiguous JPY=X)
 
 **Critical Fixes - Previous Session:**
 

@@ -256,7 +256,15 @@ export default function Analyzer() {
     const chartSymbol = analysis.correctedSymbol || analysis.symbol;
     
     // Use TradingView for ALL markets now (crypto, stocks, commodities, forex)
-    const tradingViewSymbol = convertToTradingViewSymbol(chartSymbol, analysis.market);
+    // For Indian stocks, try using just the base symbol without exchange prefix
+    // This lets TradingView auto-detect the correct exchange (NSE/BSE)
+    let tradingViewSymbol = convertToTradingViewSymbol(chartSymbol, analysis.market);
+    
+    if (analysis.market === 'stock' && (chartSymbol.includes('.NS') || chartSymbol.includes('.BO'))) {
+      // Extract base symbol (e.g., "TATAMOTORS" from "TATAMOTORS.NS")
+      const baseSymbol = chartSymbol.split('.')[0];
+      tradingViewSymbol = baseSymbol; // Let TradingView auto-detect NSE/BSE
+    }
 
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
