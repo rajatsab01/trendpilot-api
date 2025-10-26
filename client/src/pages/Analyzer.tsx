@@ -245,7 +245,7 @@ export default function Analyzer() {
     const getChartUrl = (symbol: string, duration?: string, market?: string): string => {
       // For cryptocurrency, use CoinGecko chart
       if (market === 'cryptocurrency') {
-        // Map symbols to CoinGecko IDs
+        // Map symbols to CoinGecko IDs (expanded coverage)
         const coinGeckoIdMap: Record<string, string> = {
           'BTCUSDT': 'bitcoin',
           'BTC': 'bitcoin',
@@ -271,6 +271,12 @@ export default function Analyzer() {
           'LINK': 'chainlink',
           'UNIUSDT': 'uniswap',
           'UNI': 'uniswap',
+          'ATOMUSDT': 'cosmos',
+          'ATOM': 'cosmos',
+          'LTCUSDT': 'litecoin',
+          'LTC': 'litecoin',
+          'BCHUSDT': 'bitcoin-cash',
+          'BCH': 'bitcoin-cash',
         };
 
         // Map duration to CoinGecko time range (in days)
