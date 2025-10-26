@@ -447,6 +447,55 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     console.log(`   • Stochastic: ${data.stochastic}`);
     console.log(`   • Bollinger Bands: ${data.bollingerBands}`);
 
+    // 🛡️ Defensive parsing for bracket order prices
+    // Ensures we NEVER show 0.0000 even if AI returns invalid data
+    const validatePrice = (value: any, name: string, fallbackMultiplier: number): string => {
+      // Helper to get a valid non-zero base price
+      const getNonZeroBasePrice = (): number => {
+        // Try multiple price sources in order of preference
+        const livePrice = priceData.livePrice ?? 0;
+        const candlePrice = priceData.candleClosePrice ?? 0;
+        const closePrice = priceData.close ?? 0;
+        
+        if (livePrice > 0) return livePrice;
+        if (candlePrice > 0) return candlePrice;
+        if (closePrice > 0) return closePrice;
+        
+        // Last resort: use a safe mid-price of 100 (will be converted to user currency)
+        console.error(`❌ ALL price sources are invalid! Using safe mid-price 100 for ${name}`);
+        return 100;
+      };
+      
+      if (value === undefined || value === null || value === '' || value === '0' || value === '0.00' || value === '0.0000') {
+        const basePrice = getNonZeroBasePrice();
+        const fallback = (basePrice * fallbackMultiplier).toFixed(2);
+        console.warn(`⚠️  Invalid ${name} value: "${value}" - Using fallback: ${fallback}`);
+        return fallback;
+      }
+      const parsed = parseFloat(value);
+      if (isNaN(parsed) || parsed === 0) {
+        const basePrice = getNonZeroBasePrice();
+        const fallback = (basePrice * fallbackMultiplier).toFixed(2);
+        console.warn(`⚠️  Invalid ${name} value: "${value}" (NaN or zero) - Using fallback: ${fallback}`);
+        return fallback;
+      }
+      return value.toString();
+    };
+    
+    // Apply defensive parsing to all bracket order prices
+    data.entry = validatePrice(data.entry, "Entry", 1.0);
+    data.takeProfit = validatePrice(data.takeProfit, "Take Profit", 1.005);
+    data.stopLoss = validatePrice(data.stopLoss, "Stop Loss", 0.997);
+    data.tp1 = validatePrice(data.tp1, "TP1", 1.002);
+    data.tp2 = validatePrice(data.tp2, "TP2", 1.003);
+    data.tp3 = validatePrice(data.tp3, "TP3", 1.005);
+    
+    console.log(`💰 Bracket order validation for ${data.correctedSymbol}:`);
+    console.log(`   • Entry: ${data.entry}`);
+    console.log(`   • Take Profit: ${data.takeProfit}`);
+    console.log(`   • Stop Loss: ${data.stopLoss}`);
+    console.log(`   • TP1: ${data.tp1}, TP2: ${data.tp2}, TP3: ${data.tp3}`);
+
     // FIX: For SELL trades, AI often returns inverted bracket values
     // For SELL: take profit should be BELOW entry, stop loss should be ABOVE entry
     let takeProfit = data.takeProfit;
