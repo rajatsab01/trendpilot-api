@@ -307,8 +307,9 @@ export default function Analyzer() {
           {/* Price Chart - Yahoo Finance (Primary) */}
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
-              <div className="p-3 border-b border-[#111714]">
-                <p className="text-[#9eb7a8] text-sm font-medium">📈 Price Chart</p>
+              <div className="p-3 border-b border-[#111714] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#38e07b] text-lg">show_chart</span>
+                <p className="text-[#9eb7a8] text-sm font-medium">Price Chart</p>
               </div>
               <div className="p-2">
                 <img 
@@ -407,7 +408,10 @@ export default function Analyzer() {
             {/* Current Live Market Price */}
             {analysis.livePrice && parseFloat(analysis.livePrice) > 0 && (
               <div className="bg-[#1c2620] rounded-2xl p-6 text-center border-2 border-[#38e07b]">
-                <p className="text-[#9eb7a8] text-sm mb-1">💹 {t.currentMarketPrice}</p>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="material-symbols-outlined text-[#38e07b] text-sm">candlestick_chart</span>
+                  <p className="text-[#9eb7a8] text-sm">{t.currentMarketPrice}</p>
+                </div>
                 <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-live-price">
                   ${parseFloat(analysis.livePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -417,7 +421,10 @@ export default function Analyzer() {
             {/* Analysis Price (Candle Close) */}
             {analysis.candleClosePrice && parseFloat(analysis.candleClosePrice) > 0 && (
               <div className="bg-[#1c2620] rounded-2xl p-4 text-center">
-                <p className="text-[#6a7f72] text-xs mb-1">📊 {t.analysisBasedOn}</p>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="material-symbols-outlined text-[#6a7f72] text-xs">analytics</span>
+                  <p className="text-[#6a7f72] text-xs">{t.analysisBasedOn}</p>
+                </div>
                 <p className="text-white text-2xl font-bold tracking-tight" data-testid="text-analysis-price">
                   ${parseFloat(analysis.candleClosePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
