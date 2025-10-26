@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [isValidationConfirmed, setIsValidationConfirmed] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{symbol: string; name: string; market: string; description?: string}>>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [currency, setCurrency] = useState("USD");
 
   const userId = localStorage.getItem("userId");
 
@@ -418,6 +419,40 @@ export default function Dashboard() {
 
         <main className="flex-1 px-4 py-6 space-y-6">
           <div className="space-y-4">
+            {/* Currency Preference */}
+            <label className="flex flex-col">
+              <span className="text-sm font-medium text-[#9eb7a8] mb-2">
+                Preferred Currency
+              </span>
+              <select
+                className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-4 text-base font-normal leading-normal cursor-pointer"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                data-testid="select-currency"
+              >
+                <option value="USD">🇺🇸 USD - US Dollar</option>
+                <option value="INR">🇮🇳 INR - Indian Rupee</option>
+                <option value="EUR">🇪🇺 EUR - Euro</option>
+                <option value="GBP">🇬🇧 GBP - British Pound</option>
+                <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+                <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
+                <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+                <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+                <option value="CHF">🇨🇭 CHF - Swiss Franc</option>
+                <option value="HKD">🇭🇰 HKD - Hong Kong Dollar</option>
+                <option value="SGD">🇸🇬 SGD - Singapore Dollar</option>
+                <option value="KRW">🇰🇷 KRW - South Korean Won</option>
+                <option value="BRL">🇧🇷 BRL - Brazilian Real</option>
+                <option value="MXN">🇲🇽 MXN - Mexican Peso</option>
+                <option value="ZAR">🇿🇦 ZAR - South African Rand</option>
+                <option value="RUB">🇷🇺 RUB - Russian Ruble</option>
+                <option value="TRY">🇹🇷 TRY - Turkish Lira</option>
+                <option value="SAR">🇸🇦 SAR - Saudi Riyal</option>
+                <option value="AED">🇦🇪 AED - UAE Dirham</option>
+                <option value="NZD">🇳🇿 NZD - New Zealand Dollar</option>
+              </select>
+            </label>
+
             <label className="flex flex-col relative">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">
                 {t.financialSymbol}
