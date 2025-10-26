@@ -12,10 +12,17 @@ export function cn(...inputs: ClassValue[]) {
 export function convertToTradingViewSymbol(symbol: string, market: string): string {
   const upperSymbol = symbol.toUpperCase();
   
-  // Cryptocurrency - already working with TradingView format
+  // Cryptocurrency - TradingView uses BINANCE:BTCUSDT format
   if (market === 'cryptocurrency') {
-    // TradingView uses BINANCE:BTCUSDT format
-    return symbol;
+    const normalizedSymbol = symbol.toUpperCase();
+    
+    // If symbol already has USDT/USD suffix, use it as is with BINANCE: prefix
+    if (normalizedSymbol.includes('USDT') || normalizedSymbol.includes('USD')) {
+      return `BINANCE:${normalizedSymbol.replace('-', '')}`;
+    }
+    
+    // Otherwise add USDT suffix for Binance
+    return `BINANCE:${normalizedSymbol}USDT`;
   }
   
   // Forex pairs - convert Yahoo Finance =X format to TradingView FX: format
