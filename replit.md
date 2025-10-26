@@ -7,11 +7,18 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 **Critical Fixes - Latest Session:**
 
-1. **Fixed Null-Safety Crash in Perplexity Analysis** - Resolved "Cannot read properties of null (reading 'toFixed')" error when analyzing symbols like TATAMOTORS.NS. Added optional chaining (`?.toFixed()`) with fallback values in perplexity.ts lines 220, 221, 236, 266. Prevents crashes when Yahoo Finance returns null prices.
+1. **Fixed Critical Currency Conversion Math Error** - Resolved incorrect price conversion bug where TATAMOTORS.NS was showing ₹35,637 instead of ₹403.50. Issue was prices being multiplied by exchange rate instead of divided. Implemented smart currency conversion system:
+   - Added `getExchangeCurrency()` function that maps exchange suffixes to native currencies (.NS/.BO→INR, US→USD, .L→GBP, .T→JPY, etc.)
+   - Yahoo Finance returns prices in exchange's native currency, conversion only happens when source currency differs from user's selected currency
+   - Added `sourceCurrency` field to database schema to track original price currency
+   - Updated `convertPrice()` to accept source and target currencies, returns both converted price and exchange rate
+   - Analysis disclaimer now shows conversion info: "Prices converted from INR to USD at 1 USD = ₹83.45" or "Prices in native currency (INR)"
 
-2. **Fixed Duplicate Market Dropdown Labels** - Corrected market dropdown showing "Commodity/Forex/MCX Market" twice. Updated translations.ts to display distinct labels: "Commodity Market" and "Forex Market" for clearer user experience.
+2. **Fixed Null-Safety Crash in Perplexity Analysis** - Resolved "Cannot read properties of null (reading 'toFixed')" error when analyzing symbols like TATAMOTORS.NS. Added optional chaining (`?.toFixed()`) with fallback values in perplexity.ts lines 220, 221, 236, 266. Prevents crashes when Yahoo Finance returns null prices.
 
-3. **Enhanced Currency Conversion in Confirmation Popup** - Symbol validation popup now shows prices in user's selected currency (e.g., ₹34,145.85 for INR) instead of hardcoded USD. Implemented getCurrencySymbol() helper and convertPrice() function using Frankfurter API for real-time exchange rates with proper currency symbols (₹, €, £, ¥, etc.).
+3. **Fixed Duplicate Market Dropdown Labels** - Corrected market dropdown showing "Commodity/Forex/MCX Market" twice. Updated translations.ts to display distinct labels: "Commodity Market" and "Forex Market" for clearer user experience.
+
+4. **Enhanced Currency Conversion in Confirmation Popup** - Symbol validation popup now shows prices in user's selected currency (e.g., ₹34,145.85 for INR) instead of hardcoded USD. Implemented getCurrencySymbol() helper and convertPrice() function using Frankfurter API for real-time exchange rates with proper currency symbols (₹, €, £, ¥, etc.).
 
 **Market Simplification & Previous Fixes:**
 - Simplified market types from 6 to 4 options: Stock (includes futures/derivatives), Cryptocurrency, Commodity, Forex
