@@ -23,7 +23,7 @@ export default function Analyzer() {
 
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
-  const [market, setMarket] = useState<"stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency">("stock_equities");
+  const [market, setMarket] = useState<"stock" | "commodity" | "forex" | "cryptocurrency">("stock");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -241,79 +241,33 @@ export default function Analyzer() {
 
     const currencySymbol = getCurrencySymbol(analysis.currency || 'USD');
 
-    // Chart URL configuration - Yahoo Finance for stocks/commodities/forex, CoinGecko for crypto
-    const getChartUrl = (symbol: string, duration?: string, market?: string): string => {
-      // For cryptocurrency, use CoinGecko chart
-      if (market === 'cryptocurrency') {
-        // Map symbols to CoinGecko IDs (expanded coverage)
-        const coinGeckoIdMap: Record<string, string> = {
-          'BTCUSDT': 'bitcoin',
-          'BTC': 'bitcoin',
-          'ETHUSDT': 'ethereum',
-          'ETH': 'ethereum',
-          'BNBUSDT': 'binancecoin',
-          'BNB': 'binancecoin',
-          'SOLUSDT': 'solana',
-          'SOL': 'solana',
-          'XRPUSDT': 'ripple',
-          'XRP': 'ripple',
-          'ADAUSDT': 'cardano',
-          'ADA': 'cardano',
-          'DOGEUSDT': 'dogecoin',
-          'DOGE': 'dogecoin',
-          'MATICUSDT': 'matic-network',
-          'MATIC': 'matic-network',
-          'DOTUSDT': 'polkadot',
-          'DOT': 'polkadot',
-          'AVAXUSDT': 'avalanche-2',
-          'AVAX': 'avalanche-2',
-          'LINKUSDT': 'chainlink',
-          'LINK': 'chainlink',
-          'UNIUSDT': 'uniswap',
-          'UNI': 'uniswap',
-          'ATOMUSDT': 'cosmos',
-          'ATOM': 'cosmos',
-          'LTCUSDT': 'litecoin',
-          'LTC': 'litecoin',
-          'BCHUSDT': 'bitcoin-cash',
-          'BCH': 'bitcoin-cash',
-        };
-
-        // Map duration to CoinGecko time range (in days)
-        const timeRangeMap: Record<string, string> = {
-          'scalping': '1',
-          'short_term': '7',
-          'long_term': '90'
-        };
-        const days = duration ? (timeRangeMap[duration.toLowerCase()] || '7') : '7';
-        
-        // Extract base symbol (remove USDT suffix)
-        const baseSymbol = symbol.replace(/USDT$/gi, '').replace(/USD$/gi, '').toUpperCase();
-        const coinGeckoId = coinGeckoIdMap[symbol] || coinGeckoIdMap[baseSymbol] || 'bitcoin';
-        
-        // CoinGecko chart API - returns simple price chart image
-        return `https://www.coingecko.com/coins/${coinGeckoId}/sparkline?vs_currency=usd&period=${days}d`;
-      }
-      
-      // For stocks/commodities/forex, use Yahoo Finance
+    // Chart URL configuration - Yahoo Finance for stocks/commodities/forex
+    const getYahooChartUrl = (symbol: string, duration?: string): string => {
       const timeRangeMap: Record<string, string> = {
         'scalping': '1d',
         'short_term': '5d',
         'long_term': '6m'
       };
       const timeRange = duration ? (timeRangeMap[duration.toLowerCase()] || '1d') : '1d';
-      
-      // Use the original Yahoo Finance symbol (with suffix like .NS, .BO, etc.)
-      const yahooSymbol = symbol;
-      
-      return `https://chart.yahoo.com/z?s=${encodeURIComponent(yahooSymbol)}&t=${timeRange}&q=c&l=on&z=l&p=s`;
+      return `https://chart.yahoo.com/z?s=${encodeURIComponent(symbol)}&t=${timeRange}&q=c&l=on&z=l&p=s`;
     };
 
-    const chartUrl = getChartUrl(
-      analysis.correctedSymbol || analysis.symbol, 
-      analysis.duration,
-      analysis.market
-    );
+    // TradingView symbol mapping for crypto
+    const getTradingViewSymbol = (symbol: string): string => {
+      // Common crypto symbols - map to TradingView format (BINANCE:BTCUSDT)
+      const normalizedSymbol = symbol.toUpperCase();
+      
+      // If symbol already has USDT/USD suffix, use it as is
+      if (normalizedSymbol.includes('USDT') || normalizedSymbol.includes('USD')) {
+        return `BINANCE:${normalizedSymbol.replace('-', '')}`;
+      }
+      
+      // Otherwise add USDT suffix for Binance
+      return `BINANCE:${normalizedSymbol}USDT`;
+    };
+
+    const chartSymbol = analysis.correctedSymbol || analysis.symbol;
+    const isCrypto = analysis.market === 'cryptocurrency';
 
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
@@ -337,24 +291,39 @@ export default function Analyzer() {
               <div className="p-3 border-b border-[#111714] flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#38e07b] text-lg">show_chart</span>
                 <p className="text-[#9eb7a8] text-sm font-medium">
-                  Price Chart {analysis.market === 'cryptocurrency' ? '(CoinGecko)' : '(Yahoo Finance)'}
+                  Price Chart {analysis.market === 'cryptocurrency' ? '(TradingView)' : '(Yahoo Finance)'}
                 </p>
               </div>
               <div className="p-2">
-                <img 
-                  src={chartUrl}
-                  alt={`${analysis.assetName || analysis.symbol} Price Chart`}
-                  className="w-full rounded-lg"
-                  onError={(e) => {
-                    // Fallback if chart image fails
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                  data-testid="img-price-chart"
-                />
-                <div className="hidden text-center py-8">
-                  <p className="text-[#6a7f72] text-sm">Chart not available</p>
-                </div>
+                {isCrypto ? (
+                  // TradingView widget for cryptocurrency
+                  <div className="w-full h-96" data-testid="tradingview-chart">
+                    <iframe
+                      src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${getTradingViewSymbol(chartSymbol)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget`}
+                      className="w-full h-full rounded-lg border-0"
+                      allowTransparency
+                      title="TradingView Chart"
+                    ></iframe>
+                  </div>
+                ) : (
+                  // Yahoo Finance chart for stocks/commodities/forex
+                  <>
+                    <img 
+                      src={getYahooChartUrl(chartSymbol, analysis.duration)}
+                      alt={`${analysis.assetName || analysis.symbol} Price Chart`}
+                      className="w-full rounded-lg"
+                      onError={(e) => {
+                        // Fallback if chart image fails
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                      data-testid="img-price-chart"
+                    />
+                    <div className="hidden text-center py-8">
+                      <p className="text-[#6a7f72] text-sm">Chart not available</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

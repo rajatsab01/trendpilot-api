@@ -159,156 +159,156 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
 
   // Major US Stocks
   "apple": [
-    { symbol: "AAPL", name: "Apple Inc.", market: "stock_equities", description: "Technology company" },
+    { symbol: "AAPL", name: "Apple Inc.", market: "stock", description: "Technology company" },
   ],
   "microsoft": [
-    { symbol: "MSFT", name: "Microsoft Corporation", market: "stock_equities", description: "Software company" },
+    { symbol: "MSFT", name: "Microsoft Corporation", market: "stock", description: "Software company" },
   ],
   "google": [
-    { symbol: "GOOGL", name: "Alphabet Inc.", market: "stock_equities", description: "Technology conglomerate" },
+    { symbol: "GOOGL", name: "Alphabet Inc.", market: "stock", description: "Technology conglomerate" },
   ],
   "amazon": [
-    { symbol: "AMZN", name: "Amazon.com Inc.", market: "stock_equities", description: "E-commerce company" },
+    { symbol: "AMZN", name: "Amazon.com Inc.", market: "stock", description: "E-commerce company" },
   ],
   "tesla": [
-    { symbol: "TSLA", name: "Tesla Inc.", market: "stock_equities", description: "Electric vehicle company" },
+    { symbol: "TSLA", name: "Tesla Inc.", market: "stock", description: "Electric vehicle company" },
   ],
   "meta": [
-    { symbol: "META", name: "Meta Platforms Inc.", market: "stock_equities", description: "Social media company" },
+    { symbol: "META", name: "Meta Platforms Inc.", market: "stock", description: "Social media company" },
   ],
   "facebook": [
-    { symbol: "META", name: "Meta Platforms Inc.", market: "stock_equities", description: "Social media company (formerly Facebook)" },
+    { symbol: "META", name: "Meta Platforms Inc.", market: "stock", description: "Social media company (formerly Facebook)" },
   ],
   "nvidia": [
-    { symbol: "NVDA", name: "NVIDIA Corporation", market: "stock_equities", description: "Graphics processing company" },
+    { symbol: "NVDA", name: "NVIDIA Corporation", market: "stock", description: "Graphics processing company" },
   ],
   "netflix": [
-    { symbol: "NFLX", name: "Netflix Inc.", market: "stock_equities", description: "Streaming service" },
+    { symbol: "NFLX", name: "Netflix Inc.", market: "stock", description: "Streaming service" },
   ],
   "coca cola": [
-    { symbol: "KO", name: "The Coca-Cola Company", market: "stock_equities", description: "Beverage company" },
+    { symbol: "KO", name: "The Coca-Cola Company", market: "stock", description: "Beverage company" },
   ],
   "coca-cola": [
-    { symbol: "KO", name: "The Coca-Cola Company", market: "stock_equities", description: "Beverage company" },
+    { symbol: "KO", name: "The Coca-Cola Company", market: "stock", description: "Beverage company" },
   ],
 
   // Market Indices
   "s&p": [
-    { symbol: "^GSPC", name: "S&P 500", market: "stock_equities", description: "US stock market index" },
+    { symbol: "^GSPC", name: "S&P 500", market: "stock", description: "US stock market index" },
   ],
   "sp500": [
-    { symbol: "^GSPC", name: "S&P 500", market: "stock_equities", description: "US stock market index" },
+    { symbol: "^GSPC", name: "S&P 500", market: "stock", description: "US stock market index" },
   ],
   "dow": [
-    { symbol: "^DJI", name: "Dow Jones", market: "stock_equities", description: "US stock market index" },
+    { symbol: "^DJI", name: "Dow Jones", market: "stock", description: "US stock market index" },
   ],
   "nasdaq": [
-    { symbol: "^IXIC", name: "NASDAQ", market: "stock_equities", description: "US tech stock index" },
+    { symbol: "^IXIC", name: "NASDAQ", market: "stock", description: "US tech stock index" },
   ],
   "nifty": [
-    { symbol: "^NSEI", name: "NIFTY 50", market: "stock_equities", description: "Indian stock market index" },
+    { symbol: "^NSEI", name: "NIFTY 50", market: "stock", description: "Indian stock market index" },
   ],
   "sensex": [
-    { symbol: "^BSESN", name: "BSE SENSEX", market: "stock_equities", description: "Indian stock market index" },
+    { symbol: "^BSESN", name: "BSE SENSEX", market: "stock", description: "Indian stock market index" },
   ],
 
   // Indian Stocks
   "ndtv": [
-    { symbol: "NDTV.NS", name: "New Delhi Television Ltd", market: "stock_equities", description: "Indian media company (NSE)" },
-    { symbol: "NDTV.BO", name: "New Delhi Television Ltd", market: "stock_equities", description: "Indian media company (BSE)" },
+    { symbol: "NDTV.NS", name: "New Delhi Television Ltd", market: "stock", description: "Indian media company (NSE)" },
+    { symbol: "NDTV.BO", name: "New Delhi Television Ltd", market: "stock", description: "Indian media company (BSE)" },
   ],
   "reliance": [
-    { symbol: "RELIANCE.NS", name: "Reliance Industries", market: "stock_equities", description: "Indian conglomerate (NSE)" },
-    { symbol: "RELIANCE.BO", name: "Reliance Industries", market: "stock_equities", description: "Indian conglomerate (BSE)" },
+    { symbol: "RELIANCE.NS", name: "Reliance Industries", market: "stock", description: "Indian conglomerate (NSE)" },
+    { symbol: "RELIANCE.BO", name: "Reliance Industries", market: "stock", description: "Indian conglomerate (BSE)" },
   ],
   "tcs": [
-    { symbol: "TCS.NS", name: "Tata Consultancy Services", market: "stock_equities", description: "Indian IT company (NSE)" },
-    { symbol: "TCS.BO", name: "Tata Consultancy Services", market: "stock_equities", description: "Indian IT company (BSE)" },
+    { symbol: "TCS.NS", name: "Tata Consultancy Services", market: "stock", description: "Indian IT company (NSE)" },
+    { symbol: "TCS.BO", name: "Tata Consultancy Services", market: "stock", description: "Indian IT company (BSE)" },
   ],
   "infosys": [
-    { symbol: "INFY.NS", name: "Infosys Limited", market: "stock_equities", description: "Indian IT company (NSE)" },
-    { symbol: "INFY", name: "Infosys Limited ADR", market: "stock_equities", description: "Indian IT company (US ADR)" },
+    { symbol: "INFY.NS", name: "Infosys Limited", market: "stock", description: "Indian IT company (NSE)" },
+    { symbol: "INFY", name: "Infosys Limited ADR", market: "stock", description: "Indian IT company (US ADR)" },
   ],
   "hdfc": [
-    { symbol: "HDFCBANK.NS", name: "HDFC Bank Limited", market: "stock_equities", description: "Indian bank (NSE)" },
-    { symbol: "HDB", name: "HDFC Bank ADR", market: "stock_equities", description: "Indian bank (US ADR)" },
+    { symbol: "HDFCBANK.NS", name: "HDFC Bank Limited", market: "stock", description: "Indian bank (NSE)" },
+    { symbol: "HDB", name: "HDFC Bank ADR", market: "stock", description: "Indian bank (US ADR)" },
   ],
   "icici": [
-    { symbol: "ICICIBANK.NS", name: "ICICI Bank Limited", market: "stock_equities", description: "Indian bank (NSE)" },
-    { symbol: "IBN", name: "ICICI Bank ADR", market: "stock_equities", description: "Indian bank (US ADR)" },
+    { symbol: "ICICIBANK.NS", name: "ICICI Bank Limited", market: "stock", description: "Indian bank (NSE)" },
+    { symbol: "IBN", name: "ICICI Bank ADR", market: "stock", description: "Indian bank (US ADR)" },
   ],
   "bharti": [
-    { symbol: "BHARTIARTL.NS", name: "Bharti Airtel Limited", market: "stock_equities", description: "Indian telecom (NSE)" },
+    { symbol: "BHARTIARTL.NS", name: "Bharti Airtel Limited", market: "stock", description: "Indian telecom (NSE)" },
   ],
   "airtel": [
-    { symbol: "BHARTIARTL.NS", name: "Bharti Airtel Limited", market: "stock_equities", description: "Indian telecom (NSE)" },
+    { symbol: "BHARTIARTL.NS", name: "Bharti Airtel Limited", market: "stock", description: "Indian telecom (NSE)" },
   ],
   "wipro": [
-    { symbol: "WIPRO.NS", name: "Wipro Limited", market: "stock_equities", description: "Indian IT company (NSE)" },
-    { symbol: "WIT", name: "Wipro Limited ADR", market: "stock_equities", description: "Indian IT company (US ADR)" },
+    { symbol: "WIPRO.NS", name: "Wipro Limited", market: "stock", description: "Indian IT company (NSE)" },
+    { symbol: "WIT", name: "Wipro Limited ADR", market: "stock", description: "Indian IT company (US ADR)" },
   ],
   "adani": [
-    { symbol: "ADANIENT.NS", name: "Adani Enterprises", market: "stock_equities", description: "Indian conglomerate (NSE)" },
+    { symbol: "ADANIENT.NS", name: "Adani Enterprises", market: "stock", description: "Indian conglomerate (NSE)" },
   ],
   "tata": [
-    { symbol: "TATAMOTORS.NS", name: "Tata Motors Limited", market: "stock_equities", description: "Indian auto company (NSE)" },
+    { symbol: "TATAMOTORS.NS", name: "Tata Motors Limited", market: "stock", description: "Indian auto company (NSE)" },
   ],
 
   // UK Stocks
   "bp": [
-    { symbol: "BP.L", name: "BP plc", market: "stock_equities", description: "British oil & gas company" },
-    { symbol: "BP", name: "BP plc ADR", market: "stock_equities", description: "British oil & gas (US ADR)" },
+    { symbol: "BP.L", name: "BP plc", market: "stock", description: "British oil & gas company" },
+    { symbol: "BP", name: "BP plc ADR", market: "stock", description: "British oil & gas (US ADR)" },
   ],
   "shell": [
-    { symbol: "SHEL.L", name: "Shell plc", market: "stock_equities", description: "British oil & gas company" },
-    { symbol: "SHEL", name: "Shell plc ADR", market: "stock_equities", description: "British oil & gas (US ADR)" },
+    { symbol: "SHEL.L", name: "Shell plc", market: "stock", description: "British oil & gas company" },
+    { symbol: "SHEL", name: "Shell plc ADR", market: "stock", description: "British oil & gas (US ADR)" },
   ],
   "hsbc": [
-    { symbol: "HSBA.L", name: "HSBC Holdings plc", market: "stock_equities", description: "British bank" },
-    { symbol: "HSBC", name: "HSBC Holdings ADR", market: "stock_equities", description: "British bank (US ADR)" },
+    { symbol: "HSBA.L", name: "HSBC Holdings plc", market: "stock", description: "British bank" },
+    { symbol: "HSBC", name: "HSBC Holdings ADR", market: "stock", description: "British bank (US ADR)" },
   ],
 
   // Japanese Stocks
   "toyota": [
-    { symbol: "7203.T", name: "Toyota Motor Corporation", market: "stock_equities", description: "Japanese auto company" },
-    { symbol: "TM", name: "Toyota Motor ADR", market: "stock_equities", description: "Japanese auto (US ADR)" },
+    { symbol: "7203.T", name: "Toyota Motor Corporation", market: "stock", description: "Japanese auto company" },
+    { symbol: "TM", name: "Toyota Motor ADR", market: "stock", description: "Japanese auto (US ADR)" },
   ],
   "sony": [
-    { symbol: "6758.T", name: "Sony Group Corporation", market: "stock_equities", description: "Japanese electronics company" },
-    { symbol: "SONY", name: "Sony Group ADR", market: "stock_equities", description: "Japanese electronics (US ADR)" },
+    { symbol: "6758.T", name: "Sony Group Corporation", market: "stock", description: "Japanese electronics company" },
+    { symbol: "SONY", name: "Sony Group ADR", market: "stock", description: "Japanese electronics (US ADR)" },
   ],
 
   // Chinese Stocks
   "alibaba": [
-    { symbol: "BABA", name: "Alibaba Group", market: "stock_equities", description: "Chinese e-commerce company" },
+    { symbol: "BABA", name: "Alibaba Group", market: "stock", description: "Chinese e-commerce company" },
   ],
   "tencent": [
-    { symbol: "TCEHY", name: "Tencent Holdings", market: "stock_equities", description: "Chinese tech company (OTC)" },
+    { symbol: "TCEHY", name: "Tencent Holdings", market: "stock", description: "Chinese tech company (OTC)" },
   ],
   "baidu": [
-    { symbol: "BIDU", name: "Baidu Inc", market: "stock_equities", description: "Chinese search engine" },
+    { symbol: "BIDU", name: "Baidu Inc", market: "stock", description: "Chinese search engine" },
   ],
 
   // European Stocks
   "volkswagen": [
-    { symbol: "VOW.DE", name: "Volkswagen AG", market: "stock_equities", description: "German auto company" },
-    { symbol: "VWAGY", name: "Volkswagen ADR", market: "stock_equities", description: "German auto (US ADR)" },
+    { symbol: "VOW.DE", name: "Volkswagen AG", market: "stock", description: "German auto company" },
+    { symbol: "VWAGY", name: "Volkswagen ADR", market: "stock", description: "German auto (US ADR)" },
   ],
   "bmw": [
-    { symbol: "BMW.DE", name: "BMW AG", market: "stock_equities", description: "German auto company" },
+    { symbol: "BMW.DE", name: "BMW AG", market: "stock", description: "German auto company" },
   ],
   "mercedes": [
-    { symbol: "MBG.DE", name: "Mercedes-Benz Group", market: "stock_equities", description: "German auto company" },
+    { symbol: "MBG.DE", name: "Mercedes-Benz Group", market: "stock", description: "German auto company" },
   ],
   "sap": [
-    { symbol: "SAP.DE", name: "SAP SE", market: "stock_equities", description: "German software company" },
-    { symbol: "SAP", name: "SAP SE ADR", market: "stock_equities", description: "German software (US ADR)" },
+    { symbol: "SAP.DE", name: "SAP SE", market: "stock", description: "German software company" },
+    { symbol: "SAP", name: "SAP SE ADR", market: "stock", description: "German software (US ADR)" },
   ],
   "nestle": [
-    { symbol: "NESN.SW", name: "Nestlé S.A.", market: "stock_equities", description: "Swiss food & beverage" },
+    { symbol: "NESN.SW", name: "Nestlé S.A.", market: "stock", description: "Swiss food & beverage" },
   ],
   "lvmh": [
-    { symbol: "MC.PA", name: "LVMH", market: "stock_equities", description: "French luxury goods" },
+    { symbol: "MC.PA", name: "LVMH", market: "stock", description: "French luxury goods" },
   ],
 };
 
@@ -373,9 +373,9 @@ export function getPopularInstruments(market?: string): InstrumentSuggestion[] {
     { symbol: "GC=F", name: "Gold Futures", market: "commodity", description: "Gold futures contract" },
     { symbol: "CL=F", name: "Crude Oil (WTI)", market: "commodity", description: "West Texas Intermediate crude" },
     { symbol: "EURUSD=X", name: "EUR/USD", market: "forex", description: "Euro to US Dollar" },
-    { symbol: "AAPL", name: "Apple Inc.", market: "stock_equities", description: "Technology company" },
-    { symbol: "TSLA", name: "Tesla Inc.", market: "stock_equities", description: "Electric vehicle company" },
-    { symbol: "^GSPC", name: "S&P 500", market: "stock_equities", description: "US stock market index" },
+    { symbol: "AAPL", name: "Apple Inc.", market: "stock", description: "Technology company" },
+    { symbol: "TSLA", name: "Tesla Inc.", market: "stock", description: "Electric vehicle company" },
+    { symbol: "^GSPC", name: "S&P 500", market: "stock", description: "US stock market index" },
   ];
 
   if (market) {

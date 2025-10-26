@@ -178,6 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateSchema = z.object({
         currency: z.string().optional(),
         language: z.string().optional(),
+        exchange: z.string().optional(),
       });
 
       const validationResult = updateSchema.safeParse(req.body);
@@ -666,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validateSchema = z.object({
         symbol: z.string().min(1),
-        market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
+        market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
       });
 
       const validationResult = validateSchema.safeParse(req.body);
@@ -701,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: z.string().min(1),
         symbol: z.string().min(1),
         duration: z.enum(["long_term", "short_term", "scalping"]),
-        market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
+        market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
         currency: z.string().optional().default("USD"),
         exchange: z.string().optional(),
       });
@@ -762,7 +763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeframe: analysisResult.timeframe, // Candle timeframe (e.g., "15min", "1hr", "1day")
         nextCandleCloseTime: analysisResult.nextCandleCloseTime, // When next candle closes
         duration,
-        market: analysisResult.marketType as "stock_equities" | "commodity" | "forex" | "derivatives_futures" | "bond" | "cryptocurrency", // Auto-detected by Perplexity
+        market: analysisResult.marketType as "stock" | "commodity" | "forex" | "cryptocurrency", // Auto-detected by Perplexity
         recommendation: analysisResult.recommendation,
         confidence: analysisResult.confidence,
         sentiment: analysisResult.sentiment,

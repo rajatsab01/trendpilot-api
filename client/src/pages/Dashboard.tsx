@@ -713,11 +713,10 @@ export default function Dashboard() {
                 data-testid="select-market"
               >
                 <option value="" disabled>{t.selectMarket || "Select Market Type"}</option>
+                <option value="stock">{t.stockMarket}</option>
                 <option value="cryptocurrency">{t.cryptocurrencyMarket}</option>
-                <option value="stock_equities">{t.stockMarket}</option>
                 <option value="commodity">{t.commodityMarket}</option>
-                <option value="derivatives_futures">{t.derivativesMarket}</option>
-                <option value="bond">{t.bondMarket}</option>
+                <option value="forex">{t.forexMarket}</option>
               </select>
             </label>
           </div>

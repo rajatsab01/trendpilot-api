@@ -8,7 +8,7 @@
  * and provides a reliable reference for symbol handling.
  */
 
-export type MarketType = 'stock' | 'commodity' | 'forex' | 'derivative' | 'bond' | 'cryptocurrency';
+export type MarketType = 'stock' | 'commodity' | 'forex' | 'cryptocurrency';
 export type SymbolClassification = 'spot' | 'futures' | 'cfd' | 'stock' | 'etf' | 'index' | 'pair';
 export type VerificationStatus = 'verified' | 'unverified' | 'broken' | 'deprecated';
 
