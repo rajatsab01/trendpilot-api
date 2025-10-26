@@ -20,10 +20,20 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 4. **Enhanced Currency Conversion in Confirmation Popup** - Symbol validation popup now shows prices in user's selected currency (e.g., ₹34,145.85 for INR) instead of hardcoded USD. Implemented getCurrencySymbol() helper and convertPrice() function using Frankfurter API for real-time exchange rates with proper currency symbols (₹, €, £, ¥, etc.).
 
+**Latest TradingView Chart Integration & Exchange Options:**
+- Added "Commodity" and "Forex" exchange options in dropdown (placed after "Crypto") for users analyzing gold, crude oil, or forex pairs
+- Fixed critical forex pair bug: CAD/USD now analyzes correctly as CAD/USD instead of being converted to user's currency (e.g., CAD/INR)
+- Implemented smart forex pair detection: symbols with =X suffix, / separator, or 6-letter currency pairs (EURUSD, CADUSD) bypass currency conversion
+- **Switched to TradingView charts for ALL markets** (stocks, commodities, forex, cryptocurrency) - Yahoo Finance static images removed
+- Created comprehensive symbol converter for TradingView compatibility:
+  - Stocks: .NS → NSE:, .BO → BSE:, .L → LSE:, .T → TSE:, .HK → HKEX:, .AX → ASX:, .TO → TSX:, US stocks → NASDAQ:
+  - Commodities: GC=F → TVC:GOLD, SI=F → TVC:SILVER, CL=F → TVC:USOIL, NG=F → TVC:NATURALGAS
+  - Forex: CADUSD=X → FX_IDC:USDCAD, EURUSD → FX_IDC:EURUSD
+  - Crypto: BTCUSDT → BINANCE:BTCUSDT (unchanged)
+
 **Market Simplification & Previous Fixes:**
 - Simplified market types from 6 to 4 options: Stock (includes futures/derivatives), Cryptocurrency, Commodity, Forex
 - Fixed exchange persistence bug (added 'exchange' to backend validation)
-- Replaced CoinGecko with TradingView charts for cryptocurrency
 - Implemented 4-tier symbol validation system (51 verified symbols)
 - Real-time currency conversion for all price fields using Frankfurter API
 
