@@ -710,15 +710,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Insufficient tokens" });
       }
 
-      // 🎯 STEP 1: Fetch accurate prices from Yahoo Finance / Binance
+      // 🎯 STEP 1: PRE-FLIGHT VALIDATION - Fetch accurate prices from Yahoo Finance / Binance
+      // This prevents wasting tokens on invalid symbols before running expensive Perplexity analysis
+      console.log(`🔍 [PRE-FLIGHT] Validating symbol "${symbol}" for ${market} market...`);
+      
       let priceData;
       try {
         priceData = await fetchMarketPrice(symbol, duration, market);
-        console.log(`✅ Fetched accurate ${market} price for ${symbol}:`, priceData);
+        console.log(`✅ [PRE-FLIGHT] Symbol validated successfully - price data retrieved`);
+        console.log(`   Live price: ${priceData.livePrice}, Candle close: ${priceData.candleClosePrice}`);
       } catch (error: any) {
-        console.error(`❌ Price fetching error for ${symbol}:`, error.message);
+        console.error(`❌ [PRE-FLIGHT] Symbol validation failed for ${symbol}:`, error.message);
+        console.log(`   ⚠️  Analysis aborted - no tokens consumed`);
+        
         return res.status(400).json({ 
-          error: `Unable to fetch price data for symbol "${symbol}". Please verify the symbol is correct for ${market} market.` 
+          error: `Unable to fetch price data for symbol "${symbol}". Please verify the symbol is correct for ${market} market. No tokens were consumed.`,
+          hint: "Try using the autocomplete suggestions to find the correct symbol format."
         });
       }
 
