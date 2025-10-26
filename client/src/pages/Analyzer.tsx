@@ -11,6 +11,7 @@ import type { Analysis } from "@shared/schema";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import trendPilotLogo from "@assets/trendpilot-logo.png";
+import { convertToTradingViewSymbol } from "@/lib/utils";
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
@@ -252,22 +253,10 @@ export default function Analyzer() {
       return `https://chart.yahoo.com/z?s=${encodeURIComponent(symbol)}&t=${timeRange}&q=c&l=on&z=l&p=s`;
     };
 
-    // TradingView symbol mapping for crypto
-    const getTradingViewSymbol = (symbol: string): string => {
-      // Common crypto symbols - map to TradingView format (BINANCE:BTCUSDT)
-      const normalizedSymbol = symbol.toUpperCase();
-      
-      // If symbol already has USDT/USD suffix, use it as is
-      if (normalizedSymbol.includes('USDT') || normalizedSymbol.includes('USD')) {
-        return `BINANCE:${normalizedSymbol.replace('-', '')}`;
-      }
-      
-      // Otherwise add USDT suffix for Binance
-      return `BINANCE:${normalizedSymbol}USDT`;
-    };
-
     const chartSymbol = analysis.correctedSymbol || analysis.symbol;
-    const isCrypto = analysis.market === 'cryptocurrency';
+    
+    // Use TradingView for ALL markets now (crypto, stocks, commodities, forex)
+    const tradingViewSymbol = convertToTradingViewSymbol(chartSymbol, analysis.market);
 
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
@@ -285,45 +274,25 @@ export default function Analyzer() {
             </h1>
           </header>
 
-          {/* Price Chart - Yahoo Finance for stocks/commodities, CoinGecko for crypto */}
+          {/* Price Chart - TradingView for ALL markets */}
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
               <div className="p-3 border-b border-[#111714] flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#38e07b] text-lg">show_chart</span>
                 <p className="text-[#9eb7a8] text-sm font-medium">
-                  Price Chart {analysis.market === 'cryptocurrency' ? '(TradingView)' : '(Yahoo Finance)'}
+                  Price Chart (TradingView)
                 </p>
               </div>
               <div className="p-2">
-                {isCrypto ? (
-                  // TradingView widget for cryptocurrency
-                  <div className="w-full h-96" data-testid="tradingview-chart">
-                    <iframe
-                      src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${getTradingViewSymbol(chartSymbol)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget`}
-                      className="w-full h-full rounded-lg border-0"
-                      allowTransparency
-                      title="TradingView Chart"
-                    ></iframe>
-                  </div>
-                ) : (
-                  // Yahoo Finance chart for stocks/commodities/forex
-                  <>
-                    <img 
-                      src={getYahooChartUrl(chartSymbol, analysis.duration)}
-                      alt={`${analysis.assetName || analysis.symbol} Price Chart`}
-                      className="w-full rounded-lg"
-                      onError={(e) => {
-                        // Fallback if chart image fails
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                      data-testid="img-price-chart"
-                    />
-                    <div className="hidden text-center py-8">
-                      <p className="text-[#6a7f72] text-sm">Chart not available</p>
-                    </div>
-                  </>
-                )}
+                {/* TradingView widget for ALL markets */}
+                <div className="w-full h-96" data-testid="tradingview-chart">
+                  <iframe
+                    src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${tradingViewSymbol}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget`}
+                    className="w-full h-full rounded-lg border-0"
+                    allowTransparency
+                    title="TradingView Chart"
+                  ></iframe>
+                </div>
               </div>
             </div>
           </div>
