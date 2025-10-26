@@ -1,4 +1,5 @@
 // Removed fetchMarketData import - Perplexity now handles all market data validation via real-time web search
+import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
 
 interface OHLCVData {
   symbol: string;
@@ -446,6 +447,51 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       }
     }
 
+    // 💱 CURRENCY CONVERSION: Fetch exchange rates ONCE and convert all USD prices to user's preferred currency
+    console.log(`💱 Converting prices from USD to ${currency}...`);
+    
+    // Fetch exchange rates once for this analysis
+    const exchangeData = currency === 'USD' ? null : await fetchExchangeRates('USD');
+    const exchangeRate = exchangeData?.rates[currency] || 1;
+    
+    if (currency !== 'USD' && !exchangeData?.rates[currency]) {
+      console.warn(`⚠️ Exchange rate not found for ${currency}, using 1:1 fallback`);
+    }
+    
+    // Helper to convert a price value, handling undefined/null/NaN gracefully
+    const convertPrice = (priceValue: any): string => {
+      if (priceValue === undefined || priceValue === null || priceValue === '') {
+        return '0.00';
+      }
+      const numValue = typeof priceValue === 'string' ? parseFloat(priceValue) : priceValue;
+      if (isNaN(numValue)) {
+        console.warn(`⚠️ Invalid price value: "${priceValue}"`);
+        return '0.00';
+      }
+      const converted = convertCurrencyWithRate(numValue, exchangeRate);
+      return converted.toFixed(2);
+    };
+    
+    // Convert all prices using the same exchange rate
+    const convertedLivePrice = convertPrice(data.livePrice);
+    const convertedCandleClosePrice = convertPrice(data.candleClosePrice);
+    const convertedCurrentPrice = convertPrice(data.currentPrice || data.candleClosePrice);
+    const convertedEntry = convertPrice(data.entry);
+    const convertedTakeProfit = convertPrice(takeProfit);
+    const convertedStopLoss = convertPrice(stopLoss);
+    const convertedTp1 = convertPrice(data.tp1);
+    const convertedTp2 = convertPrice(data.tp2);
+    const convertedTp3 = convertPrice(data.tp3);
+    const convertedS1 = convertPrice(data.s1);
+    const convertedS2 = convertPrice(data.s2);
+    const convertedS3 = convertPrice(data.s3);
+    const convertedR1 = convertPrice(data.r1);
+    const convertedR2 = convertPrice(data.r2);
+    const convertedR3 = convertPrice(data.r3);
+
+    console.log(`✅ Currency conversion complete to ${currency} (rate: ${exchangeRate})`);
+    console.log(`   Example: Live Price ${data.livePrice} USD → ${convertedLivePrice} ${currency}`);
+
     return {
       recommendation: data.recommendation,
       confidence: data.confidence,
@@ -457,9 +503,9 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       correctedSymbol: data.correctedSymbol,
       assetName: data.assetName,
       marketType: detectedMarket, // Auto-detected market type from Perplexity
-      currentPrice: data.currentPrice || data.candleClosePrice, // Backward compatibility
-      livePrice: data.livePrice, // Actual current live market price
-      candleClosePrice: data.candleClosePrice, // Price at closed candle for analysis
+      currentPrice: convertedCurrentPrice, // Converted to user's currency
+      livePrice: convertedLivePrice, // Actual current live market price (converted)
+      candleClosePrice: convertedCandleClosePrice, // Price at closed candle for analysis (converted)
       priceSource: data.priceSource,
       candleCloseTime: data.candleCloseTime, // Timestamp of candle close
       timeframe: data.timeframe, // Candle timeframe used
@@ -472,24 +518,24 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         bollingerBands: data.bollingerBands,
       },
       bracketOrder: {
-        entry: data.entry,
-        takeProfit: takeProfit,
-        stopLoss: stopLoss,
+        entry: convertedEntry, // Converted to user's currency
+        takeProfit: convertedTakeProfit, // Converted to user's currency
+        stopLoss: convertedStopLoss, // Converted to user's currency
       },
       takeProfitLevels: {
-        tp1: data.tp1,
-        tp2: data.tp2,
-        tp3: data.tp3,
+        tp1: convertedTp1, // Converted to user's currency
+        tp2: convertedTp2, // Converted to user's currency
+        tp3: convertedTp3, // Converted to user's currency
       },
       supportLevels: {
-        s1: data.s1,
-        s2: data.s2,
-        s3: data.s3,
+        s1: convertedS1, // Converted to user's currency
+        s2: convertedS2, // Converted to user's currency
+        s3: convertedS3, // Converted to user's currency
       },
       resistanceLevels: {
-        r1: data.r1,
-        r2: data.r2,
-        r3: data.r3,
+        r1: convertedR1, // Converted to user's currency
+        r2: convertedR2, // Converted to user's currency
+        r3: convertedR3, // Converted to user's currency
       },
       trailingStopStrategy: data.trailingStopStrategy,
       probabilityScore: data.probabilityScore,

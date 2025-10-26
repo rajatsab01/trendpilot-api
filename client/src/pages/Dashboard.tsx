@@ -608,9 +608,6 @@ export default function Dashboard() {
                             )}
                           </div>
                           <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
-                          {suggestion.description && (
-                            <span className="text-xs text-[#6a7f72] mt-0.5">{suggestion.description}</span>
-                          )}
                         </div>
                         <span className="text-xs text-[#38e07b] capitalize ml-2 mt-1 shrink-0">
                           {suggestion.market.replace(/_/g, ' ')}
