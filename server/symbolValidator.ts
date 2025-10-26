@@ -5,6 +5,8 @@
  * Fetches initial data to prepare comprehensive context for analysis.
  */
 
+import { normalizeSymbolForAPI, type MarketType, type SymbolClassification } from "./symbolRegistry";
+
 interface SymbolValidationResult {
   isValid: boolean;
   correctedSymbol?: string;
@@ -310,23 +312,9 @@ async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ sym
  */
 async function validateYahooSymbol(symbol: string, market: string): Promise<SymbolValidationResult> {
   try {
-    let yahooSymbol = symbol.toUpperCase();
-    
-    // Apply market-specific formatting
-    if (market === "forex") {
-      if (!yahooSymbol.includes("=X") && yahooSymbol.length === 6) {
-        yahooSymbol = `${yahooSymbol}=X`;
-      }
-    } else if (market === "commodity") {
-      const commodityMap: Record<string, string> = {
-        "GOLD": "GC=F",
-        "SILVER": "SI=F",
-        "CRUDE": "CL=F",
-        "OIL": "CL=F",
-        "BRENT": "BZ=F",
-      };
-      yahooSymbol = commodityMap[yahooSymbol] || `${yahooSymbol}=F`;
-    }
+    // Use unified symbol normalization from symbolRegistry
+    // Classification is auto-detected based on symbol pattern and market type
+    const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
     
     // Try fetching from Yahoo Finance
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;

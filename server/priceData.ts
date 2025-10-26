@@ -8,6 +8,8 @@
  * NO API KEYS REQUIRED - Completely FREE!
  */
 
+import { normalizeSymbolForAPI, type MarketType, type SymbolClassification } from "./symbolRegistry";
+
 interface OHLCVData {
   symbol: string;
   livePrice: number;
@@ -238,31 +240,10 @@ async function fetchYahooFinancePrice(
     
     const yahooInterval = yahooIntervalMap[interval] || "1h";
     
-    // Construct Yahoo Finance symbol
-    let yahooSymbol = symbol.toUpperCase();
-    
-    // Add common suffixes for different markets
-    if (market === "forex") {
-      // Forex pairs like EURUSD -> EURUSD=X
-      if (!yahooSymbol.includes("=X") && yahooSymbol.length === 6) {
-        yahooSymbol = `${yahooSymbol}=X`;
-      }
-    } else if (market === "commodity") {
-      // Commodities like GOLD -> GC=F (Gold Futures)
-      const commodityMap: Record<string, string> = {
-        "GOLD": "GC=F",
-        "SILVER": "SI=F",
-        "CRUDE": "CL=F",
-        "OIL": "CL=F",
-        "BRENT": "BZ=F",
-      };
-      // Only add =F suffix if not already present
-      if (commodityMap[yahooSymbol]) {
-        yahooSymbol = commodityMap[yahooSymbol];
-      } else if (!yahooSymbol.endsWith("=F")) {
-        yahooSymbol = `${yahooSymbol}=F`;
-      }
-    }
+    // Use unified symbol normalization from symbolRegistry
+    // This ensures consistent transformation logic across the entire codebase
+    // Classification is auto-detected based on symbol pattern and market type
+    const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
     
     // Fetch chart data from Yahoo Finance
     const range = duration === "long_term" ? "1mo" : duration === "short_term" ? "5d" : "1d";

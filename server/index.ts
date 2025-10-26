@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeSymbolRegistry } from "./symbolRegistry";
 
 const app = express();
 
@@ -75,6 +76,9 @@ app.use((req, res, next) => {
     } else {
       console.log("🔧 Starting server in development mode...");
     }
+
+    console.log("🔧 Initializing symbol registry...");
+    initializeSymbolRegistry();
 
     console.log("📦 Registering routes...");
     const server = await registerRoutes(app);
