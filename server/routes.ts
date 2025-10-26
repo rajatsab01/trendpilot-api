@@ -1346,6 +1346,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test all symbols in the database (admin only)
+  app.post("/api/admin/test-symbols", async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      const user = await storage.getUser(userId);
+
+      if (!user || user.isAdmin !== 1) {
+        return res.status(403).json({ error: "Unauthorized - Admin only" });
+      }
+
+      console.log("🧪 Starting comprehensive symbol testing suite (triggered by admin)...");
+
+      // Import and run the test suite
+      const { testAllSymbols } = await import("./symbolTester.js");
+      const report = await testAllSymbols();
+
+      res.json({
+        success: true,
+        report,
+        summary: {
+          totalSymbols: report.totalSymbols,
+          workingSymbols: report.workingSymbols,
+          brokenSymbols: report.brokenSymbols,
+          successRate: report.successRate,
+        },
+      });
+    } catch (error: any) {
+      console.error("Symbol testing error:", error);
+      res.status(500).json({ error: "Failed to test symbols", details: error.message });
+    }
+  });
+
   // Get app version - used for version checking and update notifications
   app.get("/api/version", async (req, res) => {
     try {

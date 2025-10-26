@@ -5,7 +5,7 @@
  * and get relevant symbol suggestions across all markets
  */
 
-interface InstrumentSuggestion {
+export interface InstrumentSuggestion {
   symbol: string;
   name: string;
   market: string;
@@ -15,7 +15,7 @@ interface InstrumentSuggestion {
 /**
  * Comprehensive instrument database mapping common names to symbols
  */
-const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
+export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
   // Cryptocurrencies
   "bitcoin": [
     { symbol: "BTCUSDT", name: "Bitcoin", market: "cryptocurrency", description: "Leading cryptocurrency" },
