@@ -415,6 +415,24 @@ export default function Analyzer() {
                   <p className="text-[#9eb7a8] text-sm leading-relaxed">
                     {t.closedCandleExplanation}
                   </p>
+                  
+                  {/* Currency Conversion Info */}
+                  {analysis.sourceCurrency && analysis.currency && (
+                    <p className="text-[#6a7f72] text-xs mt-3 pt-3 border-t border-[#1c2620]">
+                      {analysis.sourceCurrency === analysis.currency ? (
+                        <>
+                          <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
+                          <span className="text-[#9eb7a8]">Prices shown in native exchange currency ({analysis.sourceCurrency})</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
+                          <span className="text-[#9eb7a8]">Prices converted from {analysis.sourceCurrency} to {analysis.currency}</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  
                   {analysis.nextCandleCloseTime && (
                     <p className="text-[#6a7f72] text-xs mt-2">
                       <span className="text-[#38e07b]">⏰ {t.nextCandleCloses}:</span> {analysis.nextCandleCloseTime}
