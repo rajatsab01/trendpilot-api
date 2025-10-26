@@ -217,8 +217,8 @@ Respond with JSON in this exact format:
   "assetName": "Full official name of the asset from your web search (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
   "marketType": "${market}",
   "currentPrice": "DEPRECATED - Use candleClosePrice instead",
-  "livePrice": "${priceData.livePrice.toFixed(2)}",
-  "candleClosePrice": "${priceData.candleClosePrice.toFixed(2)}",
+  "livePrice": "${priceData.livePrice?.toFixed(2) ?? '0.00'}",
+  "candleClosePrice": "${priceData.candleClosePrice?.toFixed(2) ?? '0.00'}",
   "priceSource": "${priceData.dataSource}",
   "candleCloseTime": "${priceData.candleCloseTime}",
   "timeframe": "${priceData.timeframe}",
@@ -233,7 +233,7 @@ Respond with JSON in this exact format:
   "macd": NUMERIC_VALUE_ONLY (e.g., 0.45, -0.23, 1.85 - NEVER 0 or text),
   "stochastic": NUMERIC_VALUE_ONLY (e.g., 58.3, 72.5, 28.9 - NEVER 0 or text),
   "bollingerBands": NUMERIC_VALUE_ONLY (e.g., 8.5, 15.2, 22.8 - NEVER 0 or text),
-  "entry": "${isScalping ? priceData.livePrice.toFixed(2) : priceData.candleClosePrice.toFixed(2)}",
+  "entry": "${isScalping ? (priceData.livePrice?.toFixed(2) ?? '0.00') : (priceData.candleClosePrice?.toFixed(2) ?? '0.00')}",
   "takeProfit": "${isScalping ? 'realistic take profit based on live price with tight scalping targets' : 'final take profit price (same as tp3)'}",
   "stopLoss": "${isScalping ? 'realistic stop loss based on live price with tight scalping risk control' : 'realistic stop loss price with tight risk control'}",
   "tp1": "${isScalping ? 'Take Profit 1 - Based on LIVE PRICE with tight scalping targets (1:1 RR)' : 'Take Profit 1 - Conservative 1:1 RR (book 50% profit here)'}",
@@ -263,7 +263,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst with access to real-time market news and sentiment analysis. CRITICAL: Use the EXACT prices provided in the prompt - DO NOT fetch new prices. ${isScalping ? `For SCALPING: Use the LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Scalping needs actionable levels near current market price.` : `For ${duration.toUpperCase()} analysis: Use the CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) for entry and bracket order calculations.`} Return the exact price values provided in your JSON response fields. Return responses in valid JSON format only.`,
+            content: `You are an expert financial analyst with access to real-time market news and sentiment analysis. CRITICAL: Use the EXACT prices provided in the prompt - DO NOT fetch new prices. ${isScalping ? `For SCALPING: Use the LIVE CURRENT PRICE ($${priceData.livePrice?.toFixed(2) ?? '0.00'}) for entry/TP/SL calculations. Scalping needs actionable levels near current market price.` : `For ${duration.toUpperCase()} analysis: Use the CANDLE CLOSE PRICE ($${priceData.candleClosePrice?.toFixed(2) ?? '0.00'}) for entry and bracket order calculations.`} Return the exact price values provided in your JSON response fields. Return responses in valid JSON format only.`,
           },
           { role: "user", content: prompt },
         ],
