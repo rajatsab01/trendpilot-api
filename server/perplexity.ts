@@ -1,5 +1,6 @@
 // Removed fetchMarketData import - Perplexity now handles all market data validation via real-time web search
 import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
+import { getExchangeCurrency } from "./symbolValidator";
 
 interface OHLCVData {
   symbol: string;
@@ -30,6 +31,7 @@ interface MarketAnalysisResult {
   livePrice: string; // Actual current live market price
   candleClosePrice: string; // Price at the closed candle used for analysis
   priceSource: string;
+  sourceCurrency: string; // Currency that prices are originally in (before conversion)
   candleCloseTime?: string; // Optional timestamp of candle close
   timeframe?: string; // Candle timeframe (e.g., "15min", "1hr", "1day")
   nextCandleCloseTime?: string; // When the next candle closes (for re-analysis recommendation)
@@ -492,6 +494,10 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     console.log(`✅ Currency conversion complete to ${currency} (rate: ${exchangeRate})`);
     console.log(`   Example: Live Price ${data.livePrice} USD → ${convertedLivePrice} ${currency}`);
 
+    // Determine the original currency from the exchange (before Perplexity normalizes to USD)
+    const sourceCurrency = getExchangeCurrency(data.correctedSymbol, detectedMarket);
+    console.log(`💱 Source currency for ${data.correctedSymbol}: ${sourceCurrency}`);
+
     return {
       recommendation: data.recommendation,
       confidence: data.confidence,
@@ -507,6 +513,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       livePrice: convertedLivePrice, // Actual current live market price (converted)
       candleClosePrice: convertedCandleClosePrice, // Price at closed candle for analysis (converted)
       priceSource: data.priceSource,
+      sourceCurrency: sourceCurrency, // Original currency from exchange (INR for .NS, USD for US stocks, etc.)
       candleCloseTime: data.candleCloseTime, // Timestamp of candle close
       timeframe: data.timeframe, // Candle timeframe used
       nextCandleCloseTime: data.nextCandleCloseTime, // When next candle closes
