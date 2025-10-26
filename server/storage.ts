@@ -719,8 +719,8 @@ export class PgStorage implements IStorage {
   }
 
   async getPublishedAnalysesFeed(userId: string): Promise<Array<Analysis & { author: User }>> {
-    // Get published analyses from users that the current user follows
-    // Exclude analyses from blocked users
+    // Get ALL published analyses (public feed)
+    // Exclude analyses from blocked users only
     const result = await this.db
       .select({
         // Analysis fields
@@ -788,10 +788,8 @@ export class PgStorage implements IStorage {
       })
       .from(analyses)
       .innerJoin(users, eq(analyses.userId, users.id))
-      .innerJoin(follows, eq(analyses.userId, follows.followingId))
       .where(
         and(
-          eq(follows.followerId, userId), // User follows this analyst
           eq(analyses.isPublished, 1), // Analysis is published
           // Exclude blocked users - subquery to check if blocked
           sql`NOT EXISTS (

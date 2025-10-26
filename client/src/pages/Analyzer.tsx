@@ -406,6 +406,11 @@ export default function Analyzer() {
                           <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
                           <span className="text-[#9eb7a8]">Prices shown in native exchange currency ({analysis.sourceCurrency})</span>
                         </>
+                      ) : analysis.exchangeRate ? (
+                        <>
+                          <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
+                          <span className="text-[#9eb7a8]">Prices converted from {analysis.sourceCurrency} to {analysis.currency} at 1 {analysis.sourceCurrency} = {analysis.exchangeRate} {analysis.currency}</span>
+                        </>
                       ) : (
                         <>
                           <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>

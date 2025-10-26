@@ -28,6 +28,7 @@ export const analyses = pgTable("analyses", {
   instrumentName: text("instrument_name"), // Full name of the instrument (for backward compatibility)
   currency: text("currency").notNull().default("USD"), // Currency used for this analysis (USD, INR, EUR, etc.)
   sourceCurrency: text("source_currency"), // Original currency from exchange (INR for .NS, USD for US stocks, etc.)
+  exchangeRate: text("exchange_rate"), // Exchange rate used for conversion (e.g., "83.45" means 1 USD = 83.45 target currency)
   exchange: text("exchange"), // Exchange/country used for this analysis (optional)
   currentPrice: text("current_price"), // DEPRECATED: Use candleClosePrice instead
   livePrice: text("live_price"), // Actual current live market price (spot/ticker)

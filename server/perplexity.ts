@@ -32,6 +32,7 @@ interface MarketAnalysisResult {
   candleClosePrice: string; // Price at the closed candle used for analysis
   priceSource: string;
   sourceCurrency: string; // Currency that prices are originally in (before conversion)
+  exchangeRate: string | null; // Exchange rate used for conversion (null for forex/same currency)
   candleCloseTime?: string; // Optional timestamp of candle close
   timeframe?: string; // Candle timeframe (e.g., "15min", "1hr", "1day")
   nextCandleCloseTime?: string; // When the next candle closes (for re-analysis recommendation)
@@ -263,7 +264,7 @@ Respond with JSON in this exact format:
   "r2": "Resistance Level 2 - Medium resistance above current price",
   "r3": "Resistance Level 3 - Strong resistance above current price",
   "trailingStopStrategy": "Detailed trailing stop strategy in ${languageName} (e.g., 'Book 50% profit at TP1 (1:1 RR), move stop-loss to breakeven. Trail remaining 50% with TP2 (1:2 RR) as final target.')",
-  "probabilityScore": number between 1-100 (probability of success based on indicator confluence, trend strength, and market conditions),
+  "probabilityScore": number between 1-100 (CRITICAL: Vary this based on actual market conditions! Strong setups with multiple confirming indicators = 75-90, moderate setups = 55-74, weak setups with conflicting signals = 40-54. DO NOT default to ~70 - analyze real indicator confluence and market strength),
   "explanatoryNotes": "Detailed explanatory notes in ${languageName} about the trade setup, key levels, market context, and risk disclaimers (3-5 sentences, like: 'This ${durationContext} setup is based on current price action at [price] with tight risk control. Key support at [level] and resistance at [level]. Market conditions favor [direction] momentum. Trade with strict discipline and manage position size according to your risk tolerance. Past performance does not guarantee future results.')"
 }
 
@@ -542,6 +543,9 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     let convertedR2: string;
     let convertedR3: string;
     
+    // Variable to store exchange rate for display (null for forex pairs and same currency)
+    let displayExchangeRate: string | null = null;
+    
     if (isForexPairSymbol) {
       // 🎯 For forex pairs, use prices AS-IS without conversion
       // The "price" of CAD/USD IS the exchange rate (e.g., 1.35 means 1 CAD = 1.35 USD)
@@ -604,6 +608,9 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       const exchangeData = await fetchExchangeRates(sourceCurrency);
       const exchangeRate = exchangeData?.rates[currency] || 1;
       
+      // Store rate for display (e.g., "83.45" means 1 USD = 83.45 INR)
+      displayExchangeRate = exchangeRate.toFixed(2);
+      
       if (!exchangeData?.rates[currency]) {
         console.warn(`⚠️ Exchange rate not found for ${sourceCurrency} → ${currency}, using 1:1 fallback`);
       }
@@ -659,6 +666,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       candleClosePrice: convertedCandleClosePrice, // Price at closed candle for analysis (converted)
       priceSource: data.priceSource,
       sourceCurrency: sourceCurrency, // Original currency from exchange (INR for .NS, USD for US stocks, etc.)
+      exchangeRate: displayExchangeRate, // Exchange rate used for conversion (null for forex/same currency)
       candleCloseTime: data.candleCloseTime, // Timestamp of candle close
       timeframe: data.timeframe, // Candle timeframe used
       nextCandleCloseTime: data.nextCandleCloseTime, // When next candle closes
