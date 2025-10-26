@@ -512,6 +512,9 @@ export default function Dashboard() {
                   data-testid="select-exchange"
                 >
                   <option value="">Not selected</option>
+                  <option value="Not sure">❓ Not sure</option>
+                  <option value="Worldwide">🌐 Worldwide</option>
+                  <option value="Crypto">₿ Crypto</option>
                   <option value="United States">🇺🇸 United States</option>
                   <option value="Canada">🇨🇦 Canada</option>
                   <option value="Mexico">🇲🇽 Mexico</option>
@@ -554,9 +557,6 @@ export default function Dashboard() {
                   <option value="Chile">🇨🇱 Chile</option>
                   <option value="Peru">🇵🇪 Peru</option>
                   <option value="Colombia">🇨🇴 Colombia</option>
-                  <option value="Worldwide">🌐 Worldwide</option>
-                  <option value="Crypto">₿ Crypto</option>
-                  <option value="Not sure">❓ Not sure</option>
                 </select>
               </label>
             </div>
@@ -577,6 +577,10 @@ export default function Dashboard() {
                 }}
                 data-testid="input-symbol"
               />
+              <p className="text-xs text-[#6a7f72] mt-2 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">info</span>
+                App analyzes SPOT charts - use spot symbols (XAUUSD for Gold spot, BTCUSDT for Bitcoin), NOT futures symbols like NG=F (Natural Gas futures). Search by name (e.g., "gold") to find spot options.
+              </p>
               
               {/* Intelligent Search Dropdown */}
               {showSearchDropdown && searchSuggestions.length > 0 && (
@@ -680,7 +684,6 @@ export default function Dashboard() {
                 <option value="" disabled>{t.selectMarket || "Select Market Type"}</option>
                 <option value="cryptocurrency">{t.cryptocurrencyMarket}</option>
                 <option value="stock_equities">{t.stockMarket}</option>
-                <option value="forex">{t.forexMarket}</option>
                 <option value="commodity">{t.commodityMarket}</option>
                 <option value="derivatives_futures">{t.derivativesMarket}</option>
                 <option value="bond">{t.bondMarket}</option>

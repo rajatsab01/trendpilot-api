@@ -62,42 +62,44 @@ const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "DOGEUSDT", name: "Dogecoin", market: "cryptocurrency", description: "Meme cryptocurrency" },
   ],
 
-  // Precious Metals (Commodities)
+  // Precious Metals (Commodities) - SPOT symbols recommended for analysis
   "gold": [
-    { symbol: "GC=F", name: "Gold Futures", market: "commodity", description: "Gold futures contract" },
-    { symbol: "XAUUSD", name: "Gold/USD Spot", market: "commodity", description: "Gold spot price" },
+    { symbol: "XAUUSD", name: "Gold/USD SPOT", market: "commodity", description: "RECOMMENDED: Gold spot price for analysis" },
+    { symbol: "GC=F", name: "Gold Futures", market: "commodity", description: "Gold futures contract (not for spot analysis)" },
   ],
   "silver": [
-    { symbol: "SI=F", name: "Silver Futures", market: "commodity", description: "Silver futures contract" },
-    { symbol: "XAGUSD", name: "Silver/USD Spot", market: "commodity", description: "Silver spot price" },
+    { symbol: "XAGUSD", name: "Silver/USD SPOT", market: "commodity", description: "RECOMMENDED: Silver spot price for analysis" },
+    { symbol: "SI=F", name: "Silver Futures", market: "commodity", description: "Silver futures contract (not for spot analysis)" },
   ],
   "platinum": [
-    { symbol: "PL=F", name: "Platinum Futures", market: "commodity", description: "Platinum futures contract" },
+    { symbol: "XPTUSD", name: "Platinum/USD SPOT", market: "commodity", description: "RECOMMENDED: Platinum spot price" },
+    { symbol: "PL=F", name: "Platinum Futures", market: "commodity", description: "Platinum futures (not for spot analysis)" },
   ],
   "palladium": [
-    { symbol: "PA=F", name: "Palladium Futures", market: "commodity", description: "Palladium futures contract" },
+    { symbol: "XPDUSD", name: "Palladium/USD SPOT", market: "commodity", description: "RECOMMENDED: Palladium spot price" },
+    { symbol: "PA=F", name: "Palladium Futures", market: "commodity", description: "Palladium futures (not for spot analysis)" },
   ],
 
-  // Energy Commodities
+  // Energy Commodities - Note: Most energy commodities trade as futures
   "crude": [
-    { symbol: "CL=F", name: "Crude Oil (WTI)", market: "commodity", description: "West Texas Intermediate crude" },
-    { symbol: "BZ=F", name: "Brent Crude Oil", market: "commodity", description: "Brent crude oil futures" },
+    { symbol: "CL=F", name: "WTI Crude Oil Futures", market: "commodity", description: "WTI crude oil futures (most liquid)" },
+    { symbol: "BZ=F", name: "Brent Crude Oil Futures", market: "commodity", description: "Brent crude oil futures (most liquid)" },
   ],
   "oil": [
-    { symbol: "CL=F", name: "Crude Oil (WTI)", market: "commodity", description: "West Texas Intermediate crude" },
-    { symbol: "BZ=F", name: "Brent Crude Oil", market: "commodity", description: "Brent crude oil futures" },
+    { symbol: "CL=F", name: "WTI Crude Oil Futures", market: "commodity", description: "WTI crude oil futures (most liquid)" },
+    { symbol: "BZ=F", name: "Brent Crude Oil Futures", market: "commodity", description: "Brent crude oil futures (most liquid)" },
   ],
   "wti": [
-    { symbol: "CL=F", name: "Crude Oil (WTI)", market: "commodity", description: "West Texas Intermediate crude" },
+    { symbol: "CL=F", name: "WTI Crude Oil Futures", market: "commodity", description: "WTI crude oil futures (most liquid)" },
   ],
   "brent": [
-    { symbol: "BZ=F", name: "Brent Crude Oil", market: "commodity", description: "Brent crude oil futures" },
+    { symbol: "BZ=F", name: "Brent Crude Oil Futures", market: "commodity", description: "Brent crude oil futures (most liquid)" },
   ],
   "natural gas": [
-    { symbol: "NG=F", name: "Natural Gas", market: "commodity", description: "Natural gas futures" },
+    { symbol: "NG=F", name: "Natural Gas Futures", market: "commodity", description: "Natural gas futures (most liquid contract)" },
   ],
   "gas": [
-    { symbol: "NG=F", name: "Natural Gas", market: "commodity", description: "Natural gas futures" },
+    { symbol: "NG=F", name: "Natural Gas Futures", market: "commodity", description: "Natural gas futures (most liquid contract)" },
   ],
 
   // Agricultural Commodities

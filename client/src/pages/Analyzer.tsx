@@ -27,7 +27,6 @@ export default function Analyzer() {
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
-  const [showTradingView, setShowTradingView] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -213,79 +212,34 @@ export default function Analyzer() {
     const isBullish = analysis.sentiment === "Bullish";
     const sentimentColor = isBullish ? "text-[#38e07b]" : "text-red-500";
 
-    // Map timeframe to TradingView interval format
-    const getTradingViewInterval = (timeframe?: string, duration?: string): string => {
-      if (!timeframe) {
-        // Fallback based on duration
-        if (duration === 'scalping') return '15';
-        if (duration === 'short_term') return '60';
-        if (duration === 'long_term') return 'D';
-        return 'D'; // Default to daily
-      }
-      
-      const tf = timeframe.toLowerCase();
-      // Map common timeframe formats to TradingView intervals
-      if (tf.includes('15m') || tf.includes('15min') || tf.includes('15-min') || tf.includes('15 min')) return '15';
-      if (tf.includes('1h') || tf.includes('1hr') || tf.includes('1hour')) return '60';
-      if (tf.includes('4h') || tf.includes('4hr') || tf.includes('4hour')) return '240';
-      if (tf.includes('1d') || tf.includes('1day') || tf.includes('daily')) return 'D';
-      if (tf.includes('1w') || tf.includes('1week') || tf.includes('weekly')) return 'W';
-      
-      return 'D'; // Default to daily if unknown
-    };
-
-    const chartInterval = getTradingViewInterval(analysis.timeframe ?? undefined, analysis.duration ?? undefined);
-
-    // Convert exchange suffixes to TradingView format
-    // Maps common Yahoo Finance/API suffixes to TradingView exchange prefixes
-    const getTradingViewSymbol = (symbol: string, assetName?: string): string => {
-      const upperSymbol = symbol.toUpperCase();
-      
-      // Verified TradingView exchange prefix mappings
-      const exchangeMapping: Record<string, string> = {
-        // India
-        '.NS': 'NSE:',
-        '.BO': 'BSE:',
-        '.NE': 'NSE:',
-        
-        // Asia-Pacific
-        '.AX': 'ASX:',        // Australia
-        '.T': 'TSE:',         // Tokyo
-        '.HK': 'HKEX:',       // Hong Kong
-        '.SI': 'SGX:',        // Singapore
-        '.KS': 'KRX:',        // South Korea
-        
-        // Europe
-        '.L': 'LSE:',         // London
-        '.DE': 'XETR:',       // Germany Xetr a
-        '.PA': 'EURONEXT:',   // Paris
-        '.AS': 'EURONEXT:',   // Amsterdam
-        '.MI': 'MIL:',        // Milan
-        '.MC': 'BME:',        // Madrid
-        
-        // Americas
-        '.TO': 'TSX:',        // Toronto
-        '.V': 'TSXV:',        // TSX Venture
-        '.SN': 'BCS:',        // Santiago Chile
-        '.SA': 'BMFBOVESPA:', // Brazil São Paulo
-        '.MX': 'BMV:',        // Mexico
+    // Get currency symbol based on analysis currency
+    const getCurrencySymbol = (currency: string): string => {
+      const currencySymbols: Record<string, string> = {
+        'USD': '$',
+        'INR': '₹',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'CNY': '¥',
+        'AUD': 'A$',
+        'CAD': 'C$',
+        'CHF': 'Fr',
+        'HKD': 'HK$',
+        'SGD': 'S$',
+        'KRW': '₩',
+        'BRL': 'R$',
+        'MXN': 'Mex$',
+        'ZAR': 'R',
+        'RUB': '₽',
+        'TRY': '₺',
+        'SAR': '﷼',
+        'AED': 'د.إ',
+        'NZD': 'NZ$',
       };
-      
-      // Check for matching suffix and convert to prefix
-      for (const [suffix, prefix] of Object.entries(exchangeMapping)) {
-        if (upperSymbol.endsWith(suffix)) {
-          const baseSymbol = upperSymbol.slice(0, -suffix.length);
-          return `${prefix}${baseSymbol}`;
-        }
-      }
-      
-      // For unmapped exchanges, just use the symbol as-is
-      // TradingView's symbol editor will help users find the right format
-      return symbol;
+      return currencySymbols[currency] || currency + ' ';
     };
 
-    const tvSymbol = getTradingViewSymbol(analysis.correctedSymbol || analysis.symbol, analysis.assetName);
-    const tvChartUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(tvSymbol)}&interval=${chartInterval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`;
+    const currencySymbol = getCurrencySymbol(analysis.currency || 'USD');
 
     // Yahoo Finance chart configuration
     const getYahooChartUrl = (symbol: string, duration?: string): string => {
@@ -344,41 +298,6 @@ export default function Analyzer() {
                   <p className="text-[#6a7f72] text-sm">Chart not available</p>
                 </div>
               </div>
-              
-              {/* Optional TradingView Chart Toggle */}
-              <div className="px-3 pb-3">
-                <button
-                  onClick={() => setShowTradingView(!showTradingView)}
-                  className="w-full text-xs text-[#38e07b] hover:underline flex items-center justify-center gap-1"
-                  data-testid="button-toggle-tradingview"
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    {showTradingView ? 'expand_less' : 'expand_more'}
-                  </span>
-                  {showTradingView ? 'Hide' : 'Show'} Interactive TradingView Chart
-                </button>
-                
-                {showTradingView && (
-                  <div className="mt-2 rounded-lg overflow-hidden">
-                    <iframe
-                      src={tvChartUrl}
-                      style={{ width: '100%', height: '300px', border: 'none' }}
-                      title="TradingView Chart"
-                    />
-                    <div className="text-center mt-2">
-                      <p className="text-xs text-[#6a7f72]">Symbol: {tvSymbol}</p>
-                      <a 
-                        href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-[#38e07b] hover:underline"
-                      >
-                        Open in TradingView →
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
@@ -430,7 +349,7 @@ export default function Analyzer() {
                   <p className="text-[#9eb7a8] text-sm">{t.currentMarketPrice}</p>
                 </div>
                 <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-live-price">
-                  ${parseFloat(analysis.livePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currencySymbol}{parseFloat(analysis.livePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             )}
@@ -443,7 +362,7 @@ export default function Analyzer() {
                   <p className="text-[#6a7f72] text-xs">{t.analysisBasedOn}</p>
                 </div>
                 <p className="text-white text-2xl font-bold tracking-tight" data-testid="text-analysis-price">
-                  ${parseFloat(analysis.candleClosePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currencySymbol}{parseFloat(analysis.candleClosePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 {/* Display timeframe and timestamp */}
                 <div className="mt-2 text-[#6a7f72] text-xs">
