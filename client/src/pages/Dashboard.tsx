@@ -459,6 +459,21 @@ export default function Dashboard() {
                         </span>
                       </button>
                     ))}
+                    
+                    {/* None of these? Proceed anyway */}
+                    <button
+                      onClick={() => {
+                        setShowSearchDropdown(false);
+                        toast({
+                          title: "Manual Entry Mode",
+                          description: "Please select market and click Enlighten Me",
+                        });
+                      }}
+                      className="w-full px-3 py-2 mt-1 bg-[#38e07b]/10 border border-[#38e07b]/30 rounded-lg hover-elevate active-elevate-2 text-[#38e07b] text-sm font-medium"
+                      data-testid="button-proceed-manual"
+                    >
+                      None of these? Proceed anyway
+                    </button>
                   </div>
                   <button
                     onClick={() => setShowSearchDropdown(false)}
