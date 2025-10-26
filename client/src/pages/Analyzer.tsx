@@ -25,6 +25,7 @@ export default function Analyzer() {
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [showTradingView, setShowTradingView] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
@@ -269,6 +270,24 @@ export default function Analyzer() {
     const tvSymbol = getTradingViewSymbol(analysis.correctedSymbol || analysis.symbol, analysis.assetName);
     const tvChartUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(tvSymbol)}&interval=${chartInterval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget&utm_campaign=chart`;
 
+    // Yahoo Finance chart configuration
+    const getYahooChartUrl = (symbol: string, duration?: string): string => {
+      // Map duration to Yahoo Finance time range
+      const timeRangeMap: Record<string, string> = {
+        'scalping': '1d',
+        'short_term': '5d',
+        'long_term': '6m'
+      };
+      const timeRange = duration ? (timeRangeMap[duration.toLowerCase()] || '1d') : '1d';
+      
+      // Use the original Yahoo Finance symbol (with suffix like .NS, .BO, etc.)
+      const yahooSymbol = analysis.correctedSymbol || analysis.symbol;
+      
+      return `https://chart.yahoo.com/z?s=${encodeURIComponent(yahooSymbol)}&t=${timeRange}&q=c&l=on&z=l&p=s`;
+    };
+
+    const yahooChartUrl = getYahooChartUrl(analysis.correctedSymbol || analysis.symbol, analysis.duration);
+
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
         <div className="flex-grow">
@@ -285,30 +304,62 @@ export default function Analyzer() {
             </h1>
           </header>
 
-          {/* TradingView Chart Widget */}
+          {/* Price Chart - Yahoo Finance (Primary) */}
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
-              <iframe
-                src={tvChartUrl}
-                style={{ width: '100%', height: '300px', border: 'none' }}
-                title="TradingView Chart"
-              />
-              {/* Chart info note */}
-              <div className="p-2 text-center">
-                <p className="text-xs text-[#6a7f72]">
-                  Chart for: {tvSymbol} 
-                  {tvSymbol !== (analysis.correctedSymbol || analysis.symbol) && (
-                    <span className="text-[#9eb7a8]"> (simplified from {analysis.correctedSymbol || analysis.symbol})</span>
-                  )}
-                </p>
-                <a 
-                  href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#38e07b] hover:underline"
+              <div className="p-3 border-b border-[#111714]">
+                <p className="text-[#9eb7a8] text-sm font-medium">📈 Price Chart</p>
+              </div>
+              <div className="p-2">
+                <img 
+                  src={yahooChartUrl}
+                  alt={`${analysis.assetName || analysis.symbol} Price Chart`}
+                  className="w-full rounded-lg"
+                  onError={(e) => {
+                    // Fallback if Yahoo Finance image fails
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                  data-testid="img-yahoo-chart"
+                />
+                <div className="hidden text-center py-8">
+                  <p className="text-[#6a7f72] text-sm">Chart not available</p>
+                </div>
+              </div>
+              
+              {/* Optional TradingView Chart Toggle */}
+              <div className="px-3 pb-3">
+                <button
+                  onClick={() => setShowTradingView(!showTradingView)}
+                  className="w-full text-xs text-[#38e07b] hover:underline flex items-center justify-center gap-1"
+                  data-testid="button-toggle-tradingview"
                 >
-                  Open full chart in TradingView →
-                </a>
+                  <span className="material-symbols-outlined text-sm">
+                    {showTradingView ? 'expand_less' : 'expand_more'}
+                  </span>
+                  {showTradingView ? 'Hide' : 'Show'} Interactive TradingView Chart
+                </button>
+                
+                {showTradingView && (
+                  <div className="mt-2 rounded-lg overflow-hidden">
+                    <iframe
+                      src={tvChartUrl}
+                      style={{ width: '100%', height: '300px', border: 'none' }}
+                      title="TradingView Chart"
+                    />
+                    <div className="text-center mt-2">
+                      <p className="text-xs text-[#6a7f72]">Symbol: {tvSymbol}</p>
+                      <a 
+                        href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#38e07b] hover:underline"
+                      >
+                        Open in TradingView →
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
