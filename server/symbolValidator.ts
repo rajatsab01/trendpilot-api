@@ -12,12 +12,90 @@ interface SymbolValidationResult {
   correctedSymbol?: string;
   assetName?: string;
   currentPrice?: number;
+  sourceCurrency?: string; // Currency that Yahoo Finance/exchange provides the price in
   suggestions?: Array<{
     symbol: string;
     name: string;
     price?: number;
   }>;
   error?: string;
+}
+
+/**
+ * Get the currency that Yahoo Finance provides prices in for a given symbol
+ * Maps exchange suffixes to their native currencies
+ */
+export function getExchangeCurrency(symbol: string, market: string): string {
+  // Cryptocurrency prices are always in USD from Binance/CoinGecko
+  if (market === 'cryptocurrency') {
+    return 'USD';
+  }
+  
+  // Check exchange suffix for stocks/forex/commodities
+  const upperSymbol = symbol.toUpperCase();
+  
+  // Indian exchanges
+  if (upperSymbol.endsWith('.NS') || upperSymbol.endsWith('.BO')) {
+    return 'INR';
+  }
+  
+  // UK exchange
+  if (upperSymbol.endsWith('.L')) {
+    return 'GBP';
+  }
+  
+  // Tokyo exchange
+  if (upperSymbol.endsWith('.T')) {
+    return 'JPY';
+  }
+  
+  // Hong Kong exchange
+  if (upperSymbol.endsWith('.HK')) {
+    return 'HKD';
+  }
+  
+  // Australian exchange
+  if (upperSymbol.endsWith('.AX')) {
+    return 'AUD';
+  }
+  
+  // Toronto exchange
+  if (upperSymbol.endsWith('.TO')) {
+    return 'CAD';
+  }
+  
+  // Swiss exchange
+  if (upperSymbol.endsWith('.SW')) {
+    return 'CHF';
+  }
+  
+  // European exchanges
+  if (upperSymbol.endsWith('.PA') || upperSymbol.endsWith('.DE') || upperSymbol.endsWith('.AS')) {
+    return 'EUR';
+  }
+  
+  // Singapore exchange
+  if (upperSymbol.endsWith('.SI')) {
+    return 'SGD';
+  }
+  
+  // Saudi Arabia exchange
+  if (upperSymbol.endsWith('.SR')) {
+    return 'SAR';
+  }
+  
+  // Brazil exchange
+  if (upperSymbol.endsWith('.SA')) {
+    return 'BRL';
+  }
+  
+  // Mexico exchange
+  if (upperSymbol.endsWith('.MX')) {
+    return 'MXN';
+  }
+  
+  // Default to USD for US symbols (no suffix) and commodities
+  return 'USD';
 }
 
 /**
@@ -78,6 +156,7 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
           correctedSymbol: binanceSymbol,
           assetName: cleanSymbol, // Will be enriched by Perplexity
           currentPrice: parseFloat(data.price),
+          sourceCurrency: 'USD', // Crypto prices are always in USD
         };
       } else if (response.status === 451) {
         // Binance blocked by region - try alternative approach using CoinGecko API
@@ -155,6 +234,7 @@ async function validateCryptoAlternative(cleanSymbol: string, binanceSymbol: str
           correctedSymbol: binanceSymbol,
           assetName: cleanSymbol,
           currentPrice: cachedPrice,
+          sourceCurrency: 'USD', // Crypto prices are always in USD
         };
       }
       
@@ -175,6 +255,7 @@ async function validateCryptoAlternative(cleanSymbol: string, binanceSymbol: str
             correctedSymbol: binanceSymbol,
             assetName: cleanSymbol,
             currentPrice: price,
+            sourceCurrency: 'USD', // Crypto prices are always in USD
           };
         }
       } else {
@@ -365,11 +446,15 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     const result = data.chart.result[0];
     const meta = result.meta;
     
+    // Determine the currency this exchange provides prices in
+    const sourceCurrency = getExchangeCurrency(yahooSymbol, market);
+    
     return {
       isValid: true,
       correctedSymbol: yahooSymbol,
       assetName: meta.longName || yahooSymbol,
       currentPrice: meta.regularMarketPrice || meta.previousClose,
+      sourceCurrency: sourceCurrency,
     };
   } catch (error: any) {
     return {
