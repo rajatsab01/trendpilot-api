@@ -22,10 +22,50 @@ interface SymbolValidationResult {
 }
 
 /**
+ * Check if a symbol represents a forex pair (e.g., CADUSD=X, EUR/USD, GBPUSD)
+ * Forex pairs should NOT be converted to user's currency preference
+ */
+export function isForexPair(symbol: string): boolean {
+  const upperSymbol = symbol.toUpperCase();
+  
+  // Yahoo Finance forex pairs end with =X
+  if (upperSymbol.includes('=X')) {
+    return true;
+  }
+  
+  // Forex pairs with / separator
+  if (upperSymbol.includes('/')) {
+    return true;
+  }
+  
+  // Common forex pair patterns (6-8 character currency pairs)
+  // Examples: EURUSD, GBPJPY, USDINR, etc.
+  const forexPairPattern = /^[A-Z]{6,8}$/;
+  if (forexPairPattern.test(upperSymbol)) {
+    // Check if it looks like XXXYYY where XXX and YYY are currency codes
+    const commonCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'INR', 'CNY', 'HKD', 'SGD'];
+    const firstThree = upperSymbol.substring(0, 3);
+    const secondThree = upperSymbol.substring(3, 6);
+    
+    if (commonCurrencies.includes(firstThree) && commonCurrencies.includes(secondThree)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Get the currency that Yahoo Finance provides prices in for a given symbol
  * Maps exchange suffixes to their native currencies
  */
 export function getExchangeCurrency(symbol: string, market: string): string {
+  // Forex pairs should return NULL to indicate "no conversion needed"
+  // The pair itself IS the currency relationship (e.g., CAD/USD)
+  if (market === 'forex' || isForexPair(symbol)) {
+    return 'FOREX_PAIR'; // Special marker to skip conversion
+  }
+  
   // Cryptocurrency prices are always in USD from Binance/CoinGecko
   if (market === 'cryptocurrency') {
     return 'USD';

@@ -284,15 +284,21 @@ export default function Dashboard() {
         });
         setSymbolSuggestions([]);
         
-        // Smart currency conversion: only convert when source currency !== user currency
+        // Smart currency conversion: skip for forex pairs, only convert when source currency !== user currency
         if (data.currentPrice && data.sourceCurrency) {
-          const { convertedPrice, rate } = await convertPrice(
-            data.currentPrice, 
-            data.sourceCurrency, 
-            currency
-          );
-          setConvertedPrice(convertedPrice);
-          console.log(`💱 Price conversion: ${data.sourceCurrency} ${data.currentPrice} → ${currency} ${convertedPrice} (rate: ${rate || 'no conversion'})`);
+          // Forex pairs like CAD/USD should NOT be converted - the pair itself is the currency relationship
+          if (data.sourceCurrency === 'FOREX_PAIR') {
+            setConvertedPrice(data.currentPrice);
+            console.log(`💱 Forex pair detected - no currency conversion applied`);
+          } else {
+            const { convertedPrice, rate } = await convertPrice(
+              data.currentPrice, 
+              data.sourceCurrency, 
+              currency
+            );
+            setConvertedPrice(convertedPrice);
+            console.log(`💱 Price conversion: ${data.sourceCurrency} ${data.currentPrice} → ${currency} ${convertedPrice} (rate: ${rate || 'no conversion'})`);
+          }
         } else if (data.currentPrice) {
           // Fallback if sourceCurrency is not provided (shouldn't happen)
           setConvertedPrice(data.currentPrice);

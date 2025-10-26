@@ -419,7 +419,12 @@ export default function Analyzer() {
                   {/* Currency Conversion Info */}
                   {analysis.sourceCurrency && analysis.currency && (
                     <p className="text-[#6a7f72] text-xs mt-3 pt-3 border-t border-[#1c2620]">
-                      {analysis.sourceCurrency === analysis.currency ? (
+                      {analysis.sourceCurrency === 'FOREX_PAIR' ? (
+                        <>
+                          <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
+                          <span className="text-[#9eb7a8]">Forex pair analysis - prices shown as exchange rate</span>
+                        </>
+                      ) : analysis.sourceCurrency === analysis.currency ? (
                         <>
                           <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
                           <span className="text-[#9eb7a8]">Prices shown in native exchange currency ({analysis.sourceCurrency})</span>
