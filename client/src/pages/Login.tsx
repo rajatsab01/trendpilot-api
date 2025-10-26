@@ -4,7 +4,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import logoImage from "@assets/logo 3_1761320611938.png";
+import logoImage from "@assets/trendpilot-logo.png";
 
 declare global {
   interface Window {

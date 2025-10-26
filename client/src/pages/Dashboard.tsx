@@ -7,7 +7,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { User } from "@shared/schema";
-import logoImage from "@assets/logo 3_1761320611938.png";
+import logoImage from "@assets/trendpilot-logo.png";
 import {
   Dialog,
   DialogContent,
