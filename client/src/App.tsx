@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import VersionChecker from "@/components/VersionChecker";
 import LanguageSelection from "@/pages/LanguageSelection";
 import Login from "@/pages/Login";
 import Welcome from "@/pages/Welcome";
@@ -62,6 +63,7 @@ function App() {
       <TooltipProvider>
         <ThemeProvider>
           <LanguageProvider>
+            <VersionChecker />
             <Toaster />
             <Router />
           </LanguageProvider>
