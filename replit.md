@@ -16,6 +16,10 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 - **Fixed Autocomplete Market Auto-Fill Bug**: Resolved issue where market field was disrupting the validation confirmation flow. Modified `handleSelectSearchSuggestion` in Dashboard.tsx to explicitly reset market field, validation state, and cached data when selecting from autocomplete, ensuring users must manually select market type. Added refresh button next to market dropdown for easy reset without page reload.
 
+- **Implemented Real-Time Currency Conversion**: Added comprehensive currency conversion system using Frankfurter API (European Central Bank) for accurate USD-to-local currency conversion. Created `server/currencyConverter.ts` with 1-hour caching to minimize API calls. Modified `server/perplexity.ts` to fetch exchange rates once per analysis and convert all 15 price fields (livePrice, candleClosePrice, entry, TP/SL, tp1-3, s1-3, r1-3) before returning results. Handles null/undefined values gracefully and falls back to 1:1 rate if currency not found. Fixes critical bug where Natural Gas NG=F was showing ₹3.30 instead of properly converted ~₹250-330.
+
+- **Cleaned Up Autocomplete UI**: Removed technical data source descriptions (e.g., "Yahoo Finance futures symbol", "Binance exchange token") from autocomplete dropdown. Now displays only essential information: symbol name, classification badge (SPOT/FUTURES/STOCK/INDEX/PAIR), ticker symbol, and market type for cleaner user experience.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
