@@ -14,6 +14,8 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 - **Honest Symbol Labeling**: Updated instrument database to accurately reflect Yahoo Finance futures symbols instead of misleading spot symbol claims. Energy commodities (Natural Gas, Crude Oil) correctly labeled as "Yahoo Finance futures symbol" since Yahoo Finance doesn't support true spot/CFD tickers for these commodities.
 
+- **Fixed Autocomplete Market Auto-Fill Bug**: Resolved issue where market field was disrupting the validation confirmation flow. Modified `handleSelectSearchSuggestion` in Dashboard.tsx to explicitly reset market field, validation state, and cached data when selecting from autocomplete, ensuring users must manually select market type. Added refresh button next to market dropdown for easy reset without page reload.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
