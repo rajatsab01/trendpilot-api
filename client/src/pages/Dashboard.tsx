@@ -592,6 +592,8 @@ export default function Dashboard() {
                   <option value="Not sure">❓ Not sure</option>
                   <option value="Worldwide">🌐 Worldwide</option>
                   <option value="Crypto">₿ Crypto</option>
+                  <option value="Commodity">📦 Commodity</option>
+                  <option value="Forex">💱 Forex</option>
                   <option value="United States">🇺🇸 United States</option>
                   <option value="Canada">🇨🇦 Canada</option>
                   <option value="Mexico">🇲🇽 Mexico</option>
