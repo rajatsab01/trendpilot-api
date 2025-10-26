@@ -236,11 +236,26 @@ Respond with JSON in this exact format:
   "stochastic": NUMERIC_VALUE_ONLY (e.g., 58.3, 72.5, 28.9 - NEVER 0 or text),
   "bollingerBands": NUMERIC_VALUE_ONLY (e.g., 8.5, 15.2, 22.8 - NEVER 0 or text),
   "entry": "${isScalping ? (priceData.livePrice?.toFixed(2) ?? '0.00') : (priceData.candleClosePrice?.toFixed(2) ?? '0.00')}",
-  "takeProfit": "${isScalping ? 'realistic take profit based on live price with tight scalping targets' : 'final take profit price (same as tp3)'}",
-  "stopLoss": "${isScalping ? 'realistic stop loss based on live price with tight scalping risk control' : 'realistic stop loss price with tight risk control'}",
-  "tp1": "${isScalping ? 'Take Profit 1 - Based on LIVE PRICE with tight scalping targets (1:1 RR)' : 'Take Profit 1 - Conservative 1:1 RR (book 50% profit here)'}",
-  "tp2": "${isScalping ? 'Take Profit 2 - Based on LIVE PRICE (1:2 RR)' : 'Take Profit 2 - Medium 1:2 RR (trail stop to breakeven)'}",
-  "tp3": "${isScalping ? 'Take Profit 3 - Based on LIVE PRICE (1:3 RR)' : 'Take Profit 3 - Aggressive 1:3 RR (maximize remaining position)'}",
+  "takeProfit": "${(() => {
+    const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
+    return (basePrice * 1.005).toFixed(2);
+  })()}",
+  "stopLoss": "${(() => {
+    const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
+    return (basePrice * 0.997).toFixed(2);
+  })()}",
+  "tp1": "${(() => {
+    const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
+    return (basePrice * 1.002).toFixed(2);
+  })()}",
+  "tp2": "${(() => {
+    const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
+    return (basePrice * 1.003).toFixed(2);
+  })()}",
+  "tp3": "${(() => {
+    const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
+    return (basePrice * 1.005).toFixed(2);
+  })()}",
   "s1": "Support Level 1 - Nearest support below current price",
   "s2": "Support Level 2 - Medium support below current price",
   "s3": "Support Level 3 - Strong support below current price",
