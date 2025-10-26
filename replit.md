@@ -5,7 +5,31 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 ## Recent Bug Fixes (October 26, 2025)
 
-**LATEST CRITICAL FIXES (Session 3 - Tonight):**
+**SESSION 4 FIXES - Latest:**
+
+1. **Added Exchange Rate Display** - Analysis results now show live conversion rates:
+   - Added `exchangeRate` field to database schema (captures rate like "83.45")
+   - Perplexity service now returns exchange rate when currency conversion occurs
+   - UI displays: "Prices converted from USD to INR at 1 USD = ₹83.45"
+   - Rate is null for forex pairs (prices ARE the rate) and same-currency scenarios
+
+2. **Fixed Static Probability Scores (~72% bias)** - Dynamic probability generation:
+   - Enhanced Perplexity prompt with explicit probability bands
+   - Strong setups: 75-90%, Moderate: 55-74%, Weak: 40-54%
+   - AI now analyzes real indicator confluence instead of defaulting to ~70%
+
+3. **Fixed "No Analyses Yet" Bug in Community** - Public feed now working:
+   - Changed `getPublishedAnalysesFeed()` from "followed users only" to "all published analyses"
+   - Removed restrictive INNER JOIN with follows table
+   - Now shows ALL published analyses (public feed) except from blocked users
+
+4. **Database Schema Ready for Community Overhaul:**
+   - Users: Added alias (10 char), rulesAccepted, lastSeen, isBanned fields
+   - Messages: New table for direct user-to-user messaging (1000 char limit)
+   - Reports: Enhanced with reportedUserId/reportedAnalysisId for community moderation
+   - All schema changes pushed successfully and ready for UI implementation
+
+**LATEST CRITICAL FIXES (Session 3):**
 
 1. **Fixed Bracket Trade Prices Showing 0.0000** - Resolved critical bug where Entry, Take Profit, and Stop Loss displayed 0.0000 even when analysis succeeded:
    - **Root Cause**: Perplexity AI prompt template provided text descriptions instead of numeric examples for bracket prices
