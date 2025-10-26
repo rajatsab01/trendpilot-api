@@ -46,6 +46,13 @@ export default function Dashboard() {
     enabled: !!userId,
   });
 
+  // Load user's preferred currency from profile
+  useEffect(() => {
+    if (user?.currency) {
+      setCurrency(user.currency);
+    }
+  }, [user]);
+
   // PWA install prompt handling
   useEffect(() => {
     const handler = (e: any) => {
@@ -427,7 +434,23 @@ export default function Dashboard() {
               <select
                 className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-4 text-base font-normal leading-normal cursor-pointer"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={async (e) => {
+                  const newCurrency = e.target.value;
+                  setCurrency(newCurrency);
+                  
+                  // Save currency preference to backend
+                  try {
+                    await apiRequest("PATCH", `/api/user/${userId}`, { currency: newCurrency });
+                    queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+                    
+                    toast({
+                      title: "Currency Updated",
+                      description: `Your analyses will now be displayed in ${newCurrency}`,
+                    });
+                  } catch (error) {
+                    console.error("Failed to update currency:", error);
+                  }
+                }}
                 data-testid="select-currency"
               >
                 <option value="USD">🇺🇸 USD - US Dollar</option>

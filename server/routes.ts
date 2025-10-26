@@ -170,6 +170,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user preferences (currency, language, etc.)
+  app.patch("/api/user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const updateSchema = z.object({
+        currency: z.string().optional(),
+        language: z.string().optional(),
+      });
+
+      const validationResult = updateSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ error: validationResult.error.errors[0].message });
+      }
+
+      const updates = validationResult.data;
+      const updatedUser = await storage.updateUserPreferences(userId, updates);
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Update user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Razorpay: Create order for token purchase
   app.post("/api/payment/create-order", async (req, res) => {
     try {

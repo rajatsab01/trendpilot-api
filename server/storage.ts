@@ -23,6 +23,7 @@ export interface IStorage {
   decrementUserTokens(id: string, amount: number): Promise<User | undefined>;
   updateUserMobile(id: string, mobile: string): Promise<User | undefined>;
   updateUserLanguage(id: string, language: string): Promise<User | undefined>;
+  updateUserPreferences(id: string, updates: { currency?: string; language?: string }): Promise<User | undefined>;
   markInstallBonusClaimed(id: string): Promise<User | undefined>;
 
   // Analyses
@@ -113,6 +114,15 @@ export class MemStorage implements IStorage {
     if (!user) return undefined;
 
     const updatedUser = { ...user, language };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async updateUserPreferences(id: string, updates: { currency?: string; language?: string }): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser = { ...user, ...updates };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -319,6 +329,15 @@ export class PgStorage implements IStorage {
     const result = await this.db
       .update(users)
       .set({ language })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateUserPreferences(id: string, updates: { currency?: string; language?: string }): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set(updates)
       .where(eq(users.id, id))
       .returning();
     return result[0];
