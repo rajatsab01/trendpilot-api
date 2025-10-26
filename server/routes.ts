@@ -7,7 +7,7 @@ import { searchCryptoSymbols } from "./marketData";
 import { fetchMarketPrice } from "./priceData";
 import { validateSymbol } from "./symbolValidator";
 import { z } from "zod";
-import { insertUserSchema, insertBrokerSchema } from "@shared/schema";
+import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "@shared/schema";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
@@ -1011,6 +1011,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Delete broker error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get app version - used for version checking and update notifications
+  app.get("/api/version", async (req, res) => {
+    try {
+      res.json({ 
+        version: APP_VERSION,
+        updateRequired: false // Will be determined by client comparison
+      });
+    } catch (error) {
+      console.error("Get version error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

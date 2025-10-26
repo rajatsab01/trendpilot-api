@@ -139,3 +139,7 @@ export type TradeDuration = typeof tradeDurations[number];
 // Language options - 12 languages supported
 export const languages = ["en", "hi", "es", "zh", "de", "fr", "ar", "pt", "ru", "ja", "ko", "it"] as const;
 export type Language = typeof languages[number];
+
+// App version - increment this when releasing new versions
+// Format: MAJOR.MINOR.PATCH (e.g., "1.0.0")
+export const APP_VERSION = "1.0.0";
