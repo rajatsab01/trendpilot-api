@@ -256,7 +256,12 @@ async function fetchYahooFinancePrice(
         "OIL": "CL=F",
         "BRENT": "BZ=F",
       };
-      yahooSymbol = commodityMap[yahooSymbol] || `${yahooSymbol}=F`;
+      // Only add =F suffix if not already present
+      if (commodityMap[yahooSymbol]) {
+        yahooSymbol = commodityMap[yahooSymbol];
+      } else if (!yahooSymbol.endsWith("=F")) {
+        yahooSymbol = `${yahooSymbol}=F`;
+      }
     }
     
     // Fetch chart data from Yahoo Finance

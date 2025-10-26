@@ -80,26 +80,29 @@ const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "PA=F", name: "Palladium Futures", market: "commodity", description: "Palladium futures (not for spot analysis)" },
   ],
 
-  // Energy Commodities - Note: Most energy commodities trade as futures
+  // Energy Commodities - Yahoo Finance only supports futures symbols
   "crude": [
-    { symbol: "CL=F", name: "WTI Crude Oil Futures", market: "commodity", description: "WTI crude oil futures (most liquid)" },
-    { symbol: "BZ=F", name: "Brent Crude Oil Futures", market: "commodity", description: "Brent crude oil futures (most liquid)" },
+    { symbol: "CL=F", name: "WTI Crude Oil", market: "commodity", description: "WTI crude oil (Yahoo Finance futures symbol)" },
+    { symbol: "BZ=F", name: "Brent Crude Oil", market: "commodity", description: "Brent crude oil (Yahoo Finance futures symbol)" },
   ],
   "oil": [
-    { symbol: "CL=F", name: "WTI Crude Oil Futures", market: "commodity", description: "WTI crude oil futures (most liquid)" },
-    { symbol: "BZ=F", name: "Brent Crude Oil Futures", market: "commodity", description: "Brent crude oil futures (most liquid)" },
+    { symbol: "CL=F", name: "WTI Crude Oil", market: "commodity", description: "WTI crude oil (Yahoo Finance futures symbol)" },
+    { symbol: "BZ=F", name: "Brent Crude Oil", market: "commodity", description: "Brent crude oil (Yahoo Finance futures symbol)" },
   ],
   "wti": [
-    { symbol: "CL=F", name: "WTI Crude Oil Futures", market: "commodity", description: "WTI crude oil futures (most liquid)" },
+    { symbol: "CL=F", name: "WTI Crude Oil", market: "commodity", description: "WTI crude oil (Yahoo Finance futures symbol)" },
   ],
   "brent": [
-    { symbol: "BZ=F", name: "Brent Crude Oil Futures", market: "commodity", description: "Brent crude oil futures (most liquid)" },
+    { symbol: "BZ=F", name: "Brent Crude Oil", market: "commodity", description: "Brent crude oil (Yahoo Finance futures symbol)" },
   ],
   "natural gas": [
-    { symbol: "NG=F", name: "Natural Gas Futures", market: "commodity", description: "Natural gas futures (most liquid contract)" },
+    { symbol: "NG=F", name: "Natural Gas", market: "commodity", description: "Natural gas (Yahoo Finance futures symbol)" },
   ],
   "gas": [
-    { symbol: "NG=F", name: "Natural Gas Futures", market: "commodity", description: "Natural gas futures (most liquid contract)" },
+    { symbol: "NG=F", name: "Natural Gas", market: "commodity", description: "Natural gas (Yahoo Finance futures symbol)" },
+  ],
+  "natural": [
+    { symbol: "NG=F", name: "Natural Gas", market: "commodity", description: "Natural gas (Yahoo Finance futures symbol)" },
   ],
 
   // Agricultural Commodities
