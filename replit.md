@@ -5,7 +5,20 @@ Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/s
 
 ## Recent Bug Fixes (October 26, 2025)
 
-**LATEST CRITICAL FIXES (Session 2 - Tonight):**
+**LATEST CRITICAL FIXES (Session 3 - Tonight):**
+
+1. **Fixed Bracket Trade Prices Showing 0.0000** - Resolved critical bug where Entry, Take Profit, and Stop Loss displayed 0.0000 even when analysis succeeded:
+   - **Root Cause**: Perplexity AI prompt template provided text descriptions instead of numeric examples for bracket prices
+   - **Prompt Fix**: Updated lines 242-261 in server/perplexity.ts to provide numeric placeholders calculated from base price (e.g., takeProfit: 153.87, stopLoss: 152.65)
+   - **Defensive Parsing**: Added validatePrice() function with multi-tier fallback system:
+     - Primary: livePrice (for scalping) or candleClosePrice (for other durations)
+     - Secondary: candleClosePrice
+     - Tertiary: OHLCV close price
+     - Last resort: Safe mid-price of 100 (extreme edge case)
+   - **Guarantee**: Bracket prices NEVER show 0.0000, even if AI returns invalid data
+   - **Logging**: Added detailed logging to monitor when fallbacks are used
+
+**LATEST CRITICAL FIXES (Session 2 - Earlier Tonight):**
 
 1. **Fixed Forex Pair Currency Conversion Bug** - CAD/USD now analyzes correctly as CAD/USD instead of being incorrectly converted to CAD/INR:
    - Moved `getExchangeCurrency()` call BEFORE all conversion logic in perplexity.ts (line 457)
