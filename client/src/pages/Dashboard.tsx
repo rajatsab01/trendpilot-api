@@ -71,27 +71,32 @@ export default function Dashboard() {
   };
 
   // Fetch exchange rate and convert price
-  const convertPrice = async (priceInUSD: number, targetCurrency: string): Promise<number> => {
-    if (targetCurrency === 'USD') {
-      return priceInUSD;
+  const convertPrice = async (
+    price: number, 
+    sourceCurrency: string, 
+    targetCurrency: string
+  ): Promise<{ convertedPrice: number; rate: number | null }> => {
+    // No conversion needed if currencies match
+    if (sourceCurrency === targetCurrency) {
+      return { convertedPrice: price, rate: null };
     }
 
     try {
-      const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${targetCurrency}`);
+      const response = await fetch(`https://api.frankfurter.app/latest?from=${sourceCurrency}&to=${targetCurrency}`);
       if (!response.ok) {
         console.error('Failed to fetch exchange rates');
-        return priceInUSD; // Fallback to USD price
+        return { convertedPrice: price, rate: null }; // Fallback to original price
       }
       const data = await response.json();
       const rate = data.rates[targetCurrency];
       if (!rate) {
-        console.error(`No exchange rate found for ${targetCurrency}`);
-        return priceInUSD; // Fallback to USD price
+        console.error(`No exchange rate found for ${sourceCurrency} to ${targetCurrency}`);
+        return { convertedPrice: price, rate: null }; // Fallback to original price
       }
-      return priceInUSD * rate;
+      return { convertedPrice: price * rate, rate };
     } catch (error) {
       console.error('Error converting currency:', error);
-      return priceInUSD; // Fallback to USD price
+      return { convertedPrice: price, rate: null }; // Fallback to original price
     }
   };
 
@@ -279,10 +284,18 @@ export default function Dashboard() {
         });
         setSymbolSuggestions([]);
         
-        // Convert price to user's selected currency
-        if (data.currentPrice) {
-          const converted = await convertPrice(data.currentPrice, currency);
-          setConvertedPrice(converted);
+        // Smart currency conversion: only convert when source currency !== user currency
+        if (data.currentPrice && data.sourceCurrency) {
+          const { convertedPrice, rate } = await convertPrice(
+            data.currentPrice, 
+            data.sourceCurrency, 
+            currency
+          );
+          setConvertedPrice(convertedPrice);
+          console.log(`💱 Price conversion: ${data.sourceCurrency} ${data.currentPrice} → ${currency} ${convertedPrice} (rate: ${rate || 'no conversion'})`);
+        } else if (data.currentPrice) {
+          // Fallback if sourceCurrency is not provided (shouldn't happen)
+          setConvertedPrice(data.currentPrice);
         }
       } else {
         setValidatedData(null);
