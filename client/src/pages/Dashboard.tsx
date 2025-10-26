@@ -35,7 +35,7 @@ export default function Dashboard() {
   const [symbolSuggestions, setSymbolSuggestions] = useState<Array<{symbol: string; name: string; price?: number}>>([]);
   const [validatedData, setValidatedData] = useState<{symbol: string; name: string; market: string} | null>(null);
   const [isValidationConfirmed, setIsValidationConfirmed] = useState(false);
-  const [searchSuggestions, setSearchSuggestions] = useState<Array<{symbol: string; name: string; market: string; description?: string}>>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<Array<{symbol: string; name: string; market: string; description?: string; classification?: string}>>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [currency, setCurrency] = useState("USD");
   const [exchange, setExchange] = useState("");
@@ -595,13 +595,20 @@ export default function Dashboard() {
                         data-testid={`search-suggestion-${idx}`}
                       >
                         <div className="flex flex-col items-start text-left flex-1">
-                          <span className="text-white font-medium text-sm">{suggestion.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-medium text-sm">{suggestion.name}</span>
+                            {suggestion.classification && (
+                              <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase bg-[#38e07b]/20 text-[#38e07b] rounded-md border border-[#38e07b]/30">
+                                {suggestion.classification}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
                           {suggestion.description && (
                             <span className="text-xs text-[#6a7f72] mt-0.5">{suggestion.description}</span>
                           )}
                         </div>
-                        <span className="text-xs text-[#38e07b] capitalize ml-2 mt-1">
+                        <span className="text-xs text-[#38e07b] capitalize ml-2 mt-1 shrink-0">
                           {suggestion.market.replace(/_/g, ' ')}
                         </span>
                       </button>

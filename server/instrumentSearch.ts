@@ -10,6 +10,7 @@ export interface InstrumentSuggestion {
   name: string;
   market: string;
   description?: string;
+  classification?: string; // spot, futures, stock, index, pair, etc.
 }
 
 /**

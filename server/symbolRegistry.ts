@@ -369,5 +369,97 @@ export function initializeSymbolRegistry(): void {
     });
   });
 
+  // Major US stocks (Yahoo Finance)
+  const usStocks: Array<{ symbol: string; name: string; description: string }> = [
+    { symbol: "AAPL", name: "Apple Inc.", description: "Technology company" },
+    { symbol: "GOOGL", name: "Alphabet Inc.", description: "Google parent company" },
+    { symbol: "MSFT", name: "Microsoft Corporation", description: "Software and cloud services" },
+    { symbol: "AMZN", name: "Amazon.com Inc.", description: "E-commerce and cloud services" },
+    { symbol: "TSLA", name: "Tesla Inc.", description: "Electric vehicles and energy" },
+    { symbol: "META", name: "Meta Platforms Inc.", description: "Social media and technology" },
+    { symbol: "NVDA", name: "NVIDIA Corporation", description: "Graphics processing units" },
+    { symbol: "JPM", name: "JPMorgan Chase & Co.", description: "Banking and financial services" },
+    { symbol: "V", name: "Visa Inc.", description: "Payment processing" },
+    { symbol: "WMT", name: "Walmart Inc.", description: "Retail corporation" },
+    { symbol: "JNJ", name: "Johnson & Johnson", description: "Pharmaceutical and consumer goods" },
+    { symbol: "MA", name: "Mastercard Inc.", description: "Payment processing" },
+    { symbol: "PG", name: "Procter & Gamble", description: "Consumer goods" },
+    { symbol: "DIS", name: "The Walt Disney Company", description: "Entertainment and media" },
+    { symbol: "NFLX", name: "Netflix Inc.", description: "Streaming entertainment" },
+    { symbol: "ADBE", name: "Adobe Inc.", description: "Creative software" },
+    { symbol: "CSCO", name: "Cisco Systems Inc.", description: "Networking equipment" },
+    { symbol: "PEP", name: "PepsiCo Inc.", description: "Food and beverages" },
+    { symbol: "KO", name: "The Coca-Cola Company", description: "Beverages" },
+  ];
+
+  usStocks.forEach(({ symbol, name, description }) => {
+    symbolRegistry.register({
+      symbol,
+      name,
+      market: 'stock',
+      classification: 'stock',
+      dataSource: 'yahoo',
+      apiSymbol: symbol,
+      status: 'verified',
+      description,
+      exchange: 'US',
+      recommended: true,
+      lastTested: new Date(),
+    });
+  });
+
+  // Indian stocks (NSE)
+  const indianStocks: Array<{ symbol: string; name: string; description: string }> = [
+    { symbol: "RELIANCE.NS", name: "Reliance Industries", description: "Indian conglomerate" },
+    { symbol: "TCS.NS", name: "Tata Consultancy Services", description: "IT services" },
+    { symbol: "INFY.NS", name: "Infosys Limited", description: "IT services" },
+    { symbol: "HDFCBANK.NS", name: "HDFC Bank", description: "Banking" },
+    { symbol: "ICICIBANK.NS", name: "ICICI Bank", description: "Banking" },
+    { symbol: "SBIN.NS", name: "State Bank of India", description: "Public sector bank" },
+    { symbol: "BHARTIARTL.NS", name: "Bharti Airtel", description: "Telecommunications" },
+    { symbol: "ITC.NS", name: "ITC Limited", description: "Conglomerate" },
+    { symbol: "KOTAKBANK.NS", name: "Kotak Mahindra Bank", description: "Banking" },
+    { symbol: "WIPRO.NS", name: "Wipro Limited", description: "IT services" },
+  ];
+
+  indianStocks.forEach(({ symbol, name, description }) => {
+    symbolRegistry.register({
+      symbol,
+      name,
+      market: 'stock',
+      classification: 'stock',
+      dataSource: 'yahoo',
+      apiSymbol: symbol,
+      status: 'verified',
+      description,
+      exchange: 'India-NSE',
+      recommended: true,
+      lastTested: new Date(),
+    });
+  });
+
+  // Major indices (Yahoo Finance)
+  const indices: Array<{ symbol: string; name: string; description: string }> = [
+    { symbol: "^GSPC", name: "S&P 500", description: "US large-cap stock index" },
+    { symbol: "^DJI", name: "Dow Jones Industrial Average", description: "US stock index" },
+    { symbol: "^IXIC", name: "NASDAQ Composite", description: "US tech-heavy stock index" },
+    { symbol: "^NSEI", name: "NIFTY 50", description: "Indian stock index" },
+  ];
+
+  indices.forEach(({ symbol, name, description }) => {
+    symbolRegistry.register({
+      symbol,
+      name,
+      market: 'stock',
+      classification: 'index',
+      dataSource: 'yahoo',
+      apiSymbol: symbol,
+      status: 'verified',
+      description,
+      recommended: true,
+      lastTested: new Date(),
+    });
+  });
+
   console.log('✅ Symbol registry initialized with', symbolRegistry.getAll().length, 'verified symbols');
 }

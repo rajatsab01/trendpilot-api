@@ -6,6 +6,7 @@ import { analyzeMarketWithPerplexity } from "./perplexity";
 import { searchCryptoSymbols } from "./marketData";
 import { fetchMarketPrice } from "./priceData";
 import { validateSymbol } from "./symbolValidator";
+import { symbolRegistry } from "./symbolRegistry";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "@shared/schema";
 import Razorpay from "razorpay";
@@ -625,10 +626,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { searchInstruments, getPopularInstruments } = await import("./instrumentSearch.js");
       
+      // Helper function to augment suggestions with classification from registry
+      const augmentWithClassification = (suggestions: any[]) => {
+        return suggestions.map(suggestion => {
+          const registryEntry = symbolRegistry.get(suggestion.symbol);
+          return {
+            ...suggestion,
+            classification: registryEntry?.classification || undefined
+          };
+        });
+      };
+      
       // If query is too short, return popular instruments
       if (query.trim().length < 2) {
         const popular = getPopularInstruments(market as string);
-        return res.json({ suggestions: popular });
+        return res.json({ suggestions: augmentWithClassification(popular) });
       }
 
       // Search by name
@@ -639,7 +651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? results.filter(r => r.market === market)
         : results;
 
-      res.json({ suggestions: filtered });
+      // Augment results with classification from registry
+      res.json({ suggestions: augmentWithClassification(filtered) });
     } catch (error: any) {
       console.error("Instrument search error:", error);
       res.status(500).json({ error: "Failed to search instruments", suggestions: [] });
