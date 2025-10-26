@@ -1,7 +1,24 @@
 # Trend Pilot - AI Trading Assistant
 
 ## Overview
-Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/sell recommendations and bracket order analysis across various financial markets (Stock, Commodity, Forex, Derivatives, Bond, Cryptocurrency). It uniquely leverages Perplexity AI with real-time web search for all market data validation, symbol correction, and price discovery, eliminating external market data API dependencies. The system supports 12 languages, multi-currency analysis with 20+ global currencies, and exchange/market preference selection for precise symbol resolution. It operates on a token-based usage model and functions strictly as an ADVISORY-ONLY tool without trade execution capabilities. Its core ambition is to offer comprehensive, AI-driven financial guidance to enhance decision-making for traders and investors worldwide.
+Trend Pilot is an AI-powered financial advisory tool providing intelligent buy/sell recommendations and bracket order analysis across various financial markets (Stock, Commodity, Forex, Cryptocurrency). It uniquely leverages Perplexity AI with real-time web search for all market data validation, symbol correction, and price discovery, eliminating external market data API dependencies. The system supports 12 languages, multi-currency analysis with 20+ global currencies, and exchange/market preference selection for precise symbol resolution. It operates on a token-based usage model and functions strictly as an ADVISORY-ONLY tool without trade execution capabilities. Its core ambition is to offer comprehensive, AI-driven financial guidance to enhance decision-making for traders and investors worldwide.
+
+## Recent Bug Fixes (October 26, 2025)
+
+**Critical Fixes - Latest Session:**
+
+1. **Fixed Null-Safety Crash in Perplexity Analysis** - Resolved "Cannot read properties of null (reading 'toFixed')" error when analyzing symbols like TATAMOTORS.NS. Added optional chaining (`?.toFixed()`) with fallback values in perplexity.ts lines 220, 221, 236, 266. Prevents crashes when Yahoo Finance returns null prices.
+
+2. **Fixed Duplicate Market Dropdown Labels** - Corrected market dropdown showing "Commodity/Forex/MCX Market" twice. Updated translations.ts to display distinct labels: "Commodity Market" and "Forex Market" for clearer user experience.
+
+3. **Enhanced Currency Conversion in Confirmation Popup** - Symbol validation popup now shows prices in user's selected currency (e.g., ₹34,145.85 for INR) instead of hardcoded USD. Implemented getCurrencySymbol() helper and convertPrice() function using Frankfurter API for real-time exchange rates with proper currency symbols (₹, €, £, ¥, etc.).
+
+**Market Simplification & Previous Fixes:**
+- Simplified market types from 6 to 4 options: Stock (includes futures/derivatives), Cryptocurrency, Commodity, Forex
+- Fixed exchange persistence bug (added 'exchange' to backend validation)
+- Replaced CoinGecko with TradingView charts for cryptocurrency
+- Implemented 4-tier symbol validation system (51 verified symbols)
+- Real-time currency conversion for all price fields using Frankfurter API
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
