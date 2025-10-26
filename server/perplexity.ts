@@ -458,6 +458,10 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     // Forex pairs like CAD/USD represent an exchange rate, NOT a price to convert
     const isForexPairSymbol = sourceCurrency === 'FOREX_PAIR';
     
+    // 🚨 SAME CURRENCY DETECTION: Skip conversion if source = target
+    // If Yahoo Finance returns INR and user wants INR, prices are already correct!
+    const isSameCurrency = sourceCurrency === currency;
+    
     let convertedLivePrice: string;
     let convertedCandleClosePrice: string;
     let convertedCurrentPrice: string;
@@ -501,16 +505,43 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       convertedR1 = formatPrice(data.r1);
       convertedR2 = formatPrice(data.r2);
       convertedR3 = formatPrice(data.r3);
-    } else {
-      // 💱 CURRENCY CONVERSION: For non-forex symbols, convert from USD to user's preferred currency
-      console.log(`💱 Converting prices from USD to ${currency}...`);
+    } else if (isSameCurrency) {
+      // 🎯 Prices are ALREADY in the correct currency - no conversion needed!
+      // Example: TATAMOTORS.NS returns INR from Yahoo, user wants INR
+      console.log(`✅ Prices already in target currency ${currency} - no conversion needed`);
+      console.log(`   Yahoo Finance returned ${sourceCurrency}, user wants ${currency}`);
       
-      // Fetch exchange rates once for this analysis
-      const exchangeData = currency === 'USD' ? null : await fetchExchangeRates('USD');
+      const formatPrice = (value: any): string => {
+        if (value === undefined || value === null || value === '') return '0.00';
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        return isNaN(numValue) ? '0.00' : numValue.toFixed(2);
+      };
+      
+      convertedLivePrice = formatPrice(data.livePrice);
+      convertedCandleClosePrice = formatPrice(data.candleClosePrice);
+      convertedCurrentPrice = formatPrice(data.currentPrice || data.candleClosePrice);
+      convertedEntry = formatPrice(data.entry);
+      convertedTakeProfit = formatPrice(takeProfit);
+      convertedStopLoss = formatPrice(stopLoss);
+      convertedTp1 = formatPrice(data.tp1);
+      convertedTp2 = formatPrice(data.tp2);
+      convertedTp3 = formatPrice(data.tp3);
+      convertedS1 = formatPrice(data.s1);
+      convertedS2 = formatPrice(data.s2);
+      convertedS3 = formatPrice(data.s3);
+      convertedR1 = formatPrice(data.r1);
+      convertedR2 = formatPrice(data.r2);
+      convertedR3 = formatPrice(data.r3);
+    } else {
+      // 💱 CURRENCY CONVERSION: Convert from source currency to target currency
+      console.log(`💱 Converting prices from ${sourceCurrency} to ${currency}...`);
+      
+      // Fetch exchange rates from source currency to target currency
+      const exchangeData = await fetchExchangeRates(sourceCurrency);
       const exchangeRate = exchangeData?.rates[currency] || 1;
       
-      if (currency !== 'USD' && !exchangeData?.rates[currency]) {
-        console.warn(`⚠️ Exchange rate not found for ${currency}, using 1:1 fallback`);
+      if (!exchangeData?.rates[currency]) {
+        console.warn(`⚠️ Exchange rate not found for ${sourceCurrency} → ${currency}, using 1:1 fallback`);
       }
       
       // Helper to convert a price value, handling undefined/null/NaN gracefully
@@ -545,7 +576,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       convertedR3 = convertPrice(data.r3);
 
       console.log(`✅ Currency conversion complete to ${currency} (rate: ${exchangeRate})`);
-      console.log(`   Example: Live Price ${data.livePrice} USD → ${convertedLivePrice} ${currency}`);
+      console.log(`   Example: Live Price ${data.livePrice} ${sourceCurrency} → ${convertedLivePrice} ${currency}`);
     }
 
     return {
