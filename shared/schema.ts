@@ -27,6 +27,7 @@ export const analyses = pgTable("analyses", {
   assetName: text("asset_name"), // Perplexity-validated full asset name
   instrumentName: text("instrument_name"), // Full name of the instrument (for backward compatibility)
   currency: text("currency").notNull().default("USD"), // Currency used for this analysis (USD, INR, EUR, etc.)
+  sourceCurrency: text("source_currency"), // Original currency from exchange (INR for .NS, USD for US stocks, etc.)
   exchange: text("exchange"), // Exchange/country used for this analysis (optional)
   currentPrice: text("current_price"), // DEPRECATED: Use candleClosePrice instead
   livePrice: text("live_price"), // Actual current live market price (spot/ticker)
@@ -36,7 +37,7 @@ export const analyses = pgTable("analyses", {
   timeframe: text("timeframe"), // Candle timeframe used for analysis (e.g., "15min", "1hr", "1day")
   nextCandleCloseTime: text("next_candle_close_time"), // When next candle closes for re-analysis (e.g., "2025-10-25 14:00:00 UTC")
   duration: text("duration").notNull(), // 'long_term', 'short_term', 'scalping'
-  market: text("market").notNull(), // 'stock_equities', 'commodity', 'forex', 'derivatives_futures', 'bond', 'cryptocurrency'
+  market: text("market").notNull(), // 'stock', 'commodity', 'forex', 'cryptocurrency' (simplified from 6 to 4 types)
   recommendation: text("recommendation").notNull(), // 'BUY' or 'SELL' - backend field name
   confidence: integer("confidence").notNull(), // 0-100
   sentiment: text("sentiment").notNull(), // 'Bullish' or 'Bearish'
@@ -141,7 +142,7 @@ export const insertAnalysisSchema = createInsertSchema(analyses).omit({
   userId: z.string().min(1, "User ID is required"),
   symbol: z.string().min(1, "Symbol is required"),
   duration: z.enum(["long_term", "short_term", "scalping"]),
-  market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
+  market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
   recommendation: z.enum(["BUY", "SELL"]),
   confidence: z.number().int().min(0).max(100),
   sentiment: z.enum(["Bullish", "Bearish"]),

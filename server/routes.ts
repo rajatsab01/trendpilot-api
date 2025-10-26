@@ -754,6 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assetName: analysisResult.assetName, // Perplexity-validated full name
         instrumentName: analysisResult.instrumentName, // For backward compatibility
         currency, // User's preferred currency for this analysis
+        sourceCurrency: analysisResult.sourceCurrency, // Original currency from exchange
         exchange, // User's preferred exchange for this analysis
         currentPrice: analysisResult.currentPrice, // DEPRECATED: Use candleClosePrice instead
         livePrice: analysisResult.livePrice, // Actual current live market price
