@@ -86,7 +86,8 @@ export async function analyzeMarketWithPerplexity(
   market: string,
   language: string = "en",
   priceData: OHLCVData,
-  currency: string = "USD"
+  currency: string = "USD",
+  exchange?: string
 ): Promise<MarketAnalysisResult> {
   if (!process.env.PERPLEXITY_API_KEY) {
     throw new Error("Perplexity API key not configured");
@@ -153,10 +154,11 @@ export async function analyzeMarketWithPerplexity(
     const recommendedSources = researchSources[market as keyof typeof researchSources] || "yahoofinance.com, m.economictimes.com";
 
     const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "JPY" ? "¥" : currency === "INR" ? "₹" : currency;
+    const exchangeContext = exchange ? ` User prefers ${exchange} exchange/market. Use this to prioritize symbol resolution (e.g., India → prefer .NS/.BO suffixes, Japan → .T, UK → .L).` : "";
 
     const prompt = `You are an expert financial analyst. Analyze the trading symbol "${symbol}" (${marketName} market) for ${durationContext}.
 
-**IMPORTANT: User's preferred currency is ${currency}. ALL prices, targets, support/resistance levels, and stop losses must be expressed in ${currency}.**
+**IMPORTANT: User's preferred currency is ${currency}. ALL prices, targets, support/resistance levels, and stop losses must be expressed in ${currency}.**${exchangeContext}
 
 **PRICE DATA PROVIDED** (from ${priceData.dataSource}):
 - Symbol: ${priceData.symbol}
@@ -169,7 +171,7 @@ export async function analyzeMarketWithPerplexity(
 
 CRITICAL REQUIREMENTS:
 1. **USE EXACT PRICES PROVIDED ABOVE & EXPRESS IN ${currency}** - Do NOT fetch new prices. Use the exact live price (${currencySymbol}${priceData.livePrice.toFixed(2)}) and candle close price (${currencySymbol}${priceData.candleClosePrice.toFixed(2)}) provided. ALL monetary values in your response MUST be in ${currency}.
-2. VALIDATE THE SYMBOL: Use web search to find the CORRECT standard symbol name and full asset name (e.g., if symbol is "BTC", full name is "Bitcoin")
+2. **VALIDATE THE SYMBOL${exchange ? ` FOR ${exchange.toUpperCase()} EXCHANGE` : ""}**: Use web search to find the CORRECT standard symbol name${exchange ? ` prioritizing ${exchange} exchange/market (e.g., India stocks use .NS or .BO suffix, Japan uses .T, UK uses .L)` : ""} and full asset name (e.g., if symbol is "BTC", full name is "Bitcoin")
 3. **MANDATORY RESEARCH SOURCES** - Search these ${marketName}-specific sites for news, sentiment, and trends:
    ${recommendedSources}
    Focus on latest news, market sentiment, fear/greed indices, social media buzz, and expert opinions from these sources.

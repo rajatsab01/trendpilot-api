@@ -690,6 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration: z.enum(["long_term", "short_term", "scalping"]),
         market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
         currency: z.string().optional().default("USD"),
+        exchange: z.string().optional(),
       });
 
       const validationResult = analyzeSchema.safeParse(req.body);
@@ -697,7 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { userId, symbol, duration, market, currency } = validationResult.data;
+      const { userId, symbol, duration, market, currency, exchange } = validationResult.data;
 
       // Check user has enough tokens
       const user = await storage.getUser(userId);
@@ -722,7 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 🎯 STEP 2: Perform analysis using Perplexity with pre-fetched prices
-      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData, currency);
+      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData, currency, exchange);
 
       // Save analysis with Perplexity-validated metadata (including auto-detected market)
       const analysis = await storage.createAnalysis({
@@ -732,6 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assetName: analysisResult.assetName, // Perplexity-validated full name
         instrumentName: analysisResult.instrumentName, // For backward compatibility
         currency, // User's preferred currency for this analysis
+        exchange, // User's preferred exchange for this analysis
         currentPrice: analysisResult.currentPrice, // DEPRECATED: Use candleClosePrice instead
         livePrice: analysisResult.livePrice, // Actual current live market price
         candleClosePrice: analysisResult.candleClosePrice, // Price at closed candle for analysis

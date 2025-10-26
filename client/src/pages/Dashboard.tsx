@@ -38,6 +38,7 @@ export default function Dashboard() {
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{symbol: string; name: string; market: string; description?: string}>>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [currency, setCurrency] = useState("USD");
+  const [exchange, setExchange] = useState("");
 
   const userId = localStorage.getItem("userId");
 
@@ -46,10 +47,13 @@ export default function Dashboard() {
     enabled: !!userId,
   });
 
-  // Load user's preferred currency from profile
+  // Load user's preferred currency and exchange from profile
   useEffect(() => {
     if (user?.currency) {
       setCurrency(user.currency);
+    }
+    if (user?.exchange) {
+      setExchange(user.exchange);
     }
   }, [user]);
 
@@ -245,6 +249,7 @@ export default function Dashboard() {
         duration,
         market,
         currency, // Pass user's preferred currency
+        exchange, // Pass user's preferred exchange
       });
       return await result.json();
     },
@@ -427,55 +432,134 @@ export default function Dashboard() {
 
         <main className="flex-1 px-4 py-6 space-y-6">
           <div className="space-y-4">
-            {/* Currency Preference */}
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-[#9eb7a8] mb-2">
-                Preferred Currency
-              </span>
-              <select
-                className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-4 text-base font-normal leading-normal cursor-pointer"
-                value={currency}
-                onChange={async (e) => {
-                  const newCurrency = e.target.value;
-                  setCurrency(newCurrency);
-                  
-                  // Save currency preference to backend
-                  try {
-                    await apiRequest("PATCH", `/api/user/${userId}`, { currency: newCurrency });
-                    queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+            {/* Currency & Exchange Preference - 50/50 split */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Currency Selector */}
+              <label className="flex flex-col">
+                <span className="text-sm font-medium text-[#9eb7a8] mb-2">
+                  Currency
+                </span>
+                <select
+                  className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-3 text-base font-normal leading-normal cursor-pointer"
+                  value={currency}
+                  onChange={async (e) => {
+                    const newCurrency = e.target.value;
+                    setCurrency(newCurrency);
                     
-                    toast({
-                      title: "Currency Updated",
-                      description: `Your analyses will now be displayed in ${newCurrency}`,
-                    });
-                  } catch (error) {
-                    console.error("Failed to update currency:", error);
-                  }
-                }}
-                data-testid="select-currency"
-              >
-                <option value="USD">🇺🇸 USD - US Dollar</option>
-                <option value="INR">🇮🇳 INR - Indian Rupee</option>
-                <option value="EUR">🇪🇺 EUR - Euro</option>
-                <option value="GBP">🇬🇧 GBP - British Pound</option>
-                <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
-                <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
-                <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
-                <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                <option value="CHF">🇨🇭 CHF - Swiss Franc</option>
-                <option value="HKD">🇭🇰 HKD - Hong Kong Dollar</option>
-                <option value="SGD">🇸🇬 SGD - Singapore Dollar</option>
-                <option value="KRW">🇰🇷 KRW - South Korean Won</option>
-                <option value="BRL">🇧🇷 BRL - Brazilian Real</option>
-                <option value="MXN">🇲🇽 MXN - Mexican Peso</option>
-                <option value="ZAR">🇿🇦 ZAR - South African Rand</option>
-                <option value="RUB">🇷🇺 RUB - Russian Ruble</option>
-                <option value="TRY">🇹🇷 TRY - Turkish Lira</option>
-                <option value="SAR">🇸🇦 SAR - Saudi Riyal</option>
-                <option value="AED">🇦🇪 AED - UAE Dirham</option>
-                <option value="NZD">🇳🇿 NZD - New Zealand Dollar</option>
-              </select>
-            </label>
+                    // Save currency preference to backend
+                    try {
+                      await apiRequest("PATCH", `/api/user/${userId}`, { currency: newCurrency });
+                      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+                      
+                      toast({
+                        title: "Currency Updated",
+                        description: `Your analyses will now be displayed in ${newCurrency}`,
+                      });
+                    } catch (error) {
+                      console.error("Failed to update currency:", error);
+                    }
+                  }}
+                  data-testid="select-currency"
+                >
+                  <option value="USD">🇺🇸 USD</option>
+                  <option value="INR">🇮🇳 INR</option>
+                  <option value="EUR">🇪🇺 EUR</option>
+                  <option value="GBP">🇬🇧 GBP</option>
+                  <option value="JPY">🇯🇵 JPY</option>
+                  <option value="CNY">🇨🇳 CNY</option>
+                  <option value="AUD">🇦🇺 AUD</option>
+                  <option value="CAD">🇨🇦 CAD</option>
+                  <option value="CHF">🇨🇭 CHF</option>
+                  <option value="HKD">🇭🇰 HKD</option>
+                  <option value="SGD">🇸🇬 SGD</option>
+                  <option value="KRW">🇰🇷 KRW</option>
+                  <option value="BRL">🇧🇷 BRL</option>
+                  <option value="MXN">🇲🇽 MXN</option>
+                  <option value="ZAR">🇿🇦 ZAR</option>
+                  <option value="RUB">🇷🇺 RUB</option>
+                  <option value="TRY">🇹🇷 TRY</option>
+                  <option value="SAR">🇸🇦 SAR</option>
+                  <option value="AED">🇦🇪 AED</option>
+                  <option value="NZD">🇳🇿 NZD</option>
+                </select>
+              </label>
+
+              {/* Exchange Selector */}
+              <label className="flex flex-col">
+                <span className="text-sm font-medium text-[#9eb7a8] mb-2">
+                  Exchange
+                </span>
+                <select
+                  className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-3 text-base font-normal leading-normal cursor-pointer"
+                  value={exchange}
+                  onChange={async (e) => {
+                    const newExchange = e.target.value;
+                    setExchange(newExchange);
+                    
+                    // Save exchange preference to backend
+                    try {
+                      await apiRequest("PATCH", `/api/user/${userId}`, { exchange: newExchange });
+                      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+                      
+                      toast({
+                        title: "Exchange Updated",
+                        description: newExchange ? `Symbol search will prioritize ${newExchange}` : "Exchange preference cleared",
+                      });
+                    } catch (error) {
+                      console.error("Failed to update exchange:", error);
+                    }
+                  }}
+                  data-testid="select-exchange"
+                >
+                  <option value="">Not selected</option>
+                  <option value="United States">🇺🇸 United States</option>
+                  <option value="Canada">🇨🇦 Canada</option>
+                  <option value="Mexico">🇲🇽 Mexico</option>
+                  <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                  <option value="Germany">🇩🇪 Germany</option>
+                  <option value="France">🇫🇷 France</option>
+                  <option value="Switzerland">🇨🇭 Switzerland</option>
+                  <option value="Netherlands">🇳🇱 Netherlands</option>
+                  <option value="Belgium">🇧🇪 Belgium</option>
+                  <option value="Portugal">🇵🇹 Portugal</option>
+                  <option value="Italy">🇮🇹 Italy</option>
+                  <option value="Austria">🇦🇹 Austria</option>
+                  <option value="Poland">🇵🇱 Poland</option>
+                  <option value="Greece">🇬🇷 Greece</option>
+                  <option value="Spain">🇪🇸 Spain</option>
+                  <option value="Russia">🇷🇺 Russia</option>
+                  <option value="Sweden">🇸🇪 Sweden</option>
+                  <option value="Denmark">🇩🇰 Denmark</option>
+                  <option value="Finland">🇫🇮 Finland</option>
+                  <option value="Iceland">🇮🇸 Iceland</option>
+                  <option value="India">🇮🇳 India</option>
+                  <option value="China">🇨🇳 China</option>
+                  <option value="Hong Kong">🇭🇰 Hong Kong</option>
+                  <option value="Japan">🇯🇵 Japan</option>
+                  <option value="South Korea">🇰🇷 South Korea</option>
+                  <option value="Singapore">🇸🇬 Singapore</option>
+                  <option value="Australia">🇦🇺 Australia</option>
+                  <option value="Taiwan">🇹🇼 Taiwan</option>
+                  <option value="Indonesia">🇮🇩 Indonesia</option>
+                  <option value="Malaysia">🇲🇾 Malaysia</option>
+                  <option value="Thailand">🇹🇭 Thailand</option>
+                  <option value="Philippines">🇵🇭 Philippines</option>
+                  <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+                  <option value="Saudi Arabia">🇸🇦 Saudi Arabia</option>
+                  <option value="Qatar">🇶🇦 Qatar</option>
+                  <option value="South Africa">🇿🇦 South Africa</option>
+                  <option value="Egypt">🇪🇬 Egypt</option>
+                  <option value="Brazil">🇧🇷 Brazil</option>
+                  <option value="Argentina">🇦🇷 Argentina</option>
+                  <option value="Chile">🇨🇱 Chile</option>
+                  <option value="Peru">🇵🇪 Peru</option>
+                  <option value="Colombia">🇨🇴 Colombia</option>
+                  <option value="Worldwide">🌐 Worldwide</option>
+                  <option value="Crypto">₿ Crypto</option>
+                  <option value="Not sure">❓ Not sure</option>
+                </select>
+              </label>
+            </div>
 
             <label className="flex flex-col relative">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">

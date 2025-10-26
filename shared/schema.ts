@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   mobile: text("mobile").notNull().unique(),
   language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
   currency: text("currency").notNull().default("USD"), // Preferred currency for analysis and display
+  exchange: text("exchange"), // Preferred exchange/country for symbol resolution (optional)
   tokens: integer("tokens").notNull().default(20),
   maxTokens: integer("max_tokens").notNull().default(20), // Tracks the highest token count ever owned
   pwaInstallBonusClaimed: integer("pwa_install_bonus_claimed").notNull().default(0), // 0 = not claimed, 1 = claimed
@@ -25,6 +26,7 @@ export const analyses = pgTable("analyses", {
   assetName: text("asset_name"), // Perplexity-validated full asset name
   instrumentName: text("instrument_name"), // Full name of the instrument (for backward compatibility)
   currency: text("currency").notNull().default("USD"), // Currency used for this analysis (USD, INR, EUR, etc.)
+  exchange: text("exchange"), // Exchange/country used for this analysis (optional)
   currentPrice: text("current_price"), // DEPRECATED: Use candleClosePrice instead
   livePrice: text("live_price"), // Actual current live market price (spot/ticker)
   candleClosePrice: text("candle_close_price"), // Price at closed candle used for analysis
