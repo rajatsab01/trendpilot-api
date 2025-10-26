@@ -85,7 +85,8 @@ export async function analyzeMarketWithPerplexity(
   duration: string,
   market: string,
   language: string = "en",
-  priceData: OHLCVData
+  priceData: OHLCVData,
+  currency: string = "USD"
 ): Promise<MarketAnalysisResult> {
   if (!process.env.PERPLEXITY_API_KEY) {
     throw new Error("Perplexity API key not configured");
@@ -151,18 +152,23 @@ export async function analyzeMarketWithPerplexity(
     
     const recommendedSources = researchSources[market as keyof typeof researchSources] || "yahoofinance.com, m.economictimes.com";
 
+    const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "JPY" ? "¥" : currency === "INR" ? "₹" : currency;
+
     const prompt = `You are an expert financial analyst. Analyze the trading symbol "${symbol}" (${marketName} market) for ${durationContext}.
+
+**IMPORTANT: User's preferred currency is ${currency}. ALL prices, targets, support/resistance levels, and stop losses must be expressed in ${currency}.**
 
 **PRICE DATA PROVIDED** (from ${priceData.dataSource}):
 - Symbol: ${priceData.symbol}
-- Live Current Price: $${priceData.livePrice.toFixed(2)}
-- Candle Close Price (${priceData.timeframe}): $${priceData.candleClosePrice.toFixed(2)}
+- User's Preferred Currency: ${currency}
+- Live Current Price: ${currencySymbol}${priceData.livePrice.toFixed(2)}
+- Candle Close Price (${priceData.timeframe}): ${currencySymbol}${priceData.candleClosePrice.toFixed(2)}
 - Candle Close Time: ${priceData.candleCloseTime}
 - Next Candle Close: ${nextCandleCloseTime}
-- OHLCV Data: Open $${priceData.open.toFixed(2)}, High $${priceData.high.toFixed(2)}, Low $${priceData.low.toFixed(2)}, Close $${priceData.close.toFixed(2)}, Volume ${priceData.volume.toLocaleString()}
+- OHLCV Data: Open ${currencySymbol}${priceData.open.toFixed(2)}, High ${currencySymbol}${priceData.high.toFixed(2)}, Low ${currencySymbol}${priceData.low.toFixed(2)}, Close ${currencySymbol}${priceData.close.toFixed(2)}, Volume ${priceData.volume.toLocaleString()}
 
 CRITICAL REQUIREMENTS:
-1. **USE EXACT PRICES PROVIDED ABOVE** - Do NOT fetch new prices. Use the exact live price ($${priceData.livePrice.toFixed(2)}) and candle close price ($${priceData.candleClosePrice.toFixed(2)}) provided.
+1. **USE EXACT PRICES PROVIDED ABOVE & EXPRESS IN ${currency}** - Do NOT fetch new prices. Use the exact live price (${currencySymbol}${priceData.livePrice.toFixed(2)}) and candle close price (${currencySymbol}${priceData.candleClosePrice.toFixed(2)}) provided. ALL monetary values in your response MUST be in ${currency}.
 2. VALIDATE THE SYMBOL: Use web search to find the CORRECT standard symbol name and full asset name (e.g., if symbol is "BTC", full name is "Bitcoin")
 3. **MANDATORY RESEARCH SOURCES** - Search these ${marketName}-specific sites for news, sentiment, and trends:
    ${recommendedSources}
@@ -173,7 +179,7 @@ CRITICAL REQUIREMENTS:
    - Stochastic (14,3,3): Calculate %K oscillator. Return NUMERIC value (e.g., 58.3, 72.5, 28.9) - NEVER return 0, 0.0, 0.00, "neutral", or text
    - Bollinger Bands Width: Calculate (Upper Band - Lower Band) / Middle Band * 100. Return NUMERIC percentage (e.g., 8.5, 15.2, 22.8) - NEVER return 0, 0.0, 0.00, "narrow", "wide", or text
    **MANDATORY**: If you cannot calculate accurate indicator values, use typical ranges: RSI (30-70), MACD (-1 to +1), Stochastic (20-80), BB Width (5-25). DO NOT use zero or text.
-5. **MINIMUM 1:3 RISK-REWARD RATIO REQUIRED** - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE ($${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations. Even for scalping, maintain minimum 1:3 RR or higher (TP3 must be at least 3x the distance from entry to SL).` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE ($${priceData.candleClosePrice.toFixed(2)}) with MINIMUM 1:3 risk-reward ratio (TP3 must be at least 3x the distance from entry to stop loss).`}
+5. **MINIMUM 1:3 RISK-REWARD RATIO REQUIRED & EXPRESS IN ${currency}** - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE (${currencySymbol}${priceData.livePrice.toFixed(2)}) for entry/TP/SL calculations in ${currency}. Even for scalping, maintain minimum 1:3 RR or higher (TP3 must be at least 3x the distance from entry to SL).` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE (${currencySymbol}${priceData.candleClosePrice.toFixed(2)}) in ${currency} with MINIMUM 1:3 risk-reward ratio (TP3 must be at least 3x the distance from entry to stop loss).`}
 6. Provide your ENTIRE analysis in ${languageName}
 7. Calculate MULTIPLE take profit targets with STRICT risk-reward requirements:
    - TP1: Conservative target (1:1 risk-reward MINIMUM) - book 50% profit here

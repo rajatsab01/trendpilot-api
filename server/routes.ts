@@ -689,6 +689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         symbol: z.string().min(1),
         duration: z.enum(["long_term", "short_term", "scalping"]),
         market: z.enum(["stock_equities", "commodity", "forex", "derivatives_futures", "bond", "cryptocurrency"]),
+        currency: z.string().optional().default("USD"),
       });
 
       const validationResult = analyzeSchema.safeParse(req.body);
@@ -696,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationResult.error.errors[0].message });
       }
 
-      const { userId, symbol, duration, market } = validationResult.data;
+      const { userId, symbol, duration, market, currency } = validationResult.data;
 
       // Check user has enough tokens
       const user = await storage.getUser(userId);
@@ -721,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 🎯 STEP 2: Perform analysis using Perplexity with pre-fetched prices
-      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData);
+      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData, currency);
 
       // Save analysis with Perplexity-validated metadata (including auto-detected market)
       const analysis = await storage.createAnalysis({
@@ -730,6 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         correctedSymbol: analysisResult.correctedSymbol, // Perplexity-corrected symbol
         assetName: analysisResult.assetName, // Perplexity-validated full name
         instrumentName: analysisResult.instrumentName, // For backward compatibility
+        currency, // User's preferred currency for this analysis
         currentPrice: analysisResult.currentPrice, // DEPRECATED: Use candleClosePrice instead
         livePrice: analysisResult.livePrice, // Actual current live market price
         candleClosePrice: analysisResult.candleClosePrice, // Price at closed candle for analysis
