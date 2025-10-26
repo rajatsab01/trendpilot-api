@@ -39,8 +39,61 @@ export default function Dashboard() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [currency, setCurrency] = useState("USD");
   const [exchange, setExchange] = useState("");
+  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
 
   const userId = localStorage.getItem("userId");
+
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currencyCode: string): string => {
+    const currencySymbols: Record<string, string> = {
+      'USD': '$',
+      'INR': '₹',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'CNY': '¥',
+      'AUD': 'A$',
+      'CAD': 'C$',
+      'CHF': 'Fr',
+      'HKD': 'HK$',
+      'SGD': 'S$',
+      'KRW': '₩',
+      'BRL': 'R$',
+      'MXN': 'Mex$',
+      'ZAR': 'R',
+      'RUB': '₽',
+      'TRY': '₺',
+      'SAR': '﷼',
+      'AED': 'د.إ',
+      'NZD': 'NZ$',
+    };
+    return currencySymbols[currencyCode] || currencyCode + ' ';
+  };
+
+  // Fetch exchange rate and convert price
+  const convertPrice = async (priceInUSD: number, targetCurrency: string): Promise<number> => {
+    if (targetCurrency === 'USD') {
+      return priceInUSD;
+    }
+
+    try {
+      const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${targetCurrency}`);
+      if (!response.ok) {
+        console.error('Failed to fetch exchange rates');
+        return priceInUSD; // Fallback to USD price
+      }
+      const data = await response.json();
+      const rate = data.rates[targetCurrency];
+      if (!rate) {
+        console.error(`No exchange rate found for ${targetCurrency}`);
+        return priceInUSD; // Fallback to USD price
+      }
+      return priceInUSD * rate;
+    } catch (error) {
+      console.error('Error converting currency:', error);
+      return priceInUSD; // Fallback to USD price
+    }
+  };
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/user", userId],
@@ -214,7 +267,7 @@ export default function Dashboard() {
       }
       return await result.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setValidationResult(data);
       setShowValidationModal(true);
       
@@ -225,8 +278,15 @@ export default function Dashboard() {
           market: market,
         });
         setSymbolSuggestions([]);
+        
+        // Convert price to user's selected currency
+        if (data.currentPrice) {
+          const converted = await convertPrice(data.currentPrice, currency);
+          setConvertedPrice(converted);
+        }
       } else {
         setValidatedData(null);
+        setConvertedPrice(null);
         if (data.suggestions && data.suggestions.length > 0) {
           setSymbolSuggestions(data.suggestions);
         }
@@ -977,10 +1037,12 @@ export default function Dashboard() {
                   <span className="text-[#9eb7a8] text-sm">Duration:</span>
                   <span className="text-white capitalize">{duration.replace(/_/g, ' ')}</span>
                 </div>
-                {validationResult.currentPrice && (
+                {convertedPrice !== null && (
                   <div className="flex justify-between items-center border-t border-[#38e07b]/20 pt-3">
                     <span className="text-[#9eb7a8] text-sm">Current Price:</span>
-                    <span className="text-[#38e07b] font-bold">${validationResult.currentPrice.toFixed(2)}</span>
+                    <span className="text-[#38e07b] font-bold">
+                      {getCurrencySymbol(currency)}{convertedPrice.toFixed(2)}
+                    </span>
                   </div>
                 )}
               </div>
