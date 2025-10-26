@@ -321,7 +321,11 @@ export default function Dashboard() {
   const handleSelectSearchSuggestion = (suggestion: {symbol: string; name: string; market: string; description?: string}) => {
     // Auto-fill symbol only (let user select market manually to maintain flow)
     setSymbol(suggestion.symbol);
-    // Don't auto-fill market - exchange will be used with APIs for better results
+    // IMPORTANT: Do NOT auto-fill market - user must select manually
+    // Explicitly reset market to ensure it's not carried over
+    setMarket("");
+    setIsValidationConfirmed(false);
+    setValidatedData(null);
     setShowSearchDropdown(false);
     setSearchSuggestions([]);
     
@@ -663,9 +667,32 @@ export default function Dashboard() {
             </label>
 
             <label className="flex flex-col">
-              <span className="text-sm font-medium text-[#9eb7a8] mb-2">
-                {t.selectMarket}
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-[#9eb7a8]">
+                  {t.selectMarket}
+                </span>
+                {market && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMarket("");
+                      setIsValidationConfirmed(false);
+                      setValidatedData(null);
+                      toast({
+                        title: "Market Reset",
+                        description: "Please select market type again",
+                      });
+                    }}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#29382f] hover-elevate active-elevate-2 transition-all"
+                    data-testid="button-reset-market"
+                    title="Reset market selection"
+                  >
+                    <span className="material-symbols-outlined text-[#38e07b] text-xl">
+                      refresh
+                    </span>
+                  </button>
+                )}
+              </div>
               <select
                 className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-4 text-base font-normal leading-normal appearance-none"
                 style={{
