@@ -15,6 +15,11 @@ export const users = pgTable("users", {
   maxTokens: integer("max_tokens").notNull().default(20), // Tracks the highest token count ever owned
   pwaInstallBonusClaimed: integer("pwa_install_bonus_claimed").notNull().default(0), // 0 = not claimed, 1 = claimed
   isAdmin: integer("is_admin").notNull().default(0), // 0 = regular user, 1 = admin
+  // Community features
+  alias: text("alias"), // Community display name (max 10 characters)
+  rulesAccepted: integer("rules_accepted").notNull().default(0), // 0 = not accepted, 1 = accepted
+  lastSeen: timestamp("last_seen"), // Last activity timestamp for online status
+  isBanned: integer("is_banned").notNull().default(0), // 0 = active, 1 = banned by admin
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -114,13 +119,25 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Reports - users can report issues or feedback to admin
+// Messages - direct user-to-user messaging
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull(), // User who sent the message
+  receiverId: varchar("receiver_id").notNull(), // User who receives the message
+  content: text("content").notNull(), // Message text content
+  isRead: integer("is_read").notNull().default(0), // 0 = unread, 1 = read
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Reports - users can report issues, abuse, or feedback to admin
 export const reports = pgTable("reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(), // User who submitted the report
-  type: text("type").notNull(), // 'bug', 'feedback', 'feature_request', 'abuse'
+  type: text("type").notNull(), // 'bug', 'feedback', 'feature_request', 'abuse_user', 'abuse_post'
   subject: text("subject").notNull(), // Report subject/title
   message: text("message").notNull(), // Detailed message
+  reportedUserId: varchar("reported_user_id"), // User being reported (for abuse_user)
+  reportedAnalysisId: varchar("reported_analysis_id"), // Analysis being reported (for abuse_post)
   status: text("status").notNull().default("pending"), // 'pending', 'reviewing', 'resolved', 'closed'
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -194,15 +211,27 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   analysisId: z.string().nullable().optional(),
 });
 
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+}).extend({
+  senderId: z.string().min(1, "Sender ID is required"),
+  receiverId: z.string().min(1, "Receiver ID is required"),
+  content: z.string().min(1, "Message content is required").max(1000, "Message too long"),
+});
+
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,
   createdAt: true,
   status: true,
 }).extend({
   userId: z.string().min(1, "User ID is required"),
-  type: z.enum(["bug", "feedback", "feature_request", "abuse"]),
+  type: z.enum(["bug", "feedback", "feature_request", "abuse_user", "abuse_post"]),
   subject: z.string().min(1, "Subject is required"),
   message: z.string().min(10, "Message must be at least 10 characters"),
+  reportedUserId: z.string().nullable().optional(),
+  reportedAnalysisId: z.string().nullable().optional(),
 });
 
 // Types derived from Drizzle tables
@@ -212,6 +241,7 @@ export type Broker = typeof brokers.$inferSelect;
 export type Follow = typeof follows.$inferSelect;
 export type Block = typeof blocks.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type Message = typeof messages.$inferSelect;
 export type Report = typeof reports.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -220,6 +250,7 @@ export type InsertBroker = z.infer<typeof insertBrokerSchema>;
 export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type InsertBlock = z.infer<typeof insertBlockSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 
 // Trade duration options
