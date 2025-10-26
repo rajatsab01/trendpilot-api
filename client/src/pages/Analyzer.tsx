@@ -241,9 +241,55 @@ export default function Analyzer() {
 
     const currencySymbol = getCurrencySymbol(analysis.currency || 'USD');
 
-    // Yahoo Finance chart configuration
-    const getYahooChartUrl = (symbol: string, duration?: string): string => {
-      // Map duration to Yahoo Finance time range
+    // Chart URL configuration - Yahoo Finance for stocks/commodities/forex, CoinGecko for crypto
+    const getChartUrl = (symbol: string, duration?: string, market?: string): string => {
+      // For cryptocurrency, use CoinGecko chart
+      if (market === 'cryptocurrency') {
+        // Map symbols to CoinGecko IDs
+        const coinGeckoIdMap: Record<string, string> = {
+          'BTCUSDT': 'bitcoin',
+          'BTC': 'bitcoin',
+          'ETHUSDT': 'ethereum',
+          'ETH': 'ethereum',
+          'BNBUSDT': 'binancecoin',
+          'BNB': 'binancecoin',
+          'SOLUSDT': 'solana',
+          'SOL': 'solana',
+          'XRPUSDT': 'ripple',
+          'XRP': 'ripple',
+          'ADAUSDT': 'cardano',
+          'ADA': 'cardano',
+          'DOGEUSDT': 'dogecoin',
+          'DOGE': 'dogecoin',
+          'MATICUSDT': 'matic-network',
+          'MATIC': 'matic-network',
+          'DOTUSDT': 'polkadot',
+          'DOT': 'polkadot',
+          'AVAXUSDT': 'avalanche-2',
+          'AVAX': 'avalanche-2',
+          'LINKUSDT': 'chainlink',
+          'LINK': 'chainlink',
+          'UNIUSDT': 'uniswap',
+          'UNI': 'uniswap',
+        };
+
+        // Map duration to CoinGecko time range (in days)
+        const timeRangeMap: Record<string, string> = {
+          'scalping': '1',
+          'short_term': '7',
+          'long_term': '90'
+        };
+        const days = duration ? (timeRangeMap[duration.toLowerCase()] || '7') : '7';
+        
+        // Extract base symbol (remove USDT suffix)
+        const baseSymbol = symbol.replace(/USDT$/gi, '').replace(/USD$/gi, '').toUpperCase();
+        const coinGeckoId = coinGeckoIdMap[symbol] || coinGeckoIdMap[baseSymbol] || 'bitcoin';
+        
+        // CoinGecko chart API - returns simple price chart image
+        return `https://www.coingecko.com/coins/${coinGeckoId}/sparkline?vs_currency=usd&period=${days}d`;
+      }
+      
+      // For stocks/commodities/forex, use Yahoo Finance
       const timeRangeMap: Record<string, string> = {
         'scalping': '1d',
         'short_term': '5d',
@@ -252,12 +298,16 @@ export default function Analyzer() {
       const timeRange = duration ? (timeRangeMap[duration.toLowerCase()] || '1d') : '1d';
       
       // Use the original Yahoo Finance symbol (with suffix like .NS, .BO, etc.)
-      const yahooSymbol = analysis.correctedSymbol || analysis.symbol;
+      const yahooSymbol = symbol;
       
       return `https://chart.yahoo.com/z?s=${encodeURIComponent(yahooSymbol)}&t=${timeRange}&q=c&l=on&z=l&p=s`;
     };
 
-    const yahooChartUrl = getYahooChartUrl(analysis.correctedSymbol || analysis.symbol, analysis.duration);
+    const chartUrl = getChartUrl(
+      analysis.correctedSymbol || analysis.symbol, 
+      analysis.duration,
+      analysis.market
+    );
 
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
@@ -275,24 +325,26 @@ export default function Analyzer() {
             </h1>
           </header>
 
-          {/* Price Chart - Yahoo Finance (Primary) */}
+          {/* Price Chart - Yahoo Finance for stocks/commodities, CoinGecko for crypto */}
           <div className="px-4 pt-6 pb-2">
             <div className="bg-[#1c2620] rounded-2xl overflow-hidden">
               <div className="p-3 border-b border-[#111714] flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#38e07b] text-lg">show_chart</span>
-                <p className="text-[#9eb7a8] text-sm font-medium">Price Chart</p>
+                <p className="text-[#9eb7a8] text-sm font-medium">
+                  Price Chart {analysis.market === 'cryptocurrency' ? '(CoinGecko)' : '(Yahoo Finance)'}
+                </p>
               </div>
               <div className="p-2">
                 <img 
-                  src={yahooChartUrl}
+                  src={chartUrl}
                   alt={`${analysis.assetName || analysis.symbol} Price Chart`}
                   className="w-full rounded-lg"
                   onError={(e) => {
-                    // Fallback if Yahoo Finance image fails
+                    // Fallback if chart image fails
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
-                  data-testid="img-yahoo-chart"
+                  data-testid="img-price-chart"
                 />
                 <div className="hidden text-center py-8">
                   <p className="text-[#6a7f72] text-sm">Chart not available</p>

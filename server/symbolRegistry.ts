@@ -199,11 +199,13 @@ export function normalizeSymbolForAPI(
     return registryEntry.apiSymbol;
   }
 
-  // Check if symbol already has a suffix (=, .)
-  const hasExistingSuffix = normalized.includes('=') || normalized.includes('.');
+  // Check if symbol already has a suffix (=, ., -)
+  // This prevents double-normalization bugs like "NG=F" → "NG=F=F"
+  const hasExistingSuffix = normalized.includes('=') || normalized.includes('.') || normalized.includes('-');
 
   if (hasExistingSuffix) {
     // Symbol already formatted, return as-is
+    console.log(`[SymbolRegistry] Symbol "${normalized}" already has suffix, returning as-is`);
     return normalized;
   }
 
