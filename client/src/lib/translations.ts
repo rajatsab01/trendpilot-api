@@ -938,6 +938,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "分享 PDF",
     exportingPDF: "正在导出 PDF...",
+    pdfExportInProgressDesc: "请稍候，我们正在创建您的分析报告",
     pdfExported: "PDF 已导出",
     pdfExportedDesc: "您的分析已保存为 PDF",
     pdfExportFailed: "PDF 导出失败",
@@ -956,7 +957,12 @@ export const translations = {
     closedCandleExplanation: "分析使用已收盘K线价格以确保准确性。当前实时价格可能有所不同。",
     
     // Saved Analyses Page
+    save: "保存",
     saved: "已保存",
+    analysisSaved: "分析已成功保存",
+    analysisUnsaved: "分析已取消保存",
+    unsaveConfirm: "您确定要取消保存此分析吗？它将从您的保存列表中删除。",
+    failedToUpdateAnalysis: "更新分析失败",
     totalSaved: "总保存数",
     wonTrades: "盈利",
     lostTrades: "亏损",
@@ -1402,6 +1408,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "Partager le PDF",
     exportingPDF: "Export PDF en cours...",
+    pdfExportInProgressDesc: "Veuillez patienter pendant que nous créons votre rapport d'analyse",
     pdfExported: "PDF exporté",
     pdfExportedDesc: "Votre analyse a été enregistrée en PDF",
     pdfExportFailed: "Échec de l'export PDF",
@@ -1636,6 +1643,7 @@ export const translations = {
     // PDF Export Feature
     sharePDF: "مشاركة PDF",
     exportingPDF: "جاري تصدير PDF...",
+    pdfExportInProgressDesc: "يرجى الانتظار بينما نقوم بإنشاء تقرير التحليل الخاص بك",
     pdfExported: "تم تصدير PDF",
     pdfExportedDesc: "تم حفظ تحليلك بصيغة PDF",
     pdfExportFailed: "فشل تصدير PDF",

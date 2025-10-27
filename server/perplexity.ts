@@ -545,6 +545,50 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     
     // Variable to store exchange rate for display (null for forex pairs and same currency)
     let displayExchangeRate: string | null = null;
+    let exchangeRate: number | null = null;
+    
+    // Helper function to convert prices embedded in text
+    const convertPricesInText = (text: string, rate: number): string => {
+      if (!text || !rate) return text;
+      
+      // CONTEXT-AWARE PRICE MATCHING: Only convert numbers near currency symbols or trading-specific price keywords
+      // This avoids converting RSI, percentages, probabilities, and other technical indicators
+      
+      // Pattern 1: Currency symbols followed by number (₹3.29, $3.29, €3.29)
+      // Pattern 2: Trading price keywords followed by number (support 3.29, resistance 152.34, entry 120.75)
+      // RESTRICTED KEYWORDS: Only words almost exclusively used for price levels in trading
+      const priceKeywords = 'support|resistance|entry|target|stop|price';
+      const currencySymbols = '[$₹€£¥₩]';
+      
+      // Match: currency symbol + number OR price keyword + flexible separator + number
+      // Allows: "entry 120.75", "entry: 120.75", "support level 3.29", "stop loss at 50.00"
+      // Supports 1-4 decimals for forex (4), stocks (2-3), commodities (1-2)
+      const pricePattern = new RegExp(
+        `(${currencySymbols}|(?:${priceKeywords})(?:\\s+(?:level|loss|zone|area|line|point)?)?\\s*(?:at\\s+|of\\s+|:|-)?)\\s*([,\\d]+\\.\\d{1,4})\\b`,
+        'gi'
+      );
+      
+      return text.replace(pricePattern, (fullMatch, prefix, numStr) => {
+        // Remove commas from number string (e.g., "1,234.56" → "1234.56")
+        const cleanNum = numStr.replace(/,/g, '');
+        const numValue = parseFloat(cleanNum);
+        
+        // Only convert if it's a reasonable price range (0.01 to 999999)
+        if (isNaN(numValue) || numValue < 0.01 || numValue > 999999) {
+          return fullMatch; // Keep as-is
+        }
+        
+        // Convert the price and format with commas if original had them
+        const converted = convertCurrencyWithRate(numValue, rate);
+        const formattedPrice = converted.toLocaleString('en-US', { 
+          minimumFractionDigits: 2, 
+          maximumFractionDigits: 2 
+        });
+        
+        // Return with original prefix (currency symbol or keyword)
+        return `${prefix}${formattedPrice}`;
+      });
+    };
     
     if (isForexPairSymbol) {
       // 🎯 For forex pairs, use prices AS-IS without conversion
@@ -606,7 +650,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       
       // Fetch exchange rates from source currency to target currency
       const exchangeData = await fetchExchangeRates(sourceCurrency);
-      const exchangeRate = exchangeData?.rates[currency] || 1;
+      exchangeRate = exchangeData?.rates[currency] || 1;
       
       // Store rate for display (e.g., "83.45" means 1 USD = 83.45 INR)
       displayExchangeRate = exchangeRate.toFixed(2);
@@ -625,7 +669,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
           console.warn(`⚠️ Invalid price value: "${priceValue}"`);
           return '0.00';
         }
-        const converted = convertCurrencyWithRate(numValue, exchangeRate);
+        const converted = convertCurrencyWithRate(numValue, exchangeRate!);
         return converted.toFixed(2);
       };
       
@@ -650,13 +694,25 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
       console.log(`   Example: Live Price ${data.livePrice} ${sourceCurrency} → ${convertedLivePrice} ${currency}`);
     }
 
+    // Apply text conversion only when actual currency conversion happened
+    const needsTextConversion = !isForexPairSymbol && !isSameCurrency;
+    const convertedMarketSentiment = needsTextConversion && exchangeRate 
+      ? convertPricesInText(data.marketSentiment || data.analysis, exchangeRate)
+      : (data.marketSentiment || data.analysis);
+    const convertedDeepAnalysis = needsTextConversion && exchangeRate
+      ? convertPricesInText(data.deepAnalysis || data.analysis, exchangeRate)
+      : (data.deepAnalysis || data.analysis);
+    const convertedAnalysis = needsTextConversion && exchangeRate
+      ? convertPricesInText(data.analysis, exchangeRate)
+      : data.analysis;
+
     return {
       recommendation: data.recommendation,
       confidence: data.confidence,
       sentiment: data.sentiment,
-      marketSentiment: data.marketSentiment || data.analysis,
-      deepAnalysis: data.deepAnalysis || data.analysis,
-      analysis: data.analysis,
+      marketSentiment: convertedMarketSentiment,
+      deepAnalysis: convertedDeepAnalysis,
+      analysis: convertedAnalysis,
       // Perplexity-validated symbol metadata (replaces external API data)
       correctedSymbol: data.correctedSymbol,
       assetName: data.assetName,

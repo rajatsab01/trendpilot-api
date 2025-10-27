@@ -263,4 +263,5 @@ export type Language = typeof languages[number];
 
 // App version - increment this when releasing new versions
 // Format: MAJOR.MINOR.PATCH (e.g., "1.0.0")
-export const APP_VERSION = "1.0.0";
+// v1.1.0 - Added profanity filter for community content + fixed currency conversion in analysis text
+export const APP_VERSION = "1.1.0";

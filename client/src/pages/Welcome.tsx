@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import trendPilotLogo from "@assets/trendpilot-logo.png";
 
 export default function Welcome() {
   const [, setLocation] = useLocation();
@@ -105,6 +106,17 @@ export default function Welcome() {
       </header>
 
       <main className="flex flex-1 flex-col justify-center px-6 text-center">
+        {/* Logo + TrendPilot branding (horizontal row) */}
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <img 
+            src={trendPilotLogo}
+            alt="TrendPilot Logo"
+            className="h-16 w-16 object-contain rounded-lg"
+            data-testid="img-logo"
+          />
+          <h1 className="text-[#38e07b] text-3xl font-bold tracking-tight">TrendPilot</h1>
+        </div>
+        
         <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
           {t.aiGuidedTrading}
         </h2>
