@@ -714,6 +714,12 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     const convertedAnalysis = needsTextConversion && exchangeRate
       ? convertPricesInText(data.analysis, exchangeRate)
       : data.analysis;
+    const convertedTrailingStopStrategy = needsTextConversion && exchangeRate && data.trailingStopStrategy
+      ? convertPricesInText(data.trailingStopStrategy, exchangeRate)
+      : (data.trailingStopStrategy || '');
+    const convertedExplanatoryNotes = needsTextConversion && exchangeRate && data.explanatoryNotes
+      ? convertPricesInText(data.explanatoryNotes, exchangeRate)
+      : (data.explanatoryNotes || '');
 
     return {
       recommendation: data.recommendation,
@@ -762,9 +768,9 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
         r2: convertedR2, // Converted to user's currency
         r3: convertedR3, // Converted to user's currency
       },
-      trailingStopStrategy: data.trailingStopStrategy,
+      trailingStopStrategy: convertedTrailingStopStrategy,
       probabilityScore: data.probabilityScore,
-      explanatoryNotes: data.explanatoryNotes,
+      explanatoryNotes: convertedExplanatoryNotes,
     };
   } catch (error: any) {
     console.error("Perplexity API error:", error);

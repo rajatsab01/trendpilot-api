@@ -843,9 +843,10 @@ export default function Analyzer() {
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-trailing-stop">
                   {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                  {/* For other markets (crypto/stock/commodity), replace USD ($) symbols with user's preferred currency */}
                   {isForexPair 
-                    ? analysis.trailingStopStrategy.replace(/[₹$£¥€₽]/g, currencySymbol)
-                    : analysis.trailingStopStrategy
+                    ? (analysis.trailingStopStrategy || '').replace(/[₹$£¥€₽]/g, currencySymbol)
+                    : (analysis.trailingStopStrategy || '').replace(/\$/g, currencySymbol)
                   }
                 </p>
               </div>
@@ -860,9 +861,10 @@ export default function Analyzer() {
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-explanatory-notes">
                   {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                  {/* For other markets (crypto/stock/commodity), replace USD ($) symbols with user's preferred currency */}
                   {isForexPair 
-                    ? analysis.explanatoryNotes.replace(/[₹$£¥€₽]/g, currencySymbol)
-                    : analysis.explanatoryNotes
+                    ? (analysis.explanatoryNotes || '').replace(/[₹$£¥€₽]/g, currencySymbol)
+                    : (analysis.explanatoryNotes || '').replace(/\$/g, currencySymbol)
                   }
                 </p>
               </div>
