@@ -756,6 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         instrumentName: analysisResult.instrumentName, // For backward compatibility
         currency, // User's preferred currency for this analysis
         sourceCurrency: analysisResult.sourceCurrency, // Original currency from exchange
+        exchangeRate: analysisResult.exchangeRate, // Exchange rate used for conversion (null for forex/same currency)
         exchange, // User's preferred exchange for this analysis
         currentPrice: analysisResult.currentPrice, // DEPRECATED: Use candleClosePrice instead
         livePrice: analysisResult.livePrice, // Actual current live market price
