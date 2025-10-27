@@ -1360,6 +1360,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Message too long (max 1000 characters)" });
       }
 
+      // 🔒 PROFANITY FILTER: Validate message content
+      try {
+        validateContent(content, "Message");
+      } catch (validationError: any) {
+        return res.status(400).json({ error: validationError.message });
+      }
+
       const message = await storage.sendMessage({ senderId, receiverId, content });
       res.json(message);
     } catch (error) {
