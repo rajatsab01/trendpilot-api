@@ -6,7 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
+import ReactionButtons from "@/components/ReactionButtons";
 import type { Analysis, User, Report } from "@shared/schema";
+import { formatDistanceToNow } from "date-fns";
 
 type FeedItem = Analysis & { author: User };
 
@@ -123,378 +125,322 @@ export default function Community() {
     setLocation(`/analyzer?analysisId=${analysisId}&fromCommunity=true`);
   };
 
-  const handleReportUser = (reportedUserId: string) => {
+  const handleReportUser = async (reportedUserId: string) => {
+    const versionOk = await guardAction();
+    if (!versionOk) return;
+
     setReportTarget({ userId: reportedUserId, type: "abuse_user" });
     setShowReportModal(true);
   };
 
-  const handleReportAnalysis = (analysisId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent analysis click
+  const handleReportAnalysis = async (analysisId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const versionOk = await guardAction();
+    if (!versionOk) return;
+
     setReportTarget({ analysisId, type: "abuse_post" });
     setShowReportModal(true);
   };
 
-  const handleGeneralReport = () => {
-    setReportTarget({ type: "bug" });
-    setShowReportModal(true);
-  };
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-[#111714] flex flex-col pb-20">
-      <div className="flex-1 overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-[#111714] border-b border-[#2a3c33] px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-white text-xl font-bold">Community</h1>
+    <div className="min-h-screen bg-[#111714] pb-20">
+      {/* Rules Modal */}
+      {showRulesModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1c2620] rounded-2xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-white text-2xl font-bold">Join the Community</h2>
+            
+            <div className="space-y-2">
+              <p className="text-[#9eb7a8] text-sm">
+                To access the community, you need:
+              </p>
+              <ul className="list-disc list-inside text-[#9eb7a8] text-sm space-y-1">
+                <li>At least 10 saved trades ({analyses.length}/10)</li>
+                <li>A unique username (max 10 characters)</li>
+                <li>Accept our community rules</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-white text-sm font-medium">Choose Username</label>
+              <input
+                type="text"
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder="Enter username..."
+                maxLength={10}
+                className="w-full bg-[#111714] text-white rounded-xl px-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none"
+                data-testid="input-alias"
+              />
+            </div>
+
+            <div className="bg-[#111714] rounded-xl p-4 space-y-2">
+              <h3 className="text-white font-semibold text-sm">Community Rules</h3>
+              <ul className="list-disc list-inside text-[#9eb7a8] text-xs space-y-1">
+                <li>Be respectful and professional</li>
+                <li>No spam or promotional content</li>
+                <li>Share genuine trading insights</li>
+                <li>Report inappropriate behavior</li>
+              </ul>
+            </div>
+
             <button
-              onClick={handleGeneralReport}
-              className="flex items-center gap-2 px-4 py-2 bg-[#29382f] text-white rounded-lg hover-elevate active-elevate-2"
-              data-testid="button-report"
+              onClick={handleAcceptRules}
+              disabled={isAcceptingRules || analyses.length < 10 || !alias.trim()}
+              className="w-full py-3 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              data-testid="button-accept-rules"
             >
-              <span className="material-symbols-outlined text-sm">flag</span>
-              <span className="text-sm">Report</span>
+              {isAcceptingRules ? "Processing..." : "I Agree - Join Community"}
             </button>
           </div>
         </div>
+      )}
 
-        {/* Admin Panel Link */}
-        {user?.isAdmin === 1 && (
-          <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-[#38e07b]/20 to-[#29382f] rounded-xl border border-[#38e07b]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[#38e07b] text-2xl">admin_panel_settings</span>
-                <div>
-                  <p className="text-white font-semibold text-sm">Admin Panel</p>
-                  <p className="text-[#9eb7a8] text-xs">View and manage user reports</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setLocation("/admin")}
-                className="px-4 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
-                data-testid="button-admin-panel"
-              >
-                Open
-              </button>
-            </div>
-          </div>
-        )}
+      <div className="p-4 space-y-4">
+        <h1 className="text-white text-2xl font-bold">Community</h1>
 
-        {/* Community Feed */}
-        <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-white font-semibold text-lg">Trading Feed</h2>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7f72] text-xl">
-              search
-            </span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by username or symbol..."
-              className="w-full bg-[#1a241f] text-white rounded-xl pl-11 pr-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
-              data-testid="input-search-community"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a7f72] hover:text-white"
-                data-testid="button-clear-search"
-              >
-                <span className="material-symbols-outlined text-xl">close</span>
-              </button>
-            )}
-          </div>
-          
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-[#9eb7a8]">Loading feed...</div>
-            </div>
-          ) : feed.length === 0 ? (
-            <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
-              <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">group</span>
-              <h3 className="text-white font-semibold mb-2">No Analyses Yet</h3>
-              <p className="text-[#9eb7a8] text-sm mb-4">
-                The community is growing! Published analyses will appear here
-              </p>
-              <button
-                onClick={() => setLocation("/analyzer")}
-                className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
-                data-testid="button-start-analyzing"
-              >
-                Start Analyzing
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {(() => {
-                // Group analyses by user
-                const userGroups = feed.reduce((acc, item) => {
-                  const userId = item.author.id;
-                  if (!acc[userId]) {
-                    acc[userId] = {
-                      user: item.author,
-                      analyses: []
-                    };
-                  }
-                  acc[userId].analyses.push(item);
-                  return acc;
-                }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
-
-                // Filter groups based on search query
-                const filteredGroups = Object.values(userGroups).filter(({ user, analyses }) => {
-                  if (!searchQuery.trim()) return true; // Show all if no search query
-                  
-                  const query = searchQuery.toLowerCase().trim();
-                  
-                  // Check if username/alias matches
-                  const usernameMatch = (user.alias || user.name).toLowerCase().includes(query);
-                  
-                  // Check if any analysis symbol matches
-                  const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
-                  
-                  return usernameMatch || symbolMatch;
-                });
-
-                // Show "no results" if search returns empty
-                if (filteredGroups.length === 0 && searchQuery.trim()) {
-                  return (
-                    <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
-                      <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">search_off</span>
-                      <h3 className="text-white font-semibold mb-2">No Results Found</h3>
-                      <p className="text-[#9eb7a8] text-sm">
-                        No traders or symbols match "{searchQuery}"
-                      </p>
-                    </div>
-                  );
-                }
-
-                return filteredGroups.map(({ user, analyses }) => (
-                  <div
-                    key={user.id}
-                    className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33]"
-                    data-testid={`trader-card-${user.id}`}
-                  >
-                    {/* Trader Header */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#111714] font-bold">
-                          {(user.alias || user.name).charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-sm truncate">
-                          {user.alias || user.name}
-                        </p>
-                        <p className="text-[#6a7f72] text-xs">
-                          {analyses.length} {analyses.length === 1 ? 'analysis' : 'analyses'} published
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleReportUser(user.id)}
-                        className="p-2 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
-                        data-testid={`button-report-user-${user.id}`}
-                        title="Report user"
-                      >
-                        <span className="material-symbols-outlined text-lg">flag</span>
-                      </button>
-                      <button
-                        onClick={() => setLocation(`/trader/${user.id}`)}
-                        className="px-3 py-1.5 bg-[#29382f] text-[#38e07b] text-xs font-semibold rounded-lg hover-elevate active-elevate-2"
-                        data-testid={`button-view-trader-${user.id}`}
-                      >
-                        View Profile
-                      </button>
-                    </div>
-
-                    {/* Analysis Chips */}
-                    <div className="space-y-2">
-                      <p className="text-[#9eb7a8] text-xs font-medium">Recent Analyses</p>
-                      <div className="flex flex-wrap gap-2">
-                        {analyses.slice(0, 6).map((analysis) => (
-                          <div
-                            key={analysis.id}
-                            className="relative inline-flex group"
-                          >
-                            <button
-                              onClick={() => handleAnalysisClick(analysis.id)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold hover-elevate active-elevate-2 ${
-                                analysis.recommendation === "BUY"
-                                  ? "bg-[#38e07b]/20 text-[#38e07b] border border-[#38e07b]/30"
-                                  : "bg-red-500/20 text-red-500 border border-red-500/30"
-                              }`}
-                              data-testid={`analysis-chip-${analysis.id}`}
-                            >
-                              {analysis.recommendation} {analysis.symbol}
-                            </button>
-                            <button
-                              onClick={(e) => handleReportAnalysis(analysis.id, e)}
-                              className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#111714] p-1 rounded-full border border-[#2a3c33] text-[#6a7f72] hover:text-red-500"
-                              data-testid={`button-report-analysis-${analysis.id}`}
-                              title="Report analysis"
-                            >
-                              <span className="material-symbols-outlined text-xs">flag</span>
-                            </button>
-                          </div>
-                        ))}
-                        {analyses.length > 6 && (
-                          <div className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#29382f] text-[#9eb7a8]">
-                            +{analyses.length - 6} more
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
+        {/* Search Bar */}
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7f72]">
+            search
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by username or symbol..."
+            className="w-full bg-[#1a241f] text-white rounded-xl pl-11 pr-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
+            data-testid="input-search-community"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a7f72] hover:text-white"
+              data-testid="button-clear-search"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
           )}
         </div>
-
-        {/* Your Reports Section */}
-        {reports.length > 0 && (
-          <div className="p-4 space-y-4 mt-4 border-t border-[#2a3c33]">
-            <h2 className="text-white font-semibold text-lg">Your Reports</h2>
-            <div className="space-y-2">
-              {reports.slice(0, 3).map((report) => (
-                <div
-                  key={report.id}
-                  className="bg-[#1a241f] rounded-lg p-3 border border-[#2a3c33]"
-                  data-testid={`report-${report.id}`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-white font-semibold text-sm">{report.subject}</p>
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      report.status === "resolved" 
-                        ? "bg-[#38e07b]/20 text-[#38e07b]" 
-                        : report.status === "reviewing"
-                        ? "bg-blue-500/20 text-blue-500"
-                        : "bg-yellow-500/20 text-yellow-500"
-                    }`}>
-                      {report.status}
-                    </span>
-                  </div>
-                  <p className="text-[#9eb7a8] text-xs line-clamp-2">{report.message}</p>
-                  <p className="text-[#6a7f72] text-xs mt-2">
-                    {new Date(report.createdAt!).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-[#9eb7a8]">Loading feed...</div>
           </div>
-        )}
+        ) : feed.length === 0 ? (
+          <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
+            <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">group</span>
+            <h3 className="text-white font-semibold mb-2">No Analyses Yet</h3>
+            <p className="text-[#9eb7a8] text-sm mb-4">
+              The community is growing! Published analyses will appear here
+            </p>
+            <button
+              onClick={() => setLocation("/analyzer")}
+              className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
+              data-testid="button-start-analyzing"
+            >
+              Start Analyzing
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {(() => {
+              // Group analyses by user
+              const userGroups = feed.reduce((acc, item) => {
+                const userId = item.author.id;
+                if (!acc[userId]) {
+                  acc[userId] = {
+                    user: item.author,
+                    analyses: []
+                  };
+                }
+                acc[userId].analyses.push(item);
+                return acc;
+              }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
 
-        {/* Report Modal */}
-        <ReportModal
-          isOpen={showReportModal}
-          onClose={() => setShowReportModal(false)}
-          userId={userId!}
-          reportedUserId={reportTarget.userId}
-          reportedAnalysisId={reportTarget.analysisId}
-          defaultType={reportTarget.type}
-          title={
-            reportTarget.type === "abuse_user"
-              ? "Report User"
-              : reportTarget.type === "abuse_post"
-              ? "Report Analysis"
-              : "Submit Report"
-          }
-        />
+              // Filter groups based on search query
+              const filteredGroups = Object.values(userGroups).filter(({ user, analyses }) => {
+                if (!searchQuery.trim()) return true;
+                
+                const query = searchQuery.toLowerCase().trim();
+                const usernameMatch = (user.alias || user.name).toLowerCase().includes(query);
+                const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
+                
+                return usernameMatch || symbolMatch;
+              });
 
-        {/* Community Rules Modal */}
-        {showRulesModal && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#1a1f1c] rounded-xl max-w-md w-full p-6 border border-[#38e07b]">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined text-[#38e07b] text-3xl">group</span>
-                <h2 className="text-white font-bold text-xl">Welcome to the Community</h2>
-              </div>
+              // Show "no results" if search returns empty
+              if (filteredGroups.length === 0 && searchQuery.trim()) {
+                return (
+                  <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
+                    <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">search_off</span>
+                    <h3 className="text-white font-semibold mb-2">No Results Found</h3>
+                    <p className="text-[#9eb7a8] text-sm">
+                      No traders or symbols match "{searchQuery}"
+                    </p>
+                  </div>
+                );
+              }
 
-              {/* Saved Trades Check */}
-              <div className="bg-[#29382f] rounded-lg p-4 mb-4 border border-[#2a3c33]">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="material-symbols-outlined text-[#38e07b]">
-                    {analyses.length >= 10 ? "check_circle" : "cancel"}
-                  </span>
-                  <p className="text-white font-semibold">Minimum Requirement</p>
+              return filteredGroups.map(({ user: traderUser, analyses }) => (
+                <div
+                  key={traderUser.id}
+                  className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33]"
+                  data-testid={`trader-card-${traderUser.id}`}
+                >
+                  {/* Trader Header */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
+                      <span className="text-[#111714] font-bold">
+                        {(traderUser.alias || traderUser.name).charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">
+                        {traderUser.alias || traderUser.name}
+                      </p>
+                      <p className="text-[#6a7f72] text-xs">
+                        {analyses.length} {analyses.length === 1 ? 'analysis' : 'analyses'} published
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleReportUser(traderUser.id)}
+                      className="p-2 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
+                      data-testid={`button-report-user-${traderUser.id}`}
+                      title="Report user"
+                    >
+                      <span className="material-symbols-outlined text-lg">flag</span>
+                    </button>
+                    <button
+                      onClick={() => setLocation(`/trader/${traderUser.id}`)}
+                      className="px-3 py-1.5 bg-[#29382f] text-[#38e07b] text-xs font-semibold rounded-lg hover-elevate active-elevate-2"
+                      data-testid={`button-view-trader-${traderUser.id}`}
+                    >
+                      View Profile
+                    </button>
+                  </div>
+
+                  {/* Analysis Cards with Reactions */}
+                  <div className="space-y-3">
+                    {analyses.slice(0, 3).map((analysis) => (
+                      <div
+                        key={analysis.id}
+                        className="bg-[#111714] rounded-lg p-3 border border-[#2a3c33]"
+                      >
+                        {/* Analysis Header */}
+                        <div className="flex items-start justify-between mb-2">
+                          <button
+                            onClick={() => handleAnalysisClick(analysis.id)}
+                            className="flex-1 text-left"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                analysis.recommendation === "BUY"
+                                  ? "bg-[#38e07b]/20 text-[#38e07b]"
+                                  : "bg-red-500/20 text-red-500"
+                              }`}>
+                                {analysis.recommendation}
+                              </span>
+                              <span className="text-white font-semibold">
+                                {analysis.symbol}
+                              </span>
+                            </div>
+                            <p className="text-[#9eb7a8] text-xs mt-1 line-clamp-2">
+                              {analysis.marketSentiment?.substring(0, 100)}...
+                            </p>
+                          </button>
+                          <button
+                            onClick={(e) => handleReportAnalysis(analysis.id, e)}
+                            className="p-1 text-[#6a7f72] hover:text-red-500"
+                            data-testid={`button-report-analysis-${analysis.id}`}
+                            title="Report analysis"
+                          >
+                            <span className="material-symbols-outlined text-sm">flag</span>
+                          </button>
+                        </div>
+
+                        {/* Timestamp */}
+                        {analysis.createdAt && (
+                          <p className="text-[#6a7f72] text-xs mb-2">
+                            <span className="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
+                            {formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
+                          </p>
+                        )}
+
+                        {/* Reaction Buttons */}
+                        <ReactionButtons 
+                          analysisId={analysis.id} 
+                          userId={userId}
+                          showCounts={true}
+                        />
+                      </div>
+                    ))}
+                    {analyses.length > 3 && (
+                      <button
+                        onClick={() => setLocation(`/trader/${traderUser.id}`)}
+                        className="w-full px-3 py-2 rounded-lg text-sm font-semibold bg-[#29382f] text-[#9eb7a8] hover-elevate active-elevate-2"
+                      >
+                        View {analyses.length - 3} more {analyses.length - 3 === 1 ? 'analysis' : 'analyses'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[#9eb7a8] text-sm">
-                  You have <span className="text-[#38e07b] font-bold">{analyses.length}</span> saved {analyses.length === 1 ? "trade" : "trades"}.
-                  {analyses.length < 10 && ` You need ${10 - analyses.length} more to access the community.`}
-                </p>
-              </div>
-
-              {/* Community Rules */}
-              <div className="bg-[#29382f] rounded-lg p-4 mb-4 space-y-3">
-                <h3 className="text-white font-semibold text-sm mb-3">Community Guidelines</h3>
-                <div className="space-y-2 text-[#9eb7a8] text-xs">
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-[#38e07b] text-sm">check</span>
-                    <p>Share genuine insights and trading analysis</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-[#38e07b] text-sm">check</span>
-                    <p>Respect other traders and their opinions</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-red-500 text-sm">close</span>
-                    <p>No spam, promotional content, or market manipulation</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-red-500 text-sm">close</span>
-                    <p>No harassment, profanity, or inappropriate content</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-red-500 text-sm">close</span>
-                    <p>No guaranteed returns or financial advice claims</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Username Input */}
-              <div className="mb-4">
-                <label className="text-white text-sm font-medium mb-2 block">
-                  Choose Your Username <span className="text-[#6a7f72]">(max 10 characters)</span>
-                </label>
-                <input
-                  type="text"
-                  value={alias}
-                  onChange={(e) => setAlias(e.target.value.slice(0, 10))}
-                  placeholder="TrendMaster"
-                  maxLength={10}
-                  className="w-full bg-[#29382f] text-white rounded-lg px-4 py-3 border border-transparent focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
-                  data-testid="input-community-alias"
-                />
-                <p className="text-[#6a7f72] text-xs mt-1">{alias.length}/10 characters</p>
-              </div>
-
-              {/* Warning */}
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
-                <p className="text-yellow-500 text-xs">
-                  <span className="material-symbols-outlined text-sm align-middle mr-1">warning</span>
-                  Violation of community rules may result in account suspension or ban
-                </p>
-              </div>
-
-              {/* Accept Button */}
-              <button
-                onClick={handleAcceptRules}
-                disabled={isAcceptingRules || analyses.length < 10 || !alias.trim()}
-                className="w-full bg-[#38e07b] text-[#111714] font-bold py-3 rounded-lg hover:bg-[#2fc76a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid="button-accept-rules"
-              >
-                {isAcceptingRules ? "Joining..." : "I Accept - Join Community"}
-              </button>
-            </div>
+              ));
+            })()}
           </div>
         )}
       </div>
 
-      <BottomNav />
+      {/* Your Reports Section */}
+      {reports.length > 0 && (
+        <div className="p-4 space-y-4 mt-4 border-t border-[#2a3c33]">
+          <h2 className="text-white font-semibold text-lg">Your Reports</h2>
+          <div className="space-y-2">
+            {reports.slice(0, 3).map((report) => (
+              <div
+                key={report.id}
+                className="bg-[#1a241f] rounded-lg p-3 border border-[#2a3c33]"
+                data-testid={`report-${report.id}`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <p className="text-white font-semibold text-sm">{report.subject}</p>
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                    report.status === "resolved" 
+                      ? "bg-[#38e07b]/20 text-[#38e07b]" 
+                      : report.status === "reviewing"
+                      ? "bg-blue-500/20 text-blue-500"
+                      : "bg-yellow-500/20 text-yellow-500"
+                  }`}>
+                    {report.status}
+                  </span>
+                </div>
+                <p className="text-[#9eb7a8] text-xs line-clamp-2">{report.message}</p>
+                <p className="text-[#6a7f72] text-xs mt-2">
+                  {new Date(report.createdAt!).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        userId={userId!}
+        reportedUserId={reportTarget.userId || null}
+        reportedAnalysisId={reportTarget.analysisId || null}
+      />
+
+      {/* Version Guard Modal */}
       <UpdateModal />
+
+      <BottomNav />
     </div>
   );
 }
