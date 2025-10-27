@@ -19,7 +19,7 @@ export default function BottomNav() {
     { path: "/analyzer", icon: "analytics", label: t.analyzer, testId: "nav-analyzer" },
     { path: "/saved", icon: "bookmark", label: "Saved", testId: "nav-saved" },
     { path: "/community", icon: "group", label: "Community", testId: "nav-community", badge: unreadCount },
-    { path: "/buy-tokens", icon: "add_circle", label: "Buy Tokens", testId: "nav-buy-tokens" },
+    { path: "/privacy", icon: "policy", label: t.policy || "Policy", testId: "nav-policy" },
   ];
 
   return (

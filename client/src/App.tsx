@@ -19,6 +19,8 @@ import Community from "@/pages/Community";
 import TraderProfile from "@/pages/TraderProfile";
 import Messages from "@/pages/Messages";
 import Admin from "@/pages/Admin";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import ContactUs from "@/pages/ContactUs";
 import NotFound from "@/pages/not-found";
 
 function SmartRouter() {
@@ -57,6 +59,8 @@ function SmartRouter() {
       <Route path="/messages" component={Messages} />
       <Route path="/messages/:chatUserId" component={Messages} />
       <Route path="/admin" component={Admin} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/contact" component={ContactUs} />
       <Route component={NotFound} />
     </Switch>
   );
