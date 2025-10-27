@@ -1,5 +1,5 @@
 {
-  "sourcePriority": ["correctedSymbol", "symbol", "assetName", "instrumentName"],
+  "sourcePriority": ["correctedSymbol", "symbol"],
   "transforms": [
     {
       "type": "uppercase"
@@ -13,54 +13,59 @@
       "pattern": "\\.NS$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "NSE:",
-      "comment": "Indian NSE stocks"
+      "comment": "Indian NSE stocks - remove .NS suffix"
     },
     {
       "pattern": "\\.BO$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "BSE:",
-      "comment": "Indian BSE stocks"
+      "comment": "Indian BSE stocks - remove .BO suffix"
     },
     {
       "pattern": "\\.L$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "LSE:",
-      "comment": "London stocks"
+      "comment": "London stocks - remove .L suffix"
     },
     {
       "pattern": "\\.T$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "TSE:",
-      "comment": "Tokyo stocks"
+      "comment": "Tokyo stocks - remove .T suffix"
     },
     {
       "pattern": "\\.HK$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "HKEX:",
-      "comment": "Hong Kong stocks"
+      "comment": "Hong Kong stocks - remove .HK suffix"
     },
     {
       "pattern": "\\.AX$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "ASX:",
-      "comment": "Australian stocks"
+      "comment": "Australian stocks - remove .AX suffix"
     },
     {
       "pattern": "\\.TO$",
       "type": "regex",
       "action": "extractBase",
-      "prefix": "TSX:",
-      "comment": "Toronto stocks"
+      "comment": "Toronto stocks - remove .TO suffix"
+    },
+    {
+      "pattern": "\\.DE$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "German stocks - remove .DE suffix"
+    },
+    {
+      "pattern": "\\.PA$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Paris stocks - remove .PA suffix"
     }
   ],
   "fallback": {
     "useAsIs": true,
-    "comment": "US stocks - TradingView auto-detects NYSE/NASDAQ"
+    "comment": "Use ticker as-is for other markets (e.g., US stocks)"
   }
 }

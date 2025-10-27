@@ -12,60 +12,66 @@
     {
       "pattern": "GC=F",
       "type": "exact",
-      "replacement": "TVC:GOLD",
-      "comment": "Gold futures → Gold spot"
+      "replacement": "GOLD",
+      "comment": "Gold futures → plain name"
     },
     {
       "pattern": "SI=F",
       "type": "exact",
-      "replacement": "TVC:SILVER",
-      "comment": "Silver futures → Silver spot"
+      "replacement": "SILVER",
+      "comment": "Silver futures → plain name"
     },
     {
       "pattern": "CL=F",
       "type": "exact",
-      "replacement": "TVC:USOIL",
-      "comment": "Crude Oil futures → Crude Oil spot"
+      "replacement": "CRUDE OIL",
+      "comment": "Crude Oil futures → plain name"
     },
     {
       "pattern": "NG=F",
       "type": "exact",
-      "replacement": "TVC:NATURALGAS",
-      "comment": "Natural Gas futures → Natural Gas spot"
+      "replacement": "NATURAL GAS",
+      "comment": "Natural Gas futures → plain name"
     },
     {
       "pattern": "HG=F",
       "type": "exact",
-      "replacement": "TVC:COPPER",
-      "comment": "Copper futures → Copper spot"
+      "replacement": "COPPER",
+      "comment": "Copper futures → plain name"
     },
     {
       "pattern": "ZC=F",
       "type": "exact",
-      "replacement": "CBOT:ZC1!",
-      "comment": "Corn futures"
+      "replacement": "CORN",
+      "comment": "Corn futures → plain name"
     },
     {
       "pattern": "ZW=F",
       "type": "exact",
-      "replacement": "CBOT:ZW1!",
-      "comment": "Wheat futures"
+      "replacement": "WHEAT",
+      "comment": "Wheat futures → plain name"
     },
     {
       "pattern": "PL=F",
       "type": "exact",
-      "replacement": "TVC:PLATINUM",
-      "comment": "Platinum futures → Platinum spot"
+      "replacement": "PLATINUM",
+      "comment": "Platinum futures → plain name"
     },
     {
       "pattern": "PA=F",
       "type": "exact",
-      "replacement": "TVC:PALLADIUM",
-      "comment": "Palladium futures → Palladium spot"
+      "replacement": "PALLADIUM",
+      "comment": "Palladium futures → plain name"
+    },
+    {
+      "pattern": "BZ=F",
+      "type": "exact",
+      "replacement": "BRENT CRUDE OIL",
+      "comment": "Brent Crude futures → plain name"
     }
   ],
   "fallback": {
     "removeSuffix": "=F",
-    "comment": "Remove futures suffix for other commodities"
+    "comment": "Remove futures suffix for unmapped commodities"
   }
 }
