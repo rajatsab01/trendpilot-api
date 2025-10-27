@@ -43,6 +43,24 @@ export default function Community() {
     enabled: !!userId && user?.rulesAccepted === 1,
   });
 
+  // Fetch pinned traders
+  type PinnedTrader = {
+    id: string;
+    name: string;
+    alias: string | null;
+    publishedCount: number;
+  };
+  
+  const { data: pinnedTraders = [] } = useQuery<PinnedTrader[]>({
+    queryKey: ["/api/community/pinned-traders", userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/community/pinned/${userId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!userId && user?.rulesAccepted === 1,
+  });
+
   // Fetch user's reports
   const { data: reports = [] } = useQuery<Report[]>({
     queryKey: ["/api/reports", userId],
@@ -226,6 +244,42 @@ export default function Community() {
             </button>
           )}
         </div>
+
+        {/* Pinned Traders Section */}
+        {pinnedTraders.length > 0 && !searchQuery && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#38e07b] text-lg">push_pin</span>
+              <h2 className="text-white font-semibold text-sm">Pinned Traders</h2>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {pinnedTraders.map((trader) => (
+                <button
+                  key={trader.id}
+                  onClick={() => setLocation(`/trader/${trader.id}`)}
+                  className="flex-shrink-0 bg-[#1a241f] rounded-xl p-3 border border-[#38e07b]/30 hover-elevate active-elevate-2 min-w-[140px]"
+                  data-testid={`pinned-trader-${trader.id}`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
+                      <span className="text-[#38e07b] text-lg font-bold">
+                        {(trader.alias || trader.name).charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white font-semibold text-sm truncate max-w-[120px]">
+                        {trader.alias || trader.name}
+                      </p>
+                      <p className="text-[#6a7f72] text-xs">
+                        {trader.publishedCount} {trader.publishedCount === 1 ? 'post' : 'posts'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
