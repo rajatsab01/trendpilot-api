@@ -220,59 +220,84 @@ export default function Community() {
         </div>
       )}
 
-      <div className="p-4 space-y-4">
-        <h1 className="text-white text-2xl font-bold">{t.community}</h1>
-
-        {/* Search Bar */}
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7f72]">
-            search
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.searchByUsername}
-            className="w-full bg-[#1a241f] text-white rounded-xl pl-11 pr-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
-            data-testid="input-search-community"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a7f72] hover:text-white"
-              data-testid="button-clear-search"
-            >
-              <span className="material-symbols-outlined text-xl">close</span>
-            </button>
-          )}
+      <div className="space-y-3">
+        {/* Header */}
+        <div className="px-4 pt-4">
+          <h1 className="text-white text-2xl font-bold">{t.community}</h1>
         </div>
+
+        {/* Active Traders Horizontal Scroll Banner */}
+        {!searchQuery && feed.length > 0 && (
+          <div className="space-y-2 px-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#38e07b] text-lg">group</span>
+              <h2 className="text-white font-semibold text-sm">{t.activeTraders || "Active Traders"}</h2>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+              {(() => {
+                // Get unique traders from feed
+                const uniqueTraders = Array.from(
+                  new Map(feed.map(item => [item.author.id, item.author])).values()
+                );
+                
+                return uniqueTraders.map((trader) => {
+                  const traderAnalyses = feed.filter(a => a.author.id === trader.id);
+                  return (
+                    <button
+                      key={trader.id}
+                      onClick={() => setLocation(`/trader/${trader.id}`)}
+                      className="flex-shrink-0 bg-[#1a241f] rounded-lg p-2 border border-[#2a3c33] hover-elevate active-elevate-2 w-[120px]"
+                      data-testid={`active-trader-${trader.id}`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className="w-10 h-10 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
+                          <span className="text-[#38e07b] text-sm font-bold">
+                            {trader.alias?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        </div>
+                        <div className="text-center w-full">
+                          <p className="text-white font-semibold text-xs truncate">
+                            {trader.alias || 'Anonymous'}
+                          </p>
+                          <p className="text-[#6a7f72] text-[10px]">
+                            {traderAnalyses.length} {t.posts || "posts"}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Pinned Traders Section */}
         {pinnedTraders.length > 0 && !searchQuery && (
-          <div className="space-y-2">
+          <div className="space-y-2 px-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#38e07b] text-lg">push_pin</span>
               <h2 className="text-white font-semibold text-sm">{t.pinnedTraders}</h2>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
               {pinnedTraders.map((trader) => (
                 <button
                   key={trader.id}
                   onClick={() => setLocation(`/trader/${trader.id}`)}
-                  className="flex-shrink-0 bg-[#1a241f] rounded-xl p-3 border border-[#38e07b]/30 hover-elevate active-elevate-2 min-w-[140px]"
+                  className="flex-shrink-0 bg-[#1a241f] rounded-lg p-2 border border-[#38e07b]/30 hover-elevate active-elevate-2 w-[120px]"
                   data-testid={`pinned-trader-${trader.id}`}
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
-                      <span className="text-[#38e07b] text-lg font-bold">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
+                      <span className="text-[#38e07b] text-sm font-bold">
                         {trader.alias?.charAt(0).toUpperCase() || '?'}
                       </span>
                     </div>
-                    <div className="text-center">
-                      <p className="text-white font-semibold text-sm truncate max-w-[120px]">
+                    <div className="text-center w-full">
+                      <p className="text-white font-semibold text-xs truncate">
                         {trader.alias || 'Anonymous'}
                       </p>
-                      <p className="text-[#6a7f72] text-xs">
+                      <p className="text-[#6a7f72] text-[10px]">
                         {trader.publishedCount} {trader.publishedCount === 1 ? t.post : t.posts}
                       </p>
                     </div>
@@ -282,6 +307,32 @@ export default function Community() {
             </div>
           </div>
         )}
+
+        {/* Search Bar */}
+        <div className="px-4">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7f72]">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.searchByUsername}
+              className="w-full bg-[#1a241f] text-white rounded-xl pl-11 pr-4 py-2.5 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72] text-sm"
+              data-testid="input-search-community"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a7f72] hover:text-white"
+                data-testid="button-clear-search"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            )}
+          </div>
+        </div>
         
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -303,7 +354,7 @@ export default function Community() {
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="px-4 space-y-2">
             {(() => {
               // Group analyses by user
               const userGroups = feed.reduce((acc, item) => {
@@ -332,10 +383,10 @@ export default function Community() {
               // Show "no results" if search returns empty
               if (filteredGroups.length === 0 && searchQuery.trim()) {
                 return (
-                  <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
-                    <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">search_off</span>
-                    <h3 className="text-white font-semibold mb-2">{t.noResultsFound}</h3>
-                    <p className="text-[#9eb7a8] text-sm">
+                  <div className="bg-[#1a241f] rounded-xl p-6 text-center border border-[#2a3c33]">
+                    <span className="material-symbols-outlined text-[#6a7f72] text-4xl mb-2 block">search_off</span>
+                    <h3 className="text-white font-semibold text-sm mb-1">{t.noResultsFound}</h3>
+                    <p className="text-[#9eb7a8] text-xs">
                       {t.noMatchingTraders.replace('{query}', searchQuery)}
                     </p>
                   </div>
@@ -345,73 +396,73 @@ export default function Community() {
               return filteredGroups.map(({ user: traderUser, analyses }) => (
                 <div
                   key={traderUser.id}
-                  className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33]"
+                  className="bg-[#1a241f] rounded-lg p-3 border border-[#2a3c33]"
                   data-testid={`trader-card-${traderUser.id}`}
                 >
-                  {/* Trader Header */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
-                      <span className="text-[#111714] font-bold">
+                  {/* Trader Header - Compact */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
+                      <span className="text-[#111714] text-sm font-bold">
                         {traderUser.alias?.charAt(0).toUpperCase() || '?'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm truncate">
+                      <p className="text-white font-semibold text-xs truncate">
                         {traderUser.alias || 'Anonymous'}
                       </p>
-                      <p className="text-[#6a7f72] text-xs">
-                        {analyses.length} {analyses.length === 1 ? t.analysis : t.analyses} {t.published}
+                      <p className="text-[#6a7f72] text-[10px]">
+                        {analyses.length} {analyses.length === 1 ? t.analysis : t.analyses}
                       </p>
                     </div>
                     <button
                       onClick={() => handleReportUser(traderUser.id)}
-                      className="p-2 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
+                      className="p-1 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
                       data-testid={`button-report-user-${traderUser.id}`}
                       title={t.reportUser}
                     >
-                      <span className="material-symbols-outlined text-lg">flag</span>
+                      <span className="material-symbols-outlined text-base">flag</span>
                     </button>
                     <button
                       onClick={() => setLocation(`/trader/${traderUser.id}`)}
-                      className="px-3 py-1.5 bg-[#29382f] text-[#38e07b] text-xs font-semibold rounded-lg hover-elevate active-elevate-2"
+                      className="px-2 py-1 bg-[#29382f] text-[#38e07b] text-[10px] font-semibold rounded-md hover-elevate active-elevate-2"
                       data-testid={`button-view-trader-${traderUser.id}`}
                     >
                       {t.viewProfile}
                     </button>
                   </div>
 
-                  {/* Analysis Cards with Reactions */}
-                  <div className="space-y-3">
+                  {/* Analysis Cards with Reactions - Compact */}
+                  <div className="space-y-2">
                     {analyses.slice(0, 3).map((analysis) => (
                       <div
                         key={analysis.id}
-                        className="bg-[#111714] rounded-lg p-3 border border-[#2a3c33]"
+                        className="bg-[#111714] rounded-lg p-2 border border-[#2a3c33]"
                       >
-                        {/* Analysis Header */}
-                        <div className="flex items-start justify-between mb-2">
+                        {/* Analysis Header - Compact */}
+                        <div className="flex items-start justify-between mb-1.5">
                           <button
                             onClick={() => handleAnalysisClick(analysis.id)}
                             className="flex-1 text-left"
                           >
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            <div className="flex items-center gap-1.5">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                 analysis.recommendation === "BUY"
                                   ? "bg-[#38e07b]/20 text-[#38e07b]"
                                   : "bg-red-500/20 text-red-500"
                               }`}>
                                 {analysis.recommendation}
                               </span>
-                              <span className="text-white font-semibold">
+                              <span className="text-white font-semibold text-xs">
                                 {analysis.symbol}
                               </span>
                             </div>
-                            <p className="text-[#9eb7a8] text-xs mt-1 line-clamp-2">
-                              {analysis.marketSentiment?.substring(0, 100)}...
+                            <p className="text-[#9eb7a8] text-[10px] mt-0.5 line-clamp-1">
+                              {analysis.marketSentiment?.substring(0, 80)}...
                             </p>
                           </button>
                           <button
                             onClick={(e) => handleReportAnalysis(analysis.id, e)}
-                            className="p-1 text-[#6a7f72] hover:text-red-500"
+                            className="p-0.5 text-[#6a7f72] hover:text-red-500"
                             data-testid={`button-report-analysis-${analysis.id}`}
                             title="Report analysis"
                           >
@@ -419,15 +470,15 @@ export default function Community() {
                           </button>
                         </div>
 
-                        {/* Timestamp */}
+                        {/* Timestamp - Compact */}
                         {analysis.createdAt && (
-                          <p className="text-[#6a7f72] text-xs mb-2">
-                            <span className="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
-                            {format(new Date(analysis.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                          <p className="text-[#6a7f72] text-[9px] mb-1.5">
+                            <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">schedule</span>
+                            {format(new Date(analysis.createdAt), "MMM dd, h:mm a")}
                           </p>
                         )}
 
-                        {/* Reaction Buttons */}
+                        {/* Reaction Buttons - Compact */}
                         <ReactionButtons 
                           analysisId={analysis.id} 
                           userId={userId}
@@ -438,7 +489,7 @@ export default function Community() {
                     {analyses.length > 3 && (
                       <button
                         onClick={() => setLocation(`/trader/${traderUser.id}`)}
-                        className="w-full px-3 py-2 rounded-lg text-sm font-semibold bg-[#29382f] text-[#9eb7a8] hover-elevate active-elevate-2"
+                        className="w-full px-2 py-1.5 rounded-md text-xs font-semibold bg-[#29382f] text-[#9eb7a8] hover-elevate active-elevate-2"
                       >
                         {t.viewMore.replace('{count}', (analyses.length - 3).toString()).replace('{item}', analyses.length - 3 === 1 ? t.analysis : t.analyses)}
                       </button>
