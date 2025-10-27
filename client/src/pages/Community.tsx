@@ -21,6 +21,7 @@ export default function Community() {
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [alias, setAlias] = useState("");
   const [isAcceptingRules, setIsAcceptingRules] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const userId = localStorage.getItem("userId");
 
@@ -205,7 +206,33 @@ export default function Community() {
 
         {/* Community Feed */}
         <div className="p-4 space-y-4">
-          <h2 className="text-white font-semibold text-lg">Trading Feed</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-white font-semibold text-lg">Trading Feed</h2>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7f72] text-xl">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by username or symbol..."
+              className="w-full bg-[#1a241f] text-white rounded-xl pl-11 pr-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
+              data-testid="input-search-community"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a7f72] hover:text-white"
+                data-testid="button-clear-search"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            )}
+          </div>
           
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -242,7 +269,35 @@ export default function Community() {
                   return acc;
                 }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
 
-                return Object.values(userGroups).map(({ user, analyses }) => (
+                // Filter groups based on search query
+                const filteredGroups = Object.values(userGroups).filter(({ user, analyses }) => {
+                  if (!searchQuery.trim()) return true; // Show all if no search query
+                  
+                  const query = searchQuery.toLowerCase().trim();
+                  
+                  // Check if username/alias matches
+                  const usernameMatch = (user.alias || user.name).toLowerCase().includes(query);
+                  
+                  // Check if any analysis symbol matches
+                  const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
+                  
+                  return usernameMatch || symbolMatch;
+                });
+
+                // Show "no results" if search returns empty
+                if (filteredGroups.length === 0 && searchQuery.trim()) {
+                  return (
+                    <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
+                      <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">search_off</span>
+                      <h3 className="text-white font-semibold mb-2">No Results Found</h3>
+                      <p className="text-[#9eb7a8] text-sm">
+                        No traders or symbols match "{searchQuery}"
+                      </p>
+                    </div>
+                  );
+                }
+
+                return filteredGroups.map(({ user, analyses }) => (
                   <div
                     key={user.id}
                     className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33]"
