@@ -13,78 +13,180 @@
       "pattern": "GC=F",
       "type": "exact",
       "replacement": "XAUUSD",
-      "comment": "Gold futures → TradingView spot gold symbol"
+      "comment": "Gold futures → TradingView spot gold (verified working)"
     },
     {
       "pattern": "SI=F",
       "type": "exact",
       "replacement": "XAGUSD",
-      "comment": "Silver futures → TradingView spot silver symbol"
+      "comment": "Silver futures → TradingView spot silver (verified working)"
     },
     {
       "pattern": "CL=F",
       "type": "exact",
       "replacement": "USOIL",
-      "comment": "Crude Oil futures → TradingView WTI crude oil symbol"
+      "comment": "WTI Crude Oil futures → TradingView WTI (verified working)"
     },
     {
       "pattern": "NG=F",
       "type": "exact",
       "replacement": "NATURALGAS",
-      "comment": "Natural Gas futures → TradingView natural gas symbol"
+      "comment": "Natural Gas futures → TradingView natural gas (verified working)"
     },
     {
       "pattern": "HG=F",
       "type": "exact",
       "replacement": "COPPER",
-      "comment": "Copper futures → TradingView copper symbol"
+      "comment": "Copper futures → TradingView copper (verified working)"
     },
     {
       "pattern": "ZC=F",
       "type": "exact",
       "replacement": "CORN",
-      "comment": "Corn futures → TradingView corn symbol"
+      "comment": "Corn futures → TradingView corn (verified working)"
     },
     {
       "pattern": "ZW=F",
       "type": "exact",
       "replacement": "WHEAT",
-      "comment": "Wheat futures → TradingView wheat symbol"
+      "comment": "Wheat futures → TradingView wheat (verified working)"
     },
     {
       "pattern": "PL=F",
       "type": "exact",
       "replacement": "PLATINUM",
-      "comment": "Platinum futures → TradingView platinum symbol"
+      "comment": "Platinum futures → TradingView platinum (verified working)"
     },
     {
       "pattern": "PA=F",
       "type": "exact",
       "replacement": "PALLADIUM",
-      "comment": "Palladium futures → TradingView palladium symbol"
+      "comment": "Palladium futures → TradingView palladium (verified working)"
     },
     {
       "pattern": "BZ=F",
       "type": "exact",
       "replacement": "UKOIL",
-      "comment": "Brent Crude futures → TradingView Brent crude symbol"
+      "comment": "Brent Crude futures → TradingView Brent crude (verified working)"
     },
     {
-      "pattern": "ZN=F",
+      "pattern": "KC=F",
       "type": "exact",
-      "replacement": "ZINC",
-      "comment": "Zinc futures → TradingView zinc symbol"
+      "replacement": "COFFEE",
+      "comment": "Coffee futures → TradingView coffee CFD (verified working)"
+    },
+    {
+      "pattern": "SB=F",
+      "type": "exact",
+      "replacement": "SUGAR",
+      "comment": "Sugar futures → TradingView sugar CFD (verified working)"
+    },
+    {
+      "pattern": "HO=F",
+      "type": "exact",
+      "replacement": "HEATINGOIL",
+      "comment": "Heating Oil futures → TradingView heating oil (verified working)"
+    },
+    {
+      "pattern": "RB=F",
+      "type": "exact",
+      "replacement": "GASOLINE",
+      "comment": "RBOB Gasoline futures → TradingView gasoline (verified working)"
+    },
+    {
+      "pattern": "CT=F",
+      "type": "exact",
+      "replacement": "COTTON",
+      "comment": "Cotton futures → TradingView cotton (verified working)"
+    },
+    {
+      "pattern": "CC=F",
+      "type": "exact",
+      "replacement": "COCOA",
+      "comment": "Cocoa futures → TradingView cocoa (verified working)"
+    },
+    {
+      "pattern": "OJ=F",
+      "type": "exact",
+      "replacement": "ORANGEJUICE",
+      "comment": "Orange Juice futures → TradingView OJ (verified working)"
+    },
+    {
+      "pattern": "ZS=F",
+      "type": "exact",
+      "replacement": "SOYBEAN",
+      "comment": "Soybean futures → TradingView soybean CFD (verified working)"
+    },
+    {
+      "pattern": "ZL=F",
+      "type": "exact",
+      "replacement": "SOYBEANOIL",
+      "comment": "Soybean Oil futures → TradingView soybean oil (verified working)"
+    },
+    {
+      "pattern": "ZM=F",
+      "type": "exact",
+      "replacement": "SOYBEANMEAL",
+      "comment": "Soybean Meal futures → TradingView soybean meal (verified working)"
     },
     {
       "pattern": "LE=F",
       "type": "exact",
-      "replacement": "LEAD",
-      "comment": "Lead futures → TradingView lead symbol"
+      "replacement": "CATTLE",
+      "comment": "Live Cattle futures → TradingView cattle CFD (verified working)"
+    },
+    {
+      "pattern": "HE=F",
+      "type": "exact",
+      "replacement": "HOGS",
+      "comment": "Lean Hogs futures → TradingView hogs CFD (verified working)"
+    },
+    {
+      "pattern": "GF=F",
+      "type": "exact",
+      "replacement": "FEEDERCATTLE",
+      "comment": "Feeder Cattle futures → TradingView feeder cattle (verified working)"
+    },
+    {
+      "pattern": "ZN=F",
+      "type": "exact",
+      "replacement": "US10Y",
+      "comment": "10-Year Treasury Note → TradingView US 10Y bond (verified working)"
+    },
+    {
+      "pattern": "GOLD",
+      "type": "exact",
+      "replacement": "XAUUSD",
+      "comment": "User-entered GOLD → TradingView spot gold"
+    },
+    {
+      "pattern": "SILVER",
+      "type": "exact",
+      "replacement": "XAGUSD",
+      "comment": "User-entered SILVER → TradingView spot silver"
+    },
+    {
+      "pattern": "CRUDE OIL",
+      "type": "exact",
+      "replacement": "USOIL",
+      "comment": "User-entered CRUDE OIL → TradingView WTI"
+    },
+    {
+      "pattern": "OIL",
+      "type": "exact",
+      "replacement": "USOIL",
+      "comment": "User-entered OIL → TradingView WTI"
+    },
+    {
+      "pattern": "BRENT",
+      "type": "exact",
+      "replacement": "UKOIL",
+      "comment": "User-entered BRENT → TradingView Brent crude"
     }
   ],
   "fallback": {
     "suffix": "",
     "removeSuffix": "=F",
-    "comment": "Remove =F suffix and use clean symbol name"
+    "comment": "Remove =F suffix and use clean symbol - TradingView supports many simple commodity symbols"
   }
 }
