@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
+import ReactionButtons from "@/components/ReactionButtons";
 import { Bookmark, BookmarkCheck, Share2, Download } from "lucide-react";
 import type { Analysis } from "@shared/schema";
 import html2canvas from "html2canvas";
@@ -848,6 +849,18 @@ export default function Analyzer() {
                   <span>{isExportingPDF ? t.exportingPDF : t.sharePDF}</span>
                 </button>
               </div>
+
+              {/* Reaction Buttons - Only show for published analyses */}
+              {analysis.isPublished === 1 && (
+                <div className="bg-[#1c2620] rounded-xl p-4 border border-[#2a3c33]">
+                  <p className="text-[#9eb7a8] text-sm mb-3">Community Reactions</p>
+                  <ReactionButtons 
+                    analysisId={analysis.id} 
+                    userId={userId} 
+                    showCounts={true}
+                  />
+                </div>
+              )}
               <button
                 onClick={() => setLocation("/dashboard")}
                 className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"

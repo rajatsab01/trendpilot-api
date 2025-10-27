@@ -142,6 +142,24 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Reactions - emoji reactions on published analyses (like, heart, dislike)
+export const reactions = pgTable("reactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // User who reacted
+  analysisId: varchar("analysis_id").notNull(), // Analysis being reacted to
+  reactionType: text("reaction_type").notNull(), // 'like', 'heart', 'dislike'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Pinned Traders - users can pin favorite traders to top of their community feed
+export const pinnedTraders = pgTable("pinned_traders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // User who pinned the trader
+  pinnedUserId: varchar("pinned_user_id").notNull(), // Trader being pinned
+  pinnedOrder: integer("pinned_order").notNull().default(0), // Order of pinned trader (0 = first, 1 = second, etc.)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas with proper validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -234,6 +252,24 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   reportedAnalysisId: z.string().nullable().optional(),
 });
 
+export const insertReactionSchema = createInsertSchema(reactions).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  userId: z.string().min(1, "User ID is required"),
+  analysisId: z.string().min(1, "Analysis ID is required"),
+  reactionType: z.enum(["like", "heart", "dislike"]),
+});
+
+export const insertPinnedTraderSchema = createInsertSchema(pinnedTraders).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  userId: z.string().min(1, "User ID is required"),
+  pinnedUserId: z.string().min(1, "Pinned User ID is required"),
+  pinnedOrder: z.number().int().min(0).default(0),
+});
+
 // Types derived from Drizzle tables
 export type User = typeof users.$inferSelect;
 export type Analysis = typeof analyses.$inferSelect;
@@ -243,6 +279,8 @@ export type Block = typeof blocks.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Report = typeof reports.$inferSelect;
+export type Reaction = typeof reactions.$inferSelect;
+export type PinnedTrader = typeof pinnedTraders.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertAnalysis = z.infer<typeof insertAnalysisSchema>;
@@ -252,6 +290,8 @@ export type InsertBlock = z.infer<typeof insertBlockSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertReport = z.infer<typeof insertReportSchema>;
+export type InsertReaction = z.infer<typeof insertReactionSchema>;
+export type InsertPinnedTrader = z.infer<typeof insertPinnedTraderSchema>;
 
 // Trade duration options
 export const tradeDurations = ["long_term", "short_term", "scalping"] as const;

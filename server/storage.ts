@@ -15,6 +15,10 @@ import {
   type InsertMessage,
   type Report,
   type InsertReport,
+  type Reaction,
+  type InsertReaction,
+  type PinnedTrader,
+  type InsertPinnedTrader,
   users,
   analyses,
   brokers,
@@ -23,6 +27,8 @@ import {
   notifications,
   messages,
   reports,
+  reactions,
+  pinnedTraders,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -98,6 +104,20 @@ export interface IStorage {
   createReport(report: InsertReport): Promise<Report>;
   getReports(userId?: string): Promise<Report[]>; // Admin gets all, users get their own
   updateReportStatus(id: string, status: string): Promise<Report | undefined>;
+
+  // Community - Reactions
+  addReaction(reaction: InsertReaction): Promise<Reaction>;
+  removeReaction(userId: string, analysisId: string, reactionType: string): Promise<boolean>;
+  getUserReaction(userId: string, analysisId: string): Promise<Reaction | undefined>;
+  getReactionCounts(analysisId: string): Promise<{ like: number; heart: number; dislike: number }>;
+  getAnalysisReactions(analysisId: string): Promise<Reaction[]>;
+
+  // Community - Pinned Traders
+  pinTrader(userId: string, pinnedUserId: string): Promise<PinnedTrader>;
+  unpinTrader(userId: string, pinnedUserId: string): Promise<boolean>;
+  reorderPinnedTrader(userId: string, pinnedUserId: string, newOrder: number): Promise<PinnedTrader | undefined>;
+  getPinnedTraders(userId: string): Promise<Array<PinnedTrader & { pinnedUser: User }>>;
+  isPinned(userId: string, pinnedUserId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -451,6 +471,46 @@ export class MemStorage implements IStorage {
   }
 
   async updateReportStatus(): Promise<Report | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async addReaction(): Promise<Reaction> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async removeReaction(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getUserReaction(): Promise<Reaction | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getReactionCounts(): Promise<{ like: number; heart: number; dislike: number }> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getAnalysisReactions(): Promise<Reaction[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async pinTrader(): Promise<PinnedTrader> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async unpinTrader(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async reorderPinnedTrader(): Promise<PinnedTrader | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getPinnedTraders(): Promise<Array<PinnedTrader & { pinnedUser: User }>> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async isPinned(): Promise<boolean> {
     throw new Error("Community features require PostgreSQL database");
   }
 }
@@ -1051,6 +1111,222 @@ export class PgStorage implements IStorage {
       .where(eq(reports.id, id))
       .returning();
     return result[0];
+  }
+
+  // Community - Reactions
+  async addReaction(insertReaction: InsertReaction): Promise<Reaction> {
+    // First, check if user already reacted with this type - if so, just return existing
+    const existing = await this.getUserReaction(insertReaction.userId, insertReaction.analysisId);
+    
+    if (existing) {
+      // If same reaction type, just return existing
+      if (existing.reactionType === insertReaction.reactionType) {
+        return existing;
+      }
+      // If different reaction type, update it
+      const result = await this.db
+        .update(reactions)
+        .set({ reactionType: insertReaction.reactionType })
+        .where(eq(reactions.id, existing.id))
+        .returning();
+      return result[0];
+    }
+
+    // Insert new reaction
+    const result = await this.db
+      .insert(reactions)
+      .values(insertReaction)
+      .returning();
+    return result[0];
+  }
+
+  async removeReaction(userId: string, analysisId: string, reactionType: string): Promise<boolean> {
+    const result = await this.db
+      .delete(reactions)
+      .where(
+        and(
+          eq(reactions.userId, userId),
+          eq(reactions.analysisId, analysisId),
+          eq(reactions.reactionType, reactionType)
+        )
+      )
+      .returning();
+    return result.length > 0;
+  }
+
+  async getUserReaction(userId: string, analysisId: string): Promise<Reaction | undefined> {
+    const result = await this.db
+      .select()
+      .from(reactions)
+      .where(
+        and(
+          eq(reactions.userId, userId),
+          eq(reactions.analysisId, analysisId)
+        )
+      );
+    return result[0];
+  }
+
+  async getReactionCounts(analysisId: string): Promise<{ like: number; heart: number; dislike: number }> {
+    const result = await this.db
+      .select()
+      .from(reactions)
+      .where(eq(reactions.analysisId, analysisId));
+
+    const counts = {
+      like: result.filter(r => r.reactionType === 'like').length,
+      heart: result.filter(r => r.reactionType === 'heart').length,
+      dislike: result.filter(r => r.reactionType === 'dislike').length,
+    };
+
+    return counts;
+  }
+
+  async getAnalysisReactions(analysisId: string): Promise<Reaction[]> {
+    return await this.db
+      .select()
+      .from(reactions)
+      .where(eq(reactions.analysisId, analysisId))
+      .orderBy(sql`${reactions.createdAt} DESC`);
+  }
+
+  // Community - Pinned Traders
+  async pinTrader(userId: string, pinnedUserId: string): Promise<PinnedTrader> {
+    // Check if already pinned
+    const existing = await this.isPinned(userId, pinnedUserId);
+    if (existing) {
+      // Return existing pinned trader
+      const result = await this.db
+        .select()
+        .from(pinnedTraders)
+        .where(
+          and(
+            eq(pinnedTraders.userId, userId),
+            eq(pinnedTraders.pinnedUserId, pinnedUserId)
+          )
+        );
+      return result[0];
+    }
+
+    // Get current max order for this user
+    const currentPinned = await this.db
+      .select()
+      .from(pinnedTraders)
+      .where(eq(pinnedTraders.userId, userId))
+      .orderBy(sql`${pinnedTraders.pinnedOrder} DESC`);
+    
+    const nextOrder = currentPinned.length > 0 ? currentPinned[0].pinnedOrder + 1 : 0;
+
+    // Insert new pinned trader
+    const result = await this.db
+      .insert(pinnedTraders)
+      .values({
+        userId,
+        pinnedUserId,
+        pinnedOrder: nextOrder,
+      })
+      .returning();
+    return result[0];
+  }
+
+  async unpinTrader(userId: string, pinnedUserId: string): Promise<boolean> {
+    const result = await this.db
+      .delete(pinnedTraders)
+      .where(
+        and(
+          eq(pinnedTraders.userId, userId),
+          eq(pinnedTraders.pinnedUserId, pinnedUserId)
+        )
+      )
+      .returning();
+    
+    // Reorder remaining pinned traders
+    if (result.length > 0) {
+      const remaining = await this.db
+        .select()
+        .from(pinnedTraders)
+        .where(eq(pinnedTraders.userId, userId))
+        .orderBy(sql`${pinnedTraders.pinnedOrder} ASC`);
+      
+      // Update orders to be sequential
+      for (let i = 0; i < remaining.length; i++) {
+        await this.db
+          .update(pinnedTraders)
+          .set({ pinnedOrder: i })
+          .where(eq(pinnedTraders.id, remaining[i].id));
+      }
+    }
+
+    return result.length > 0;
+  }
+
+  async reorderPinnedTrader(userId: string, pinnedUserId: string, newOrder: number): Promise<PinnedTrader | undefined> {
+    const pinned = await this.db
+      .select()
+      .from(pinnedTraders)
+      .where(
+        and(
+          eq(pinnedTraders.userId, userId),
+          eq(pinnedTraders.pinnedUserId, pinnedUserId)
+        )
+      );
+    
+    if (pinned.length === 0) return undefined;
+
+    const result = await this.db
+      .update(pinnedTraders)
+      .set({ pinnedOrder: newOrder })
+      .where(eq(pinnedTraders.id, pinned[0].id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async getPinnedTraders(userId: string): Promise<Array<PinnedTrader & { pinnedUser: User }>> {
+    const result = await this.db
+      .select({
+        id: pinnedTraders.id,
+        userId: pinnedTraders.userId,
+        pinnedUserId: pinnedTraders.pinnedUserId,
+        pinnedOrder: pinnedTraders.pinnedOrder,
+        createdAt: pinnedTraders.createdAt,
+        pinnedUser: {
+          id: users.id,
+          name: users.name,
+          mobile: users.mobile,
+          language: users.language,
+          currency: users.currency,
+          exchange: users.exchange,
+          tokens: users.tokens,
+          maxTokens: users.maxTokens,
+          pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
+          isAdmin: users.isAdmin,
+          alias: users.alias,
+          rulesAccepted: users.rulesAccepted,
+          lastSeen: users.lastSeen,
+          isBanned: users.isBanned,
+          createdAt: users.createdAt,
+        },
+      })
+      .from(pinnedTraders)
+      .innerJoin(users, eq(pinnedTraders.pinnedUserId, users.id))
+      .where(eq(pinnedTraders.userId, userId))
+      .orderBy(sql`${pinnedTraders.pinnedOrder} ASC`);
+
+    return result as Array<PinnedTrader & { pinnedUser: User }>;
+  }
+
+  async isPinned(userId: string, pinnedUserId: string): Promise<boolean> {
+    const result = await this.db
+      .select()
+      .from(pinnedTraders)
+      .where(
+        and(
+          eq(pinnedTraders.userId, userId),
+          eq(pinnedTraders.pinnedUserId, pinnedUserId)
+        )
+      );
+    return result.length > 0;
   }
 }
 

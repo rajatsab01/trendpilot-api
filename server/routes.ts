@@ -1629,6 +1629,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== REACTIONS ====================
+
+  // Add or update reaction to an analysis
+  app.post("/api/reactions", async (req, res) => {
+    try {
+      const { userId, analysisId, reactionType } = req.body;
+
+      if (!userId || !analysisId || !reactionType) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (!["like", "heart", "dislike"].includes(reactionType)) {
+        return res.status(400).json({ error: "Invalid reaction type" });
+      }
+
+      const reaction = await storage.addReaction({
+        userId,
+        analysisId,
+        reactionType,
+      });
+
+      res.json(reaction);
+    } catch (error) {
+      console.error("Add reaction error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Remove reaction from an analysis
+  app.delete("/api/reactions/:userId/:analysisId/:reactionType", async (req, res) => {
+    try {
+      const { userId, analysisId, reactionType } = req.params;
+
+      const success = await storage.removeReaction(userId, analysisId, reactionType);
+      res.json({ success });
+    } catch (error) {
+      console.error("Remove reaction error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get user's reaction for an analysis
+  app.get("/api/reactions/user/:userId/:analysisId", async (req, res) => {
+    try {
+      const { userId, analysisId } = req.params;
+
+      const reaction = await storage.getUserReaction(userId, analysisId);
+      res.json(reaction || null);
+    } catch (error) {
+      console.error("Get user reaction error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get reaction counts for an analysis
+  app.get("/api/reactions/counts/:analysisId", async (req, res) => {
+    try {
+      const { analysisId } = req.params;
+
+      const counts = await storage.getReactionCounts(analysisId);
+      res.json(counts);
+    } catch (error) {
+      console.error("Get reaction counts error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get all reactions for an analysis
+  app.get("/api/reactions/:analysisId", async (req, res) => {
+    try {
+      const { analysisId } = req.params;
+
+      const reactions = await storage.getAnalysisReactions(analysisId);
+      res.json(reactions);
+    } catch (error) {
+      console.error("Get analysis reactions error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ==================== PINNED TRADERS ====================
+
+  // Pin a trader
+  app.post("/api/community/pin", async (req, res) => {
+    try {
+      const { userId, pinnedUserId } = req.body;
+
+      if (!userId || !pinnedUserId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (userId === pinnedUserId) {
+        return res.status(400).json({ error: "Cannot pin yourself" });
+      }
+
+      const pinned = await storage.pinTrader(userId, pinnedUserId);
+      res.json(pinned);
+    } catch (error) {
+      console.error("Pin trader error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Unpin a trader
+  app.delete("/api/community/pin/:userId/:pinnedUserId", async (req, res) => {
+    try {
+      const { userId, pinnedUserId } = req.params;
+
+      const success = await storage.unpinTrader(userId, pinnedUserId);
+      res.json({ success });
+    } catch (error) {
+      console.error("Unpin trader error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Reorder pinned trader
+  app.patch("/api/community/pin/reorder", async (req, res) => {
+    try {
+      const { userId, pinnedUserId, newOrder } = req.body;
+
+      if (!userId || !pinnedUserId || newOrder === undefined) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const pinned = await storage.reorderPinnedTrader(userId, pinnedUserId, newOrder);
+
+      if (!pinned) {
+        return res.status(404).json({ error: "Pinned trader not found" });
+      }
+
+      res.json(pinned);
+    } catch (error) {
+      console.error("Reorder pinned trader error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get pinned traders
+  app.get("/api/community/pinned/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const pinned = await storage.getPinnedTraders(userId);
+      res.json(pinned);
+    } catch (error) {
+      console.error("Get pinned traders error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Check if trader is pinned
+  app.get("/api/community/is-pinned/:userId/:pinnedUserId", async (req, res) => {
+    try {
+      const { userId, pinnedUserId } = req.params;
+
+      const isPinned = await storage.isPinned(userId, pinnedUserId);
+      res.json({ isPinned });
+    } catch (error) {
+      console.error("Check if pinned error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Test all symbols in the database (admin only)
   app.post("/api/admin/test-symbols", async (req, res) => {
     try {

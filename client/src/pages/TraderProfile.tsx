@@ -108,6 +108,50 @@ export default function TraderProfile({ params }: { params: { traderId: string }
     },
   });
 
+  // Check if trader is pinned
+  const { data: isPinned = false } = useQuery<boolean>({
+    queryKey: ["/api/community/pinned", userId, traderId],
+    queryFn: async () => {
+      const response = await fetch(`/api/community/pinned/${userId}/${traderId}`);
+      if (!response.ok) return false;
+      const data = await response.json();
+      return data.isPinned;
+    },
+    enabled: !!userId && !!traderId && userId !== traderId,
+  });
+
+  // Pin/Unpin mutation
+  const pinMutation = useMutation({
+    mutationFn: async ({ action }: { action: "pin" | "unpin" }) => {
+      if (action === "pin") {
+        return apiRequest("POST", "/api/community/pin", {
+          userId,
+          traderId,
+        });
+      } else {
+        return fetch(`/api/community/pin/${userId}/${traderId}`, {
+          method: "DELETE",
+        });
+      }
+    },
+    onSuccess: async (_, { action }) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/community/pinned", userId, traderId] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/community/pinned-traders", userId] });
+      
+      toast({
+        title: "Success",
+        description: action === "pin" ? "Pinned trader for quick access" : "Unpinned trader",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update pin status",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFollow = async () => {
     const versionOk = await guardAction();
     if (!versionOk) return;
@@ -122,6 +166,14 @@ export default function TraderProfile({ params }: { params: { traderId: string }
 
     const action = profile?.relationship.isBlocked ? "unblock" : "block";
     blockMutation.mutate({ action });
+  };
+
+  const handlePin = async () => {
+    const versionOk = await guardAction();
+    if (!versionOk) return;
+
+    const action = isPinned ? "unpin" : "pin";
+    pinMutation.mutate({ action });
   };
 
   const handleMessage = async () => {
@@ -221,35 +273,54 @@ export default function TraderProfile({ params }: { params: { traderId: string }
 
               {/* Action Buttons */}
               {userId !== traderId && (
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={handleFollow}
-                    disabled={followMutation.isPending || profile.relationship.isBlocked}
-                    className={`px-4 py-2 rounded-xl font-semibold disabled:opacity-50 ${
-                      profile.relationship.isFollowing
-                        ? "bg-[#2a3c33] text-white"
-                        : "bg-[#38e07b] text-[#111714]"
-                    }`}
-                    data-testid="button-follow"
-                  >
-                    {profile.relationship.isFollowing ? "Unfollow" : "Follow"}
-                  </button>
-                  <button
-                    onClick={handleMessage}
-                    disabled={profile.relationship.isBlocked}
-                    className="bg-[#2a3c33] text-white px-4 py-2 rounded-xl font-semibold disabled:opacity-50"
-                    data-testid="button-message"
-                  >
-                    Message
-                  </button>
-                  <button
-                    onClick={handleBlock}
-                    disabled={blockMutation.isPending}
-                    className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl font-semibold"
-                    data-testid="button-block"
-                  >
-                    {profile.relationship.isBlocked ? "Unblock" : "Block"}
-                  </button>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleFollow}
+                      disabled={followMutation.isPending || profile.relationship.isBlocked}
+                      className={`px-4 py-2 rounded-xl font-semibold disabled:opacity-50 ${
+                        profile.relationship.isFollowing
+                          ? "bg-[#2a3c33] text-white"
+                          : "bg-[#38e07b] text-[#111714]"
+                      }`}
+                      data-testid="button-follow"
+                    >
+                      {profile.relationship.isFollowing ? "Unfollow" : "Follow"}
+                    </button>
+                    <button
+                      onClick={handlePin}
+                      disabled={pinMutation.isPending || profile.relationship.isBlocked}
+                      className={`px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-1 disabled:opacity-50 ${
+                        isPinned
+                          ? "bg-[#38e07b]/20 text-[#38e07b] border border-[#38e07b]"
+                          : "bg-[#2a3c33] text-white"
+                      }`}
+                      data-testid="button-pin"
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        {isPinned ? "push_pin" : "push_pin"}
+                      </span>
+                      {isPinned ? "Pinned" : "Pin"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleMessage}
+                      disabled={profile.relationship.isBlocked}
+                      className="bg-[#2a3c33] text-white px-4 py-2 rounded-xl font-semibold disabled:opacity-50"
+                      data-testid="button-message"
+                    >
+                      Message
+                    </button>
+                    <button
+                      onClick={handleBlock}
+                      disabled={blockMutation.isPending}
+                      className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl font-semibold"
+                      data-testid="button-block"
+                    >
+                      {profile.relationship.isBlocked ? "Unblock" : "Block"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
