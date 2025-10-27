@@ -11,6 +11,8 @@ import {
   type InsertBlock,
   type Notification,
   type InsertNotification,
+  type Message,
+  type InsertMessage,
   type Report,
   type InsertReport,
   users,
@@ -19,6 +21,7 @@ import {
   follows,
   blocks,
   notifications,
+  messages,
   reports,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -37,6 +40,12 @@ export interface IStorage {
   updateUserLanguage(id: string, language: string): Promise<User | undefined>;
   updateUserPreferences(id: string, updates: { currency?: string; language?: string; exchange?: string }): Promise<User | undefined>;
   markInstallBonusClaimed(id: string): Promise<User | undefined>;
+  updateAlias(id: string, alias: string): Promise<User | undefined>;
+  acceptCommunityRules(id: string): Promise<User | undefined>;
+  updateLastSeen(id: string): Promise<User | undefined>;
+  banUser(id: string): Promise<User | undefined>;
+  unbanUser(id: string): Promise<User | undefined>;
+  searchUsersByAlias(query: string): Promise<User[]>;
 
   // Analyses
   getAnalysis(id: string): Promise<Analysis | undefined>;
@@ -72,6 +81,13 @@ export interface IStorage {
   getNotifications(userId: string): Promise<Notification[]>;
   markNotificationAsRead(id: string): Promise<Notification | undefined>;
   getUnreadNotificationCount(userId: string): Promise<number>;
+
+  // Community - Messages
+  sendMessage(message: InsertMessage): Promise<Message>;
+  getConversation(userId1: string, userId2: string): Promise<Message[]>;
+  getRecentConversations(userId: string): Promise<Array<Message & { otherUser: User }>>;
+  markMessageAsRead(id: string): Promise<Message | undefined>;
+  getUnreadMessageCount(userId: string): Promise<number>;
 
   // Community - Published Analyses
   publishAnalysis(id: string): Promise<Analysis | undefined>;
@@ -109,9 +125,15 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      exchange: insertUser.exchange ?? null,
       currency: insertUser.currency ?? "USD",
       maxTokens: insertUser.maxTokens ?? 20,
       pwaInstallBonusClaimed: insertUser.pwaInstallBonusClaimed ?? 0,
+      isAdmin: insertUser.isAdmin ?? 0,
+      alias: insertUser.alias ?? null,
+      rulesAccepted: insertUser.rulesAccepted ?? 0,
+      lastSeen: insertUser.lastSeen ?? null,
+      isBanned: insertUser.isBanned ?? 0,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -197,6 +219,7 @@ export class MemStorage implements IStorage {
       assetName: insertAnalysis.assetName ?? null,
       instrumentName: insertAnalysis.instrumentName ?? null,
       currency: insertAnalysis.currency ?? "USD",
+      exchange: insertAnalysis.exchange ?? null,
       currentPrice: insertAnalysis.currentPrice ?? null,
       livePrice: insertAnalysis.livePrice ?? null,
       candleClosePrice: insertAnalysis.candleClosePrice ?? null,
@@ -226,8 +249,11 @@ export class MemStorage implements IStorage {
       probabilityScore: insertAnalysis.probabilityScore ?? null,
       explanatoryNotes: insertAnalysis.explanatoryNotes ?? null,
       isSaved: insertAnalysis.isSaved ?? 0,
+      isPublished: insertAnalysis.isPublished ?? 0,
       tradeStatus: insertAnalysis.tradeStatus ?? "active",
       actualProfit: insertAnalysis.actualProfit ?? null,
+      sourceCurrency: insertAnalysis.sourceCurrency ?? null,
+      exchangeRate: insertAnalysis.exchangeRate ?? null,
       id,
       createdAt: new Date(),
     };
@@ -306,6 +332,31 @@ export class MemStorage implements IStorage {
     return this.brokers.delete(id);
   }
 
+  // Community user methods - Not implemented in MemStorage (PostgreSQL only)
+  async updateAlias(): Promise<User | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async acceptCommunityRules(): Promise<User | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async updateLastSeen(): Promise<User | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async banUser(): Promise<User | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async unbanUser(): Promise<User | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async searchUsersByAlias(): Promise<User[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
   // Community methods - Not implemented in MemStorage (PostgreSQL only)
   async followUser(): Promise<Follow> {
     throw new Error("Community features require PostgreSQL database");
@@ -356,6 +407,26 @@ export class MemStorage implements IStorage {
   }
 
   async getUnreadNotificationCount(): Promise<number> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async sendMessage(): Promise<Message> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getConversation(): Promise<Message[]> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getRecentConversations(): Promise<Array<Message & { otherUser: User }>> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async markMessageAsRead(): Promise<Message | undefined> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getUnreadMessageCount(): Promise<number> {
     throw new Error("Community features require PostgreSQL database");
   }
 
@@ -472,6 +543,60 @@ export class PgStorage implements IStorage {
     return result[0];
   }
 
+  async updateAlias(id: string, alias: string): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set({ alias })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async acceptCommunityRules(id: string): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set({ rulesAccepted: 1 })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateLastSeen(id: string): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set({ lastSeen: sql`NOW()` })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async banUser(id: string): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set({ isBanned: 1 })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async unbanUser(id: string): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set({ isBanned: 0 })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async searchUsersByAlias(query: string): Promise<User[]> {
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(sql`${users.alias} ILIKE ${`%${query}%`}`)
+      .limit(20);
+    return result;
+  }
+
   // Analyses
   async getAnalysis(id: string): Promise<Analysis | undefined> {
     const result = await this.db.select().from(analyses).where(eq(analyses.id, id));
@@ -582,6 +707,10 @@ export class PgStorage implements IStorage {
         maxTokens: users.maxTokens,
         pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
         isAdmin: users.isAdmin,
+        alias: users.alias,
+        rulesAccepted: users.rulesAccepted,
+        lastSeen: users.lastSeen,
+        isBanned: users.isBanned,
         createdAt: users.createdAt,
       })
       .from(follows)
@@ -604,6 +733,10 @@ export class PgStorage implements IStorage {
         maxTokens: users.maxTokens,
         pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
         isAdmin: users.isAdmin,
+        alias: users.alias,
+        rulesAccepted: users.rulesAccepted,
+        lastSeen: users.lastSeen,
+        isBanned: users.isBanned,
         createdAt: users.createdAt,
       })
       .from(follows)
@@ -649,6 +782,10 @@ export class PgStorage implements IStorage {
         maxTokens: users.maxTokens,
         pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
         isAdmin: users.isAdmin,
+        alias: users.alias,
+        rulesAccepted: users.rulesAccepted,
+        lastSeen: users.lastSeen,
+        isBanned: users.isBanned,
         createdAt: users.createdAt,
       })
       .from(blocks)
@@ -696,6 +833,82 @@ export class PgStorage implements IStorage {
       .select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, 0)));
+    return result[0]?.count || 0;
+  }
+
+  // Community - Messages
+  async sendMessage(insertMessage: InsertMessage): Promise<Message> {
+    const result = await this.db
+      .insert(messages)
+      .values(insertMessage)
+      .returning();
+    return result[0];
+  }
+
+  async getConversation(userId1: string, userId2: string): Promise<Message[]> {
+    return await this.db
+      .select()
+      .from(messages)
+      .where(
+        sql`(${messages.senderId} = ${userId1} AND ${messages.receiverId} = ${userId2}) 
+            OR (${messages.senderId} = ${userId2} AND ${messages.receiverId} = ${userId1})`
+      )
+      .orderBy(sql`${messages.createdAt} ASC`);
+  }
+
+  async getRecentConversations(userId: string): Promise<Array<Message & { otherUser: User }>> {
+    // Get the most recent message from each conversation
+    const result = await this.db
+      .select({
+        id: messages.id,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        content: messages.content,
+        isRead: messages.isRead,
+        createdAt: messages.createdAt,
+        otherUser: {
+          id: users.id,
+          name: users.name,
+          mobile: users.mobile,
+          language: users.language,
+          currency: users.currency,
+          exchange: users.exchange,
+          tokens: users.tokens,
+          maxTokens: users.maxTokens,
+          pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
+          isAdmin: users.isAdmin,
+          alias: users.alias,
+          rulesAccepted: users.rulesAccepted,
+          lastSeen: users.lastSeen,
+          isBanned: users.isBanned,
+          createdAt: users.createdAt,
+        },
+      })
+      .from(messages)
+      .innerJoin(
+        users,
+        sql`${users.id} = CASE WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId} ELSE ${messages.senderId} END`
+      )
+      .where(sql`${messages.senderId} = ${userId} OR ${messages.receiverId} = ${userId}`)
+      .orderBy(sql`${messages.createdAt} DESC`)
+      .limit(20);
+    return result as Array<Message & { otherUser: User }>;
+  }
+
+  async markMessageAsRead(id: string): Promise<Message | undefined> {
+    const result = await this.db
+      .update(messages)
+      .set({ isRead: 1 })
+      .where(eq(messages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .where(and(eq(messages.receiverId, userId), eq(messages.isRead, 0)));
     return result[0]?.count || 0;
   }
 

@@ -1175,6 +1175,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user alias
+  app.post("/api/community/alias", async (req, res) => {
+    try {
+      const { userId, alias } = req.body;
+
+      if (!userId || !alias) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (alias.length > 10) {
+        return res.status(400).json({ error: "Alias must be 10 characters or less" });
+      }
+
+      const user = await storage.updateAlias(userId, alias);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Update alias error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Accept community rules
+  app.post("/api/community/accept-rules", async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const user = await storage.acceptCommunityRules(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Accept rules error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update last seen
+  app.post("/api/community/update-last-seen", async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const user = await storage.updateLastSeen(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Update last seen error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Search users by alias
+  app.get("/api/community/search/:query", async (req, res) => {
+    try {
+      const { query } = req.params;
+
+      if (!query || query.length < 2) {
+        return res.status(400).json({ error: "Query must be at least 2 characters" });
+      }
+
+      const users = await storage.searchUsersByAlias(query);
+      res.json(users);
+    } catch (error) {
+      console.error("Search users error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Send message
+  app.post("/api/messages", async (req, res) => {
+    try {
+      const { senderId, receiverId, content } = req.body;
+
+      if (!senderId || !receiverId || !content) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (content.length > 1000) {
+        return res.status(400).json({ error: "Message too long (max 1000 characters)" });
+      }
+
+      const message = await storage.sendMessage({ senderId, receiverId, content });
+      res.json(message);
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get conversation between two users
+  app.get("/api/messages/conversation/:userId1/:userId2", async (req, res) => {
+    try {
+      const { userId1, userId2 } = req.params;
+      const messages = await storage.getConversation(userId1, userId2);
+      res.json(messages);
+    } catch (error) {
+      console.error("Get conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get recent conversations
+  app.get("/api/messages/recent/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const conversations = await storage.getRecentConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Get recent conversations error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Mark message as read
+  app.post("/api/messages/:messageId/read", async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      const message = await storage.markMessageAsRead(messageId);
+
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      res.json(message);
+    } catch (error) {
+      console.error("Mark message as read error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get unread message count
+  app.get("/api/messages/unread-count/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const count = await storage.getUnreadMessageCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Get unread message count error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Publish analysis
   app.post("/api/community/publish/:analysisId", async (req, res) => {
     try {
