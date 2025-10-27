@@ -13,7 +13,7 @@ import { APP_VERSION } from "@shared/schema";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import trendPilotLogo from "@assets/trendpilot-logo.png";
-import { convertToTradingViewSymbol } from "@/lib/utils";
+import { resolveChartSymbol } from "@/lib/utils";
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
@@ -258,18 +258,9 @@ export default function Analyzer() {
       return `https://chart.yahoo.com/z?s=${encodeURIComponent(symbol)}&t=${timeRange}&q=c&l=on&z=l&p=s`;
     };
 
-    const chartSymbol = analysis.correctedSymbol || analysis.symbol;
-    
-    // Use TradingView for ALL markets now (crypto, stocks, commodities, forex)
-    // For Indian stocks, try using just the base symbol without exchange prefix
-    // This lets TradingView auto-detect the correct exchange (NSE/BSE)
-    let tradingViewSymbol = convertToTradingViewSymbol(chartSymbol, analysis.market);
-    
-    if (analysis.market === 'stock' && (chartSymbol.includes('.NS') || chartSymbol.includes('.BO'))) {
-      // Extract base symbol (e.g., "TATAMOTORS" from "TATAMOTORS.NS")
-      const baseSymbol = chartSymbol.split('.')[0];
-      tradingViewSymbol = baseSymbol; // Let TradingView auto-detect NSE/BSE
-    }
+    // Use config-driven chart symbol resolver
+    // This automatically handles stocks (uses name), commodities (GC=F→TVC:GOLD), forex, crypto
+    const tradingViewSymbol = resolveChartSymbol(analysis);
 
     return (
       <div className="min-h-screen bg-[#111714] flex flex-col">
