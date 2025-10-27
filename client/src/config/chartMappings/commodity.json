@@ -12,56 +12,56 @@
     {
       "pattern": "GC=F",
       "type": "exact",
-      "replacement": "GOLD",
-      "comment": "Gold futures → clean name"
+      "replacement": "TVC:GOLD",
+      "comment": "Gold futures → Gold spot"
     },
     {
       "pattern": "SI=F",
       "type": "exact",
-      "replacement": "SILVER",
-      "comment": "Silver futures → clean name"
+      "replacement": "TVC:SILVER",
+      "comment": "Silver futures → Silver spot"
     },
     {
       "pattern": "CL=F",
       "type": "exact",
-      "replacement": "USOIL",
-      "comment": "Crude Oil futures → clean name"
+      "replacement": "TVC:USOIL",
+      "comment": "Crude Oil futures → Crude Oil spot"
     },
     {
       "pattern": "NG=F",
       "type": "exact",
-      "replacement": "NATURALGAS",
-      "comment": "Natural Gas futures → clean name"
+      "replacement": "TVC:NATURALGAS",
+      "comment": "Natural Gas futures → Natural Gas spot"
     },
     {
       "pattern": "HG=F",
       "type": "exact",
-      "replacement": "COPPER",
-      "comment": "Copper futures → clean name"
+      "replacement": "TVC:COPPER",
+      "comment": "Copper futures → Copper spot"
     },
     {
       "pattern": "ZC=F",
       "type": "exact",
-      "replacement": "CORN",
-      "comment": "Corn futures → clean name"
+      "replacement": "CBOT:ZC1!",
+      "comment": "Corn futures"
     },
     {
       "pattern": "ZW=F",
       "type": "exact",
-      "replacement": "WHEAT",
-      "comment": "Wheat futures → clean name"
+      "replacement": "CBOT:ZW1!",
+      "comment": "Wheat futures"
     },
     {
       "pattern": "PL=F",
       "type": "exact",
-      "replacement": "PLATINUM",
-      "comment": "Platinum futures → clean name"
+      "replacement": "TVC:PLATINUM",
+      "comment": "Platinum futures → Platinum spot"
     },
     {
       "pattern": "PA=F",
       "type": "exact",
-      "replacement": "PALLADIUM",
-      "comment": "Palladium futures → clean name"
+      "replacement": "TVC:PALLADIUM",
+      "comment": "Palladium futures → Palladium spot"
     }
   ],
   "fallback": {

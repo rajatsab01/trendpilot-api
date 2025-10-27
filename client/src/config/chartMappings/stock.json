@@ -1,5 +1,5 @@
 {
-  "sourcePriority": ["correctedSymbol", "symbol"],
+  "sourcePriority": ["correctedSymbol", "symbol", "assetName", "instrumentName"],
   "transforms": [
     {
       "type": "uppercase"
@@ -13,47 +13,54 @@
       "pattern": "\\.NS$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "Indian NSE stocks - remove .NS suffix, no prefix"
+      "prefix": "NSE:",
+      "comment": "Indian NSE stocks"
     },
     {
       "pattern": "\\.BO$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "Indian BSE stocks - remove .BO suffix, no prefix"
+      "prefix": "BSE:",
+      "comment": "Indian BSE stocks"
     },
     {
       "pattern": "\\.L$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "London stocks - remove .L suffix, no prefix"
+      "prefix": "LSE:",
+      "comment": "London stocks"
     },
     {
       "pattern": "\\.T$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "Tokyo stocks - remove .T suffix, no prefix"
+      "prefix": "TSE:",
+      "comment": "Tokyo stocks"
     },
     {
       "pattern": "\\.HK$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "Hong Kong stocks - remove .HK suffix, no prefix"
+      "prefix": "HKEX:",
+      "comment": "Hong Kong stocks"
     },
     {
       "pattern": "\\.AX$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "Australian stocks - remove .AX suffix, no prefix"
+      "prefix": "ASX:",
+      "comment": "Australian stocks"
     },
     {
       "pattern": "\\.TO$",
       "type": "regex",
       "action": "extractBase",
-      "comment": "Toronto stocks - remove .TO suffix, no prefix"
+      "prefix": "TSX:",
+      "comment": "Toronto stocks"
     }
   ],
   "fallback": {
     "useAsIs": true,
-    "comment": "Use clean ticker without exchange prefix - TradingView auto-detects"
+    "comment": "US stocks - TradingView auto-detects NYSE/NASDAQ"
   }
 }
