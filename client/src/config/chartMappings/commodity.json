@@ -12,66 +12,80 @@
     {
       "pattern": "GC=F",
       "type": "exact",
-      "replacement": "GOLD",
-      "comment": "Gold futures → plain name"
+      "replacement": "MCX:GOLD1!",
+      "comment": "Gold futures → MCX Gold continuous contract"
     },
     {
       "pattern": "SI=F",
       "type": "exact",
-      "replacement": "SILVER",
-      "comment": "Silver futures → plain name"
+      "replacement": "MCX:SILVER1!",
+      "comment": "Silver futures → MCX Silver continuous contract"
     },
     {
       "pattern": "CL=F",
       "type": "exact",
-      "replacement": "CRUDE OIL",
-      "comment": "Crude Oil futures → plain name"
+      "replacement": "MCX:CRUDEOIL1!",
+      "comment": "Crude Oil futures → MCX Crude Oil continuous contract"
     },
     {
       "pattern": "NG=F",
       "type": "exact",
-      "replacement": "NATURAL GAS",
-      "comment": "Natural Gas futures → plain name"
+      "replacement": "MCX:NATURALGAS1!",
+      "comment": "Natural Gas futures → MCX Natural Gas continuous contract"
     },
     {
       "pattern": "HG=F",
       "type": "exact",
-      "replacement": "COPPER",
-      "comment": "Copper futures → plain name"
+      "replacement": "MCX:COPPER1!",
+      "comment": "Copper futures → MCX Copper continuous contract"
     },
     {
       "pattern": "ZC=F",
       "type": "exact",
-      "replacement": "CORN",
-      "comment": "Corn futures → plain name"
+      "replacement": "CBOT:ZC1!",
+      "comment": "Corn futures → CBOT continuous contract"
     },
     {
       "pattern": "ZW=F",
       "type": "exact",
-      "replacement": "WHEAT",
-      "comment": "Wheat futures → plain name"
+      "replacement": "CBOT:ZW1!",
+      "comment": "Wheat futures → CBOT continuous contract"
     },
     {
       "pattern": "PL=F",
       "type": "exact",
-      "replacement": "PLATINUM",
-      "comment": "Platinum futures → plain name"
+      "replacement": "MCX:PLATINUM1!",
+      "comment": "Platinum futures → MCX Platinum continuous contract"
     },
     {
       "pattern": "PA=F",
       "type": "exact",
-      "replacement": "PALLADIUM",
-      "comment": "Palladium futures → plain name"
+      "replacement": "MCX:PALLADIUM1!",
+      "comment": "Palladium futures → MCX Palladium continuous contract"
     },
     {
       "pattern": "BZ=F",
       "type": "exact",
-      "replacement": "BRENT CRUDE OIL",
-      "comment": "Brent Crude futures → plain name"
+      "replacement": "MCX:BRENT1!",
+      "comment": "Brent Crude futures → MCX Brent continuous contract"
+    },
+    {
+      "pattern": "ZN=F",
+      "type": "exact",
+      "replacement": "MCX:ZINC1!",
+      "comment": "Zinc futures → MCX Zinc continuous contract"
+    },
+    {
+      "pattern": "LE=F",
+      "type": "exact",
+      "replacement": "MCX:LEAD1!",
+      "comment": "Lead futures → MCX Lead continuous contract"
     }
   ],
   "fallback": {
+    "prefix": "MCX:",
+    "suffix": "1!",
     "removeSuffix": "=F",
-    "comment": "Remove futures suffix for unmapped commodities"
+    "comment": "Default to MCX exchange with continuous contract suffix"
   }
 }
