@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -18,19 +18,28 @@ export default function Community() {
   const [reportSubject, setReportSubject] = useState("");
   const [reportMessage, setReportMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [alias, setAlias] = useState("");
+  const [isAcceptingRules, setIsAcceptingRules] = useState(false);
 
   const userId = localStorage.getItem("userId");
 
-  // Fetch user data to check if admin
+  // Fetch user data to check if admin and rules acceptance
   const { data: user } = useQuery<User>({
     queryKey: ["/api/user", userId],
+    enabled: !!userId,
+  });
+
+  // Fetch saved analyses to check minimum requirement
+  const { data: analyses = [] } = useQuery<Analysis[]>({
+    queryKey: ["/api/analyses", userId],
     enabled: !!userId,
   });
 
   // Fetch community feed
   const { data: feed = [], isLoading } = useQuery<FeedItem[]>({
     queryKey: ["/api/community/feed", userId],
-    enabled: !!userId,
+    enabled: !!userId && user?.rulesAccepted === 1,
   });
 
   // Fetch user's reports
@@ -38,6 +47,78 @@ export default function Community() {
     queryKey: ["/api/reports", userId],
     enabled: !!userId,
   });
+
+  // Check if user has accepted rules and has minimum saved analyses
+  useEffect(() => {
+    if (user && user.rulesAccepted !== 1) {
+      setShowRulesModal(true);
+      setAlias(user.alias || "");
+    }
+  }, [user]);
+
+  const handleAcceptRules = async () => {
+    if (!userId) return;
+
+    // Check minimum saved analyses
+    if (analyses.length < 10) {
+      toast({
+        title: "Minimum Requirement",
+        description: "You need at least 10 saved trades to access the community. Keep trading!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate alias
+    if (!alias || alias.trim().length === 0) {
+      toast({
+        title: "Alias Required",
+        description: "Please enter a username for the community",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (alias.length > 10) {
+      toast({
+        title: "Alias Too Long",
+        description: "Username must be 10 characters or less",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAcceptingRules(true);
+
+    try {
+      // Update alias first
+      await apiRequest("POST", "/api/community/alias", {
+        userId,
+        alias: alias.trim(),
+      });
+
+      // Accept rules
+      await apiRequest("POST", "/api/community/accept-rules", {
+        userId,
+      });
+
+      toast({
+        title: "Welcome to the Community!",
+        description: "You can now share and discover trading insights",
+      });
+
+      setShowRulesModal(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to join community",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAcceptingRules(false);
+    }
+  };
 
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,6 +389,94 @@ export default function Community() {
                   {isSubmitting ? "Submitting..." : "Submit Report"}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Community Rules Modal */}
+        {showRulesModal && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1a1f1c] rounded-xl max-w-md w-full p-6 border border-[#38e07b]">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="material-symbols-outlined text-[#38e07b] text-3xl">group</span>
+                <h2 className="text-white font-bold text-xl">Welcome to the Community</h2>
+              </div>
+
+              {/* Saved Trades Check */}
+              <div className="bg-[#29382f] rounded-lg p-4 mb-4 border border-[#2a3c33]">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">
+                    {analyses.length >= 10 ? "check_circle" : "cancel"}
+                  </span>
+                  <p className="text-white font-semibold">Minimum Requirement</p>
+                </div>
+                <p className="text-[#9eb7a8] text-sm">
+                  You have <span className="text-[#38e07b] font-bold">{analyses.length}</span> saved {analyses.length === 1 ? "trade" : "trades"}.
+                  {analyses.length < 10 && ` You need ${10 - analyses.length} more to access the community.`}
+                </p>
+              </div>
+
+              {/* Community Rules */}
+              <div className="bg-[#29382f] rounded-lg p-4 mb-4 space-y-3">
+                <h3 className="text-white font-semibold text-sm mb-3">Community Guidelines</h3>
+                <div className="space-y-2 text-[#9eb7a8] text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#38e07b] text-sm">check</span>
+                    <p>Share genuine insights and trading analysis</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#38e07b] text-sm">check</span>
+                    <p>Respect other traders and their opinions</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-red-500 text-sm">close</span>
+                    <p>No spam, promotional content, or market manipulation</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-red-500 text-sm">close</span>
+                    <p>No harassment, profanity, or inappropriate content</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-red-500 text-sm">close</span>
+                    <p>No guaranteed returns or financial advice claims</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Username Input */}
+              <div className="mb-4">
+                <label className="text-white text-sm font-medium mb-2 block">
+                  Choose Your Username <span className="text-[#6a7f72]">(max 10 characters)</span>
+                </label>
+                <input
+                  type="text"
+                  value={alias}
+                  onChange={(e) => setAlias(e.target.value.slice(0, 10))}
+                  placeholder="TrendMaster"
+                  maxLength={10}
+                  className="w-full bg-[#29382f] text-white rounded-lg px-4 py-3 border border-transparent focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
+                  data-testid="input-community-alias"
+                />
+                <p className="text-[#6a7f72] text-xs mt-1">{alias.length}/10 characters</p>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                <p className="text-yellow-500 text-xs">
+                  <span className="material-symbols-outlined text-sm align-middle mr-1">warning</span>
+                  Violation of community rules may result in account suspension or ban
+                </p>
+              </div>
+
+              {/* Accept Button */}
+              <button
+                onClick={handleAcceptRules}
+                disabled={isAcceptingRules || analyses.length < 10 || !alias.trim()}
+                className="w-full bg-[#38e07b] text-[#111714] font-bold py-3 rounded-lg hover:bg-[#2fc76a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="button-accept-rules"
+              >
+                {isAcceptingRules ? "Joining..." : "I Accept - Join Community"}
+              </button>
             </div>
           </div>
         )}

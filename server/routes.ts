@@ -1210,6 +1210,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
+      // Verify minimum saved analyses requirement (10 trades)
+      const analyses = await storage.getAnalyses(userId);
+      if (analyses.length < 10) {
+        return res.status(403).json({ 
+          error: "Minimum requirement not met",
+          message: "You need at least 10 saved trades to access the community"
+        });
+      }
+
       const user = await storage.acceptCommunityRules(userId);
 
       if (!user) {
