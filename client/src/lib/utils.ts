@@ -1,8 +1,138 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Analysis } from "@shared/schema"
+
+import stockConfig from "@/config/chartMappings/stock.json"
+import commodityConfig from "@/config/chartMappings/commodity.json"
+import forexConfig from "@/config/chartMappings/forex.json"
+import cryptoConfig from "@/config/chartMappings/crypto.json"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+interface ChartConfig {
+  sourcePriority: string[];
+  transforms: Array<{
+    type: string;
+    value?: string;
+  }>;
+  overrides: Array<{
+    pattern: string;
+    type: string;
+    replacement?: string;
+    action?: string;
+    prefix?: string;
+    comment?: string;
+  }>;
+  fallback: {
+    useAsIs?: boolean;
+    removeSuffix?: string;
+    prefix?: string;
+    ensureSuffix?: string;
+    comment?: string;
+  };
+}
+
+/**
+ * NEW: Config-driven chart symbol resolver
+ * Uses JSON configs per market type to convert analysis symbols to TradingView format
+ */
+export function resolveChartSymbol(analysis: Partial<Analysis>): string {
+  const market = analysis.market || 'stock';
+  
+  // Select appropriate config based on market type
+  const configMap: Record<string, ChartConfig> = {
+    'stock': stockConfig,
+    'commodity': commodityConfig,
+    'forex': forexConfig,
+    'cryptocurrency': cryptoConfig,
+  };
+  
+  const config = configMap[market] || stockConfig;
+  
+  // Step 1: Get source value based on priority
+  let sourceValue = '';
+  for (const field of config.sourcePriority) {
+    const value = (analysis as any)[field];
+    if (value && typeof value === 'string' && value.trim()) {
+      sourceValue = value;
+      break;
+    }
+  }
+  
+  if (!sourceValue) {
+    console.warn(`⚠️ No source value found for ${market} chart symbol`);
+    return analysis.symbol || '';
+  }
+  
+  // Step 2: Apply transforms
+  let transformed = sourceValue;
+  for (const transform of config.transforms) {
+    switch (transform.type) {
+      case 'uppercase':
+        transformed = transformed.toUpperCase();
+        break;
+      case 'trim':
+        transformed = transformed.trim();
+        break;
+      case 'removeSuffix':
+        if (transform.value && transformed.endsWith(transform.value)) {
+          transformed = transformed.replace(new RegExp(`${transform.value}$`), '');
+        }
+        break;
+      case 'removeChar':
+        if (transform.value) {
+          transformed = transformed.replace(new RegExp(transform.value, 'g'), '');
+        }
+        break;
+    }
+  }
+  
+  // Step 3: Check overrides
+  for (const override of config.overrides) {
+    if (override.type === 'exact' && transformed === override.pattern) {
+      return override.replacement || transformed;
+    }
+    
+    if (override.type === 'regex') {
+      const regex = new RegExp(override.pattern);
+      if (regex.test(transformed)) {
+        if (override.action === 'extractBase') {
+          // Extract base symbol (e.g., "TATAMOTORS.NS" → "TATAMOTORS")
+          const base = transformed.replace(regex, '');
+          return override.prefix ? `${override.prefix}${base}` : base;
+        }
+        if (override.replacement) {
+          return transformed.replace(regex, override.replacement);
+        }
+      }
+    }
+  }
+  
+  // Step 4: Apply fallback rules
+  if (config.fallback.useAsIs) {
+    return transformed;
+  }
+  
+  if (config.fallback.removeSuffix) {
+    transformed = transformed.replace(config.fallback.removeSuffix, '');
+  }
+  
+  if (config.fallback.ensureSuffix) {
+    // For crypto: if doesn't have USDT or USD, add USDT
+    if (!transformed.includes(config.fallback.ensureSuffix) && 
+        !transformed.includes('USD')) {
+      transformed = transformed + config.fallback.ensureSuffix;
+    }
+  }
+  
+  if (config.fallback.prefix) {
+    transformed = `${config.fallback.prefix}${transformed}`;
+  }
+  
+  console.log(`📊 Chart symbol resolved: ${sourceValue} → ${transformed} (${market})`);
+  return transformed;
 }
 
 /**

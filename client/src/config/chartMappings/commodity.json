@@ -1,0 +1,71 @@
+{
+  "sourcePriority": ["correctedSymbol", "symbol"],
+  "transforms": [
+    {
+      "type": "uppercase"
+    },
+    {
+      "type": "trim"
+    }
+  ],
+  "overrides": [
+    {
+      "pattern": "GC=F",
+      "type": "exact",
+      "replacement": "TVC:GOLD",
+      "comment": "Gold futures → Gold spot"
+    },
+    {
+      "pattern": "SI=F",
+      "type": "exact",
+      "replacement": "TVC:SILVER",
+      "comment": "Silver futures → Silver spot"
+    },
+    {
+      "pattern": "CL=F",
+      "type": "exact",
+      "replacement": "TVC:USOIL",
+      "comment": "Crude Oil futures → Crude Oil spot"
+    },
+    {
+      "pattern": "NG=F",
+      "type": "exact",
+      "replacement": "TVC:NATURALGAS",
+      "comment": "Natural Gas futures → Natural Gas spot"
+    },
+    {
+      "pattern": "HG=F",
+      "type": "exact",
+      "replacement": "TVC:COPPER",
+      "comment": "Copper futures → Copper spot"
+    },
+    {
+      "pattern": "ZC=F",
+      "type": "exact",
+      "replacement": "CBOT:ZC1!",
+      "comment": "Corn futures"
+    },
+    {
+      "pattern": "ZW=F",
+      "type": "exact",
+      "replacement": "CBOT:ZW1!",
+      "comment": "Wheat futures"
+    },
+    {
+      "pattern": "PL=F",
+      "type": "exact",
+      "replacement": "TVC:PLATINUM",
+      "comment": "Platinum futures → Platinum spot"
+    },
+    {
+      "pattern": "PA=F",
+      "type": "exact",
+      "replacement": "TVC:PALLADIUM",
+      "comment": "Palladium futures → Palladium spot"
+    }
+  ],
+  "fallback": {
+    "removeSuffix": "=F",
+    "comment": "Remove futures suffix for other commodities"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "sourcePriority": ["assetName", "instrumentName", "correctedSymbol", "symbol"],
+  "transforms": [
+    {
+      "type": "uppercase"
+    },
+    {
+      "type": "trim"
+    }
+  ],
+  "overrides": [
+    {
+      "pattern": "\\.NS$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "NSE:"
+    },
+    {
+      "pattern": "\\.BO$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "BSE:"
+    },
+    {
+      "pattern": "\\.L$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "LSE:"
+    },
+    {
+      "pattern": "\\.T$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "TSE:"
+    },
+    {
+      "pattern": "\\.HK$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "HKEX:"
+    },
+    {
+      "pattern": "\\.AX$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "ASX:"
+    },
+    {
+      "pattern": "\\.TO$",
+      "type": "regex",
+      "action": "extractBase",
+      "prefix": "TSX:"
+    }
+  ],
+  "fallback": {
+    "useAsIs": true,
+    "comment": "US stocks - TradingView auto-detects NYSE/NASDAQ"
+  }
+}

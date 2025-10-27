@@ -1,0 +1,86 @@
+{
+  "sourcePriority": ["correctedSymbol", "symbol"],
+  "transforms": [
+    {
+      "type": "uppercase"
+    },
+    {
+      "type": "trim"
+    },
+    {
+      "type": "removeSuffix",
+      "value": "=X"
+    },
+    {
+      "type": "removeChar",
+      "value": "/"
+    }
+  ],
+  "overrides": [
+    {
+      "pattern": "EURUSD",
+      "type": "exact",
+      "replacement": "FX_IDC:EURUSD"
+    },
+    {
+      "pattern": "GBPUSD",
+      "type": "exact",
+      "replacement": "FX_IDC:GBPUSD"
+    },
+    {
+      "pattern": "USDJPY",
+      "type": "exact",
+      "replacement": "FX_IDC:USDJPY"
+    },
+    {
+      "pattern": "USDCHF",
+      "type": "exact",
+      "replacement": "FX_IDC:USDCHF"
+    },
+    {
+      "pattern": "AUDUSD",
+      "type": "exact",
+      "replacement": "FX_IDC:AUDUSD"
+    },
+    {
+      "pattern": "USDCAD",
+      "type": "exact",
+      "replacement": "FX_IDC:USDCAD"
+    },
+    {
+      "pattern": "NZDUSD",
+      "type": "exact",
+      "replacement": "FX_IDC:NZDUSD"
+    },
+    {
+      "pattern": "EURGBP",
+      "type": "exact",
+      "replacement": "FX_IDC:EURGBP"
+    },
+    {
+      "pattern": "EURJPY",
+      "type": "exact",
+      "replacement": "FX_IDC:EURJPY"
+    },
+    {
+      "pattern": "GBPJPY",
+      "type": "exact",
+      "replacement": "FX_IDC:GBPJPY"
+    },
+    {
+      "pattern": "USDINR",
+      "type": "exact",
+      "replacement": "FX_IDC:USDINR"
+    },
+    {
+      "pattern": "CADUSD",
+      "type": "exact",
+      "replacement": "FX_IDC:USDCAD",
+      "comment": "CAD/USD → USD/CAD for TradingView"
+    }
+  ],
+  "fallback": {
+    "prefix": "FX_IDC:",
+    "comment": "Use FX_IDC prefix for unlisted forex pairs"
+  }
+}

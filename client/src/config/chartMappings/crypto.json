@@ -1,0 +1,21 @@
+{
+  "sourcePriority": ["correctedSymbol", "symbol"],
+  "transforms": [
+    {
+      "type": "uppercase"
+    },
+    {
+      "type": "trim"
+    },
+    {
+      "type": "removeChar",
+      "value": "-"
+    }
+  ],
+  "overrides": [],
+  "fallback": {
+    "prefix": "BINANCE:",
+    "ensureSuffix": "USDT",
+    "comment": "Use Binance exchange with USDT pairing as default"
+  }
+}
