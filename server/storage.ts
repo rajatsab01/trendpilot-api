@@ -1056,6 +1056,8 @@ export class PgStorage implements IStorage {
           maxTokens: users.maxTokens,
           pwaInstallBonusClaimed: users.pwaInstallBonusClaimed,
           isAdmin: users.isAdmin,
+          alias: users.alias,
+          rulesAccepted: users.rulesAccepted,
           createdAt: users.createdAt,
         },
       })
