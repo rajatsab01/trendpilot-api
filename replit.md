@@ -22,6 +22,8 @@ State management uses TanStack Query for server state and React Context API for 
 
 **Forex Pair Handling:** Forex pairs receive special treatment to preserve their nature as exchange rates. The system extracts the quote currency (2nd currency in the pair) using `getQuoteCurrency()` and displays all prices in that currency without conversion. For example, USD/GBP shows prices in GBP (£), while GBP/USD shows prices in USD ($). The `getExchangeCurrency()` function returns the quote currency for forex pairs, ensuring `sourceCurrency` correctly identifies the display currency. The frontend detects forex pairs via `analysis.market === 'forex'` and uses `analysis.sourceCurrency` for symbol display instead of the user's preferred currency. This approach maintains the integrity of forex pairs as exchange rates rather than convertible prices.
 
+**Commodity Futures Handling:** Commodity futures (symbols with =F suffix like GC=F, SI=F, CL=F) are ALWAYS priced in USD from Yahoo Finance. The `getExchangeCurrency()` function prioritizes commodity futures detection BEFORE checking exchange suffixes to prevent false matches (e.g., SI=F should not match Singapore Exchange .SI suffix). All commodity prices are sourced in USD and then converted to the user's preferred currency. TradingView chart mappings transform futures symbols to their CFD equivalents (SI=F→XAGUSD, GC=F→XAUUSD, CL=F→USOIL) for proper chart rendering.
+
 ## External Dependencies
 *   **AI Service & Market Data:** Perplexity AI (sonar-pro model)
 *   **Database Service:** Neon PostgreSQL (`@neondatabase/serverless`)

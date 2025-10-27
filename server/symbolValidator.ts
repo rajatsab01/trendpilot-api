@@ -116,8 +116,16 @@ export function getExchangeCurrency(symbol: string, market: string): string {
     return 'USD';
   }
   
-  // Check exchange suffix for stocks/forex/commodities
+  // IMPORTANT: Commodity futures (with =F suffix) are ALWAYS priced in USD
+  // This must be checked BEFORE exchange suffixes to avoid false matches
+  // Example: SI=F (silver futures) should NOT match Singapore Exchange (.SI)
   const upperSymbol = symbol.toUpperCase();
+  if (upperSymbol.includes('=F') || market === 'commodity') {
+    console.log(`[Commodity] ${symbol} → USD (futures/commodities always in USD)`);
+    return 'USD';
+  }
+  
+  // Check exchange suffix for stocks/forex
   
   // Indian exchanges
   if (upperSymbol.endsWith('.NS') || upperSymbol.endsWith('.BO')) {
