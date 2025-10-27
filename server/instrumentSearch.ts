@@ -142,49 +142,85 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "USD/EUR", name: "USD/EUR", market: "forex", description: "US Dollar to Euro" },
   ],
   "eurgbp": [
-    { symbol: "EURGBP=X", name: "EUR/GBP", market: "forex", description: "Euro to British Pound" },
+    { symbol: "EUR/GBP", name: "EUR/GBP", market: "forex", description: "Euro to British Pound" },
+  ],
+  "eur/gbp": [
+    { symbol: "EUR/GBP", name: "EUR/GBP", market: "forex", description: "Euro to British Pound" },
   ],
   "gbpeur": [
-    { symbol: "GBPEUR=X", name: "GBP/EUR", market: "forex", description: "British Pound to Euro" },
+    { symbol: "GBP/EUR", name: "GBP/EUR", market: "forex", description: "British Pound to Euro" },
+  ],
+  "gbp/eur": [
+    { symbol: "GBP/EUR", name: "GBP/EUR", market: "forex", description: "British Pound to Euro" },
   ],
   "eurjpy": [
-    { symbol: "EURJPY=X", name: "EUR/JPY", market: "forex", description: "Euro to Japanese Yen" },
+    { symbol: "EUR/JPY", name: "EUR/JPY", market: "forex", description: "Euro to Japanese Yen" },
+  ],
+  "eur/jpy": [
+    { symbol: "EUR/JPY", name: "EUR/JPY", market: "forex", description: "Euro to Japanese Yen" },
   ],
   "jpyeur": [
-    { symbol: "JPYEUR=X", name: "JPY/EUR", market: "forex", description: "Japanese Yen to Euro" },
+    { symbol: "JPY/EUR", name: "JPY/EUR", market: "forex", description: "Japanese Yen to Euro" },
+  ],
+  "jpy/eur": [
+    { symbol: "JPY/EUR", name: "JPY/EUR", market: "forex", description: "Japanese Yen to Euro" },
   ],
   "eurchf": [
-    { symbol: "EURCHF=X", name: "EUR/CHF", market: "forex", description: "Euro to Swiss Franc" },
+    { symbol: "EUR/CHF", name: "EUR/CHF", market: "forex", description: "Euro to Swiss Franc" },
+  ],
+  "eur/chf": [
+    { symbol: "EUR/CHF", name: "EUR/CHF", market: "forex", description: "Euro to Swiss Franc" },
   ],
   "chfeur": [
-    { symbol: "CHFEUR=X", name: "CHF/EUR", market: "forex", description: "Swiss Franc to Euro" },
+    { symbol: "CHF/EUR", name: "CHF/EUR", market: "forex", description: "Swiss Franc to Euro" },
+  ],
+  "chf/eur": [
+    { symbol: "CHF/EUR", name: "CHF/EUR", market: "forex", description: "Swiss Franc to Euro" },
   ],
   "euraud": [
-    { symbol: "EURAUD=X", name: "EUR/AUD", market: "forex", description: "Euro to Australian Dollar" },
+    { symbol: "EUR/AUD", name: "EUR/AUD", market: "forex", description: "Euro to Australian Dollar" },
+  ],
+  "eur/aud": [
+    { symbol: "EUR/AUD", name: "EUR/AUD", market: "forex", description: "Euro to Australian Dollar" },
   ],
   "audeur": [
-    { symbol: "AUDEUR=X", name: "AUD/EUR", market: "forex", description: "Australian Dollar to Euro" },
+    { symbol: "AUD/EUR", name: "AUD/EUR", market: "forex", description: "Australian Dollar to Euro" },
+  ],
+  "aud/eur": [
+    { symbol: "AUD/EUR", name: "AUD/EUR", market: "forex", description: "Australian Dollar to Euro" },
   ],
   "eurcad": [
-    { symbol: "EURCAD=X", name: "EUR/CAD", market: "forex", description: "Euro to Canadian Dollar" },
+    { symbol: "EUR/CAD", name: "EUR/CAD", market: "forex", description: "Euro to Canadian Dollar" },
+  ],
+  "eur/cad": [
+    { symbol: "EUR/CAD", name: "EUR/CAD", market: "forex", description: "Euro to Canadian Dollar" },
   ],
   "cadeur": [
-    { symbol: "CADEUR=X", name: "CAD/EUR", market: "forex", description: "Canadian Dollar to Euro" },
+    { symbol: "CAD/EUR", name: "CAD/EUR", market: "forex", description: "Canadian Dollar to Euro" },
+  ],
+  "cad/eur": [
+    { symbol: "CAD/EUR", name: "CAD/EUR", market: "forex", description: "Canadian Dollar to Euro" },
   ],
   "eurnzd": [
-    { symbol: "EURNZD=X", name: "EUR/NZD", market: "forex", description: "Euro to New Zealand Dollar" },
+    { symbol: "EUR/NZD", name: "EUR/NZD", market: "forex", description: "Euro to New Zealand Dollar" },
+  ],
+  "eur/nzd": [
+    { symbol: "EUR/NZD", name: "EUR/NZD", market: "forex", description: "Euro to New Zealand Dollar" },
   ],
   "nzdeur": [
-    { symbol: "NZDEUR=X", name: "NZD/EUR", market: "forex", description: "New Zealand Dollar to Euro" },
+    { symbol: "NZD/EUR", name: "NZD/EUR", market: "forex", description: "New Zealand Dollar to Euro" },
+  ],
+  "nzd/eur": [
+    { symbol: "NZD/EUR", name: "NZD/EUR", market: "forex", description: "New Zealand Dollar to Euro" },
   ],
   
   // GBP Pairs
   "gbp": [
-    { symbol: "GBPUSD=X", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
-    { symbol: "GBPJPY=X", name: "GBP/JPY", market: "forex", description: "British Pound to Japanese Yen" },
+    { symbol: "GBP/USD", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
+    { symbol: "GBP/JPY", name: "GBP/JPY", market: "forex", description: "British Pound to Japanese Yen" },
   ],
   "pound": [
-    { symbol: "GBPUSD=X", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
+    { symbol: "GBP/USD", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
   ],
   "gbpusd": [
     { symbol: "GBP/USD", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
@@ -199,269 +235,299 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "USD/GBP", name: "USD/GBP", market: "forex", description: "US Dollar to British Pound" },
   ],
   "gbpjpy": [
-    { symbol: "GBPJPY=X", name: "GBP/JPY", market: "forex", description: "British Pound to Japanese Yen" },
+    { symbol: "GBP/JPY", name: "GBP/JPY", market: "forex", description: "British Pound to Japanese Yen" },
+  ],
+  "gbp/jpy": [
+    { symbol: "GBP/JPY", name: "GBP/JPY", market: "forex", description: "British Pound to Japanese Yen" },
   ],
   "jpygbp": [
-    { symbol: "JPYGBP=X", name: "JPY/GBP", market: "forex", description: "Japanese Yen to British Pound" },
+    { symbol: "JPY/GBP", name: "JPY/GBP", market: "forex", description: "Japanese Yen to British Pound" },
+  ],
+  "jpy/gbp": [
+    { symbol: "JPY/GBP", name: "JPY/GBP", market: "forex", description: "Japanese Yen to British Pound" },
   ],
   "gbpchf": [
-    { symbol: "GBPCHF=X", name: "GBP/CHF", market: "forex", description: "British Pound to Swiss Franc" },
+    { symbol: "GBP/CHF", name: "GBP/CHF", market: "forex", description: "British Pound to Swiss Franc" },
+  ],
+  "gbp/chf": [
+    { symbol: "GBP/CHF", name: "GBP/CHF", market: "forex", description: "British Pound to Swiss Franc" },
   ],
   "chfgbp": [
-    { symbol: "CHFGBP=X", name: "CHF/GBP", market: "forex", description: "Swiss Franc to British Pound" },
+    { symbol: "CHF/GBP", name: "CHF/GBP", market: "forex", description: "Swiss Franc to British Pound" },
+  ],
+  "chf/gbp": [
+    { symbol: "CHF/GBP", name: "CHF/GBP", market: "forex", description: "Swiss Franc to British Pound" },
   ],
   "gbpaud": [
-    { symbol: "GBPAUD=X", name: "GBP/AUD", market: "forex", description: "British Pound to Australian Dollar" },
+    { symbol: "GBP/AUD", name: "GBP/AUD", market: "forex", description: "British Pound to Australian Dollar" },
+  ],
+  "gbp/aud": [
+    { symbol: "GBP/AUD", name: "GBP/AUD", market: "forex", description: "British Pound to Australian Dollar" },
   ],
   "audgbp": [
-    { symbol: "AUDGBP=X", name: "AUD/GBP", market: "forex", description: "Australian Dollar to British Pound" },
+    { symbol: "AUD/GBP", name: "AUD/GBP", market: "forex", description: "Australian Dollar to British Pound" },
+  ],
+  "aud/gbp": [
+    { symbol: "AUD/GBP", name: "AUD/GBP", market: "forex", description: "Australian Dollar to British Pound" },
   ],
   "gbpcad": [
-    { symbol: "GBPCAD=X", name: "GBP/CAD", market: "forex", description: "British Pound to Canadian Dollar" },
+    { symbol: "GBP/CAD", name: "GBP/CAD", market: "forex", description: "British Pound to Canadian Dollar" },
+  ],
+  "gbp/cad": [
+    { symbol: "GBP/CAD", name: "GBP/CAD", market: "forex", description: "British Pound to Canadian Dollar" },
   ],
   "cadgbp": [
-    { symbol: "CADGBP=X", name: "CAD/GBP", market: "forex", description: "Canadian Dollar to British Pound" },
+    { symbol: "CAD/GBP", name: "CAD/GBP", market: "forex", description: "Canadian Dollar to British Pound" },
+  ],
+  "cad/gbp": [
+    { symbol: "CAD/GBP", name: "CAD/GBP", market: "forex", description: "Canadian Dollar to British Pound" },
   ],
   "gbpnzd": [
-    { symbol: "GBPNZD=X", name: "GBP/NZD", market: "forex", description: "British Pound to New Zealand Dollar" },
+    { symbol: "GBP/NZD", name: "GBP/NZD", market: "forex", description: "British Pound to New Zealand Dollar" },
+  ],
+  "gbp/nzd": [
+    { symbol: "GBP/NZD", name: "GBP/NZD", market: "forex", description: "British Pound to New Zealand Dollar" },
   ],
   "nzdgbp": [
-    { symbol: "NZDGBP=X", name: "NZD/GBP", market: "forex", description: "New Zealand Dollar to British Pound" },
+    { symbol: "NZD/GBP", name: "NZD/GBP", market: "forex", description: "New Zealand Dollar to British Pound" },
+  ],
+  "nzd/gbp": [
+    { symbol: "NZD/GBP", name: "NZD/GBP", market: "forex", description: "New Zealand Dollar to British Pound" },
   ],
   
   // JPY Pairs
   "yen": [
-    { symbol: "USDJPY=X", name: "USD/JPY", market: "forex", description: "US Dollar to Japanese Yen" },
+    { symbol: "USD/JPY", name: "USD/JPY", market: "forex", description: "US Dollar to Japanese Yen" },
   ],
   "jpy": [
-    { symbol: "USDJPY=X", name: "USD/JPY", market: "forex", description: "US Dollar to Japanese Yen" },
-    { symbol: "JPYUSD=X", name: "JPY/USD", market: "forex", description: "Japanese Yen to US Dollar" },
+    { symbol: "USD/JPY", name: "USD/JPY", market: "forex", description: "US Dollar to Japanese Yen" },
+    { symbol: "JPY/USD", name: "JPY/USD", market: "forex", description: "Japanese Yen to US Dollar" },
   ],
   "usdjpy": [
-    { symbol: "USDJPY=X", name: "USD/JPY", market: "forex", description: "US Dollar to Japanese Yen" },
+    { symbol: "USD/JPY", name: "USD/JPY", market: "forex", description: "US Dollar to Japanese Yen" },
   ],
   "jpyusd": [
-    { symbol: "JPYUSD=X", name: "JPY/USD", market: "forex", description: "Japanese Yen to US Dollar" },
+    { symbol: "JPY/USD", name: "JPY/USD", market: "forex", description: "Japanese Yen to US Dollar" },
   ],
   "audjpy": [
-    { symbol: "AUDJPY=X", name: "AUD/JPY", market: "forex", description: "Australian Dollar to Japanese Yen" },
+    { symbol: "AUD/JPY", name: "AUD/JPY", market: "forex", description: "Australian Dollar to Japanese Yen" },
   ],
   "jpyaud": [
-    { symbol: "JPYAUD=X", name: "JPY/AUD", market: "forex", description: "Japanese Yen to Australian Dollar" },
+    { symbol: "JPY/AUD", name: "JPY/AUD", market: "forex", description: "Japanese Yen to Australian Dollar" },
   ],
   "cadjpy": [
-    { symbol: "CADJPY=X", name: "CAD/JPY", market: "forex", description: "Canadian Dollar to Japanese Yen" },
+    { symbol: "CAD/JPY", name: "CAD/JPY", market: "forex", description: "Canadian Dollar to Japanese Yen" },
   ],
   "jpycad": [
-    { symbol: "JPYCAD=X", name: "JPY/CAD", market: "forex", description: "Japanese Yen to Canadian Dollar" },
+    { symbol: "JPY/CAD", name: "JPY/CAD", market: "forex", description: "Japanese Yen to Canadian Dollar" },
   ],
   "chfjpy": [
-    { symbol: "CHFJPY=X", name: "CHF/JPY", market: "forex", description: "Swiss Franc to Japanese Yen" },
+    { symbol: "CHF/JPY", name: "CHF/JPY", market: "forex", description: "Swiss Franc to Japanese Yen" },
   ],
   "jpychf": [
-    { symbol: "JPYCHF=X", name: "JPY/CHF", market: "forex", description: "Japanese Yen to Swiss Franc" },
+    { symbol: "JPY/CHF", name: "JPY/CHF", market: "forex", description: "Japanese Yen to Swiss Franc" },
   ],
   "nzdjpy": [
-    { symbol: "NZDJPY=X", name: "NZD/JPY", market: "forex", description: "New Zealand Dollar to Japanese Yen" },
+    { symbol: "NZD/JPY", name: "NZD/JPY", market: "forex", description: "New Zealand Dollar to Japanese Yen" },
   ],
   "jpynzd": [
-    { symbol: "JPYNZD=X", name: "JPY/NZD", market: "forex", description: "Japanese Yen to New Zealand Dollar" },
+    { symbol: "JPY/NZD", name: "JPY/NZD", market: "forex", description: "Japanese Yen to New Zealand Dollar" },
   ],
   
   // CAD Pairs
   "cad": [
-    { symbol: "USDCAD=X", name: "USD/CAD", market: "forex", description: "US Dollar to Canadian Dollar" },
-    { symbol: "CADUSD=X", name: "CAD/USD", market: "forex", description: "Canadian Dollar to US Dollar" },
+    { symbol: "USD/CAD", name: "USD/CAD", market: "forex", description: "US Dollar to Canadian Dollar" },
+    { symbol: "CAD/USD", name: "CAD/USD", market: "forex", description: "Canadian Dollar to US Dollar" },
   ],
   "usdcad": [
-    { symbol: "USDCAD=X", name: "USD/CAD", market: "forex", description: "US Dollar to Canadian Dollar" },
+    { symbol: "USD/CAD", name: "USD/CAD", market: "forex", description: "US Dollar to Canadian Dollar" },
   ],
   "cadusd": [
-    { symbol: "CADUSD=X", name: "CAD/USD", market: "forex", description: "Canadian Dollar to US Dollar" },
+    { symbol: "CAD/USD", name: "CAD/USD", market: "forex", description: "Canadian Dollar to US Dollar" },
   ],
   "audcad": [
-    { symbol: "AUDCAD=X", name: "AUD/CAD", market: "forex", description: "Australian Dollar to Canadian Dollar" },
+    { symbol: "AUD/CAD", name: "AUD/CAD", market: "forex", description: "Australian Dollar to Canadian Dollar" },
   ],
   "cadaud": [
-    { symbol: "CADAUD=X", name: "CAD/AUD", market: "forex", description: "Canadian Dollar to Australian Dollar" },
+    { symbol: "CAD/AUD", name: "CAD/AUD", market: "forex", description: "Canadian Dollar to Australian Dollar" },
   ],
   "cadchf": [
-    { symbol: "CADCHF=X", name: "CAD/CHF", market: "forex", description: "Canadian Dollar to Swiss Franc" },
+    { symbol: "CAD/CHF", name: "CAD/CHF", market: "forex", description: "Canadian Dollar to Swiss Franc" },
   ],
   "chfcad": [
-    { symbol: "CHFCAD=X", name: "CHF/CAD", market: "forex", description: "Swiss Franc to Canadian Dollar" },
+    { symbol: "CHF/CAD", name: "CHF/CAD", market: "forex", description: "Swiss Franc to Canadian Dollar" },
   ],
   "nzdcad": [
-    { symbol: "NZDCAD=X", name: "NZD/CAD", market: "forex", description: "New Zealand Dollar to Canadian Dollar" },
+    { symbol: "NZD/CAD", name: "NZD/CAD", market: "forex", description: "New Zealand Dollar to Canadian Dollar" },
   ],
   "cadnzd": [
-    { symbol: "CADNZD=X", name: "CAD/NZD", market: "forex", description: "Canadian Dollar to New Zealand Dollar" },
+    { symbol: "CAD/NZD", name: "CAD/NZD", market: "forex", description: "Canadian Dollar to New Zealand Dollar" },
   ],
   
   // AUD Pairs
   "aud": [
-    { symbol: "AUDUSD=X", name: "AUD/USD", market: "forex", description: "Australian Dollar to US Dollar" },
-    { symbol: "USDAUD=X", name: "USD/AUD", market: "forex", description: "US Dollar to Australian Dollar" },
+    { symbol: "AUD/USD", name: "AUD/USD", market: "forex", description: "Australian Dollar to US Dollar" },
+    { symbol: "USD/AUD", name: "USD/AUD", market: "forex", description: "US Dollar to Australian Dollar" },
   ],
   "audusd": [
-    { symbol: "AUDUSD=X", name: "AUD/USD", market: "forex", description: "Australian Dollar to US Dollar" },
+    { symbol: "AUD/USD", name: "AUD/USD", market: "forex", description: "Australian Dollar to US Dollar" },
   ],
   "usdaud": [
-    { symbol: "USDAUD=X", name: "USD/AUD", market: "forex", description: "US Dollar to Australian Dollar" },
+    { symbol: "USD/AUD", name: "USD/AUD", market: "forex", description: "US Dollar to Australian Dollar" },
   ],
   "audchf": [
-    { symbol: "AUDCHF=X", name: "AUD/CHF", market: "forex", description: "Australian Dollar to Swiss Franc" },
+    { symbol: "AUD/CHF", name: "AUD/CHF", market: "forex", description: "Australian Dollar to Swiss Franc" },
   ],
   "chfaud": [
-    { symbol: "CHFAUD=X", name: "CHF/AUD", market: "forex", description: "Swiss Franc to Australian Dollar" },
+    { symbol: "CHF/AUD", name: "CHF/AUD", market: "forex", description: "Swiss Franc to Australian Dollar" },
   ],
   "audnzd": [
-    { symbol: "AUDNZD=X", name: "AUD/NZD", market: "forex", description: "Australian Dollar to New Zealand Dollar" },
+    { symbol: "AUD/NZD", name: "AUD/NZD", market: "forex", description: "Australian Dollar to New Zealand Dollar" },
   ],
   "nzdaud": [
-    { symbol: "NZDAUD=X", name: "NZD/AUD", market: "forex", description: "New Zealand Dollar to Australian Dollar" },
+    { symbol: "NZD/AUD", name: "NZD/AUD", market: "forex", description: "New Zealand Dollar to Australian Dollar" },
   ],
   
   // NZD Pairs
   "nzd": [
-    { symbol: "NZDUSD=X", name: "NZD/USD", market: "forex", description: "New Zealand Dollar to US Dollar" },
-    { symbol: "USDNZD=X", name: "USD/NZD", market: "forex", description: "US Dollar to New Zealand Dollar" },
+    { symbol: "NZD/USD", name: "NZD/USD", market: "forex", description: "New Zealand Dollar to US Dollar" },
+    { symbol: "USD/NZD", name: "USD/NZD", market: "forex", description: "US Dollar to New Zealand Dollar" },
   ],
   "nzdusd": [
-    { symbol: "NZDUSD=X", name: "NZD/USD", market: "forex", description: "New Zealand Dollar to US Dollar" },
+    { symbol: "NZD/USD", name: "NZD/USD", market: "forex", description: "New Zealand Dollar to US Dollar" },
   ],
   "usdnzd": [
-    { symbol: "USDNZD=X", name: "USD/NZD", market: "forex", description: "US Dollar to New Zealand Dollar" },
+    { symbol: "USD/NZD", name: "USD/NZD", market: "forex", description: "US Dollar to New Zealand Dollar" },
   ],
   "nzdchf": [
-    { symbol: "NZDCHF=X", name: "NZD/CHF", market: "forex", description: "New Zealand Dollar to Swiss Franc" },
+    { symbol: "NZD/CHF", name: "NZD/CHF", market: "forex", description: "New Zealand Dollar to Swiss Franc" },
   ],
   "chfnzd": [
-    { symbol: "CHFNZD=X", name: "CHF/NZD", market: "forex", description: "Swiss Franc to New Zealand Dollar" },
+    { symbol: "CHF/NZD", name: "CHF/NZD", market: "forex", description: "Swiss Franc to New Zealand Dollar" },
   ],
   
   // CHF Pairs
   "chf": [
-    { symbol: "USDCHF=X", name: "USD/CHF", market: "forex", description: "US Dollar to Swiss Franc" },
-    { symbol: "CHFUSD=X", name: "CHF/USD", market: "forex", description: "Swiss Franc to US Dollar" },
+    { symbol: "USD/CHF", name: "USD/CHF", market: "forex", description: "US Dollar to Swiss Franc" },
+    { symbol: "CHF/USD", name: "CHF/USD", market: "forex", description: "Swiss Franc to US Dollar" },
   ],
   "usdchf": [
-    { symbol: "USDCHF=X", name: "USD/CHF", market: "forex", description: "US Dollar to Swiss Franc" },
+    { symbol: "USD/CHF", name: "USD/CHF", market: "forex", description: "US Dollar to Swiss Franc" },
   ],
   "chfusd": [
-    { symbol: "CHFUSD=X", name: "CHF/USD", market: "forex", description: "Swiss Franc to US Dollar" },
+    { symbol: "CHF/USD", name: "CHF/USD", market: "forex", description: "Swiss Franc to US Dollar" },
   ],
   
   // Emerging Market Pairs
   "inr": [
-    { symbol: "USDINR=X", name: "USD/INR", market: "forex", description: "US Dollar to Indian Rupee" },
-    { symbol: "INRUSD=X", name: "INR/USD", market: "forex", description: "Indian Rupee to US Dollar" },
+    { symbol: "USD/INR", name: "USD/INR", market: "forex", description: "US Dollar to Indian Rupee" },
+    { symbol: "INR/USD", name: "INR/USD", market: "forex", description: "Indian Rupee to US Dollar" },
   ],
   "usdinr": [
-    { symbol: "USDINR=X", name: "USD/INR", market: "forex", description: "US Dollar to Indian Rupee" },
+    { symbol: "USD/INR", name: "USD/INR", market: "forex", description: "US Dollar to Indian Rupee" },
   ],
   "inrusd": [
-    { symbol: "INRUSD=X", name: "INR/USD", market: "forex", description: "Indian Rupee to US Dollar" },
+    { symbol: "INR/USD", name: "INR/USD", market: "forex", description: "Indian Rupee to US Dollar" },
   ],
   "cny": [
-    { symbol: "USDCNY=X", name: "USD/CNY", market: "forex", description: "US Dollar to Chinese Yuan" },
-    { symbol: "CNYUSD=X", name: "CNY/USD", market: "forex", description: "Chinese Yuan to US Dollar" },
+    { symbol: "USD/CNY", name: "USD/CNY", market: "forex", description: "US Dollar to Chinese Yuan" },
+    { symbol: "CNY/USD", name: "CNY/USD", market: "forex", description: "Chinese Yuan to US Dollar" },
   ],
   "usdcny": [
-    { symbol: "USDCNY=X", name: "USD/CNY", market: "forex", description: "US Dollar to Chinese Yuan" },
+    { symbol: "USD/CNY", name: "USD/CNY", market: "forex", description: "US Dollar to Chinese Yuan" },
   ],
   "cnyusd": [
-    { symbol: "CNYUSD=X", name: "CNY/USD", market: "forex", description: "Chinese Yuan to US Dollar" },
+    { symbol: "CNY/USD", name: "CNY/USD", market: "forex", description: "Chinese Yuan to US Dollar" },
   ],
   "brl": [
-    { symbol: "USDBRL=X", name: "USD/BRL", market: "forex", description: "US Dollar to Brazilian Real" },
-    { symbol: "BRLUSD=X", name: "BRL/USD", market: "forex", description: "Brazilian Real to US Dollar" },
+    { symbol: "USD/BRL", name: "USD/BRL", market: "forex", description: "US Dollar to Brazilian Real" },
+    { symbol: "BRL/USD", name: "BRL/USD", market: "forex", description: "Brazilian Real to US Dollar" },
   ],
   "usdbrl": [
-    { symbol: "USDBRL=X", name: "USD/BRL", market: "forex", description: "US Dollar to Brazilian Real" },
+    { symbol: "USD/BRL", name: "USD/BRL", market: "forex", description: "US Dollar to Brazilian Real" },
   ],
   "brlusd": [
-    { symbol: "BRLUSD=X", name: "BRL/USD", market: "forex", description: "Brazilian Real to US Dollar" },
+    { symbol: "BRL/USD", name: "BRL/USD", market: "forex", description: "Brazilian Real to US Dollar" },
   ],
   "mxn": [
-    { symbol: "USDMXN=X", name: "USD/MXN", market: "forex", description: "US Dollar to Mexican Peso" },
-    { symbol: "MXNUSD=X", name: "MXN/USD", market: "forex", description: "Mexican Peso to US Dollar" },
+    { symbol: "USD/MXN", name: "USD/MXN", market: "forex", description: "US Dollar to Mexican Peso" },
+    { symbol: "MXN/USD", name: "MXN/USD", market: "forex", description: "Mexican Peso to US Dollar" },
   ],
   "usdmxn": [
-    { symbol: "USDMXN=X", name: "USD/MXN", market: "forex", description: "US Dollar to Mexican Peso" },
+    { symbol: "USD/MXN", name: "USD/MXN", market: "forex", description: "US Dollar to Mexican Peso" },
   ],
   "mxnusd": [
-    { symbol: "MXNUSD=X", name: "MXN/USD", market: "forex", description: "Mexican Peso to US Dollar" },
+    { symbol: "MXN/USD", name: "MXN/USD", market: "forex", description: "Mexican Peso to US Dollar" },
   ],
   "zar": [
-    { symbol: "USDZAR=X", name: "USD/ZAR", market: "forex", description: "US Dollar to South African Rand" },
-    { symbol: "ZARUSD=X", name: "ZAR/USD", market: "forex", description: "South African Rand to US Dollar" },
+    { symbol: "USD/ZAR", name: "USD/ZAR", market: "forex", description: "US Dollar to South African Rand" },
+    { symbol: "ZAR/USD", name: "ZAR/USD", market: "forex", description: "South African Rand to US Dollar" },
   ],
   "usdzar": [
-    { symbol: "USDZAR=X", name: "USD/ZAR", market: "forex", description: "US Dollar to South African Rand" },
+    { symbol: "USD/ZAR", name: "USD/ZAR", market: "forex", description: "US Dollar to South African Rand" },
   ],
   "zarusd": [
-    { symbol: "ZARUSD=X", name: "ZAR/USD", market: "forex", description: "South African Rand to US Dollar" },
+    { symbol: "ZAR/USD", name: "ZAR/USD", market: "forex", description: "South African Rand to US Dollar" },
   ],
   "rub": [
-    { symbol: "USDRUB=X", name: "USD/RUB", market: "forex", description: "US Dollar to Russian Ruble" },
-    { symbol: "RUBUSD=X", name: "RUB/USD", market: "forex", description: "Russian Ruble to US Dollar" },
+    { symbol: "USD/RUB", name: "USD/RUB", market: "forex", description: "US Dollar to Russian Ruble" },
+    { symbol: "RUB/USD", name: "RUB/USD", market: "forex", description: "Russian Ruble to US Dollar" },
   ],
   "usdrub": [
-    { symbol: "USDRUB=X", name: "USD/RUB", market: "forex", description: "US Dollar to Russian Ruble" },
+    { symbol: "USD/RUB", name: "USD/RUB", market: "forex", description: "US Dollar to Russian Ruble" },
   ],
   "rubusd": [
-    { symbol: "RUBUSD=X", name: "RUB/USD", market: "forex", description: "Russian Ruble to US Dollar" },
+    { symbol: "RUB/USD", name: "RUB/USD", market: "forex", description: "Russian Ruble to US Dollar" },
   ],
   "krw": [
-    { symbol: "USDKRW=X", name: "USD/KRW", market: "forex", description: "US Dollar to South Korean Won" },
-    { symbol: "KRWUSD=X", name: "KRW/USD", market: "forex", description: "South Korean Won to US Dollar" },
+    { symbol: "USD/KRW", name: "USD/KRW", market: "forex", description: "US Dollar to South Korean Won" },
+    { symbol: "KRW/USD", name: "KRW/USD", market: "forex", description: "South Korean Won to US Dollar" },
   ],
   "usdkrw": [
-    { symbol: "USDKRW=X", name: "USD/KRW", market: "forex", description: "US Dollar to South Korean Won" },
+    { symbol: "USD/KRW", name: "USD/KRW", market: "forex", description: "US Dollar to South Korean Won" },
   ],
   "krwusd": [
-    { symbol: "KRWUSD=X", name: "KRW/USD", market: "forex", description: "South Korean Won to US Dollar" },
+    { symbol: "KRW/USD", name: "KRW/USD", market: "forex", description: "South Korean Won to US Dollar" },
   ],
   "sgd": [
-    { symbol: "USDSGD=X", name: "USD/SGD", market: "forex", description: "US Dollar to Singapore Dollar" },
-    { symbol: "SGDUSD=X", name: "SGD/USD", market: "forex", description: "Singapore Dollar to US Dollar" },
+    { symbol: "USD/SGD", name: "USD/SGD", market: "forex", description: "US Dollar to Singapore Dollar" },
+    { symbol: "SGD/USD", name: "SGD/USD", market: "forex", description: "Singapore Dollar to US Dollar" },
   ],
   "usdsgd": [
-    { symbol: "USDSGD=X", name: "USD/SGD", market: "forex", description: "US Dollar to Singapore Dollar" },
+    { symbol: "USD/SGD", name: "USD/SGD", market: "forex", description: "US Dollar to Singapore Dollar" },
   ],
   "sgdusd": [
-    { symbol: "SGDUSD=X", name: "SGD/USD", market: "forex", description: "Singapore Dollar to US Dollar" },
+    { symbol: "SGD/USD", name: "SGD/USD", market: "forex", description: "Singapore Dollar to US Dollar" },
   ],
   "hkd": [
-    { symbol: "USDHKD=X", name: "USD/HKD", market: "forex", description: "US Dollar to Hong Kong Dollar" },
-    { symbol: "HKDUSD=X", name: "HKD/USD", market: "forex", description: "Hong Kong Dollar to US Dollar" },
+    { symbol: "USD/HKD", name: "USD/HKD", market: "forex", description: "US Dollar to Hong Kong Dollar" },
+    { symbol: "HKD/USD", name: "HKD/USD", market: "forex", description: "Hong Kong Dollar to US Dollar" },
   ],
   "usdhkd": [
-    { symbol: "USDHKD=X", name: "USD/HKD", market: "forex", description: "US Dollar to Hong Kong Dollar" },
+    { symbol: "USD/HKD", name: "USD/HKD", market: "forex", description: "US Dollar to Hong Kong Dollar" },
   ],
   "hkdusd": [
-    { symbol: "HKDUSD=X", name: "HKD/USD", market: "forex", description: "Hong Kong Dollar to US Dollar" },
+    { symbol: "HKD/USD", name: "HKD/USD", market: "forex", description: "Hong Kong Dollar to US Dollar" },
   ],
   "thb": [
-    { symbol: "USDTHB=X", name: "USD/THB", market: "forex", description: "US Dollar to Thai Baht" },
-    { symbol: "THBUSD=X", name: "THB/USD", market: "forex", description: "Thai Baht to US Dollar" },
+    { symbol: "USD/THB", name: "USD/THB", market: "forex", description: "US Dollar to Thai Baht" },
+    { symbol: "THB/USD", name: "THB/USD", market: "forex", description: "Thai Baht to US Dollar" },
   ],
   "usdthb": [
-    { symbol: "USDTHB=X", name: "USD/THB", market: "forex", description: "US Dollar to Thai Baht" },
+    { symbol: "USD/THB", name: "USD/THB", market: "forex", description: "US Dollar to Thai Baht" },
   ],
   "thbusd": [
-    { symbol: "THBUSD=X", name: "THB/USD", market: "forex", description: "Thai Baht to US Dollar" },
+    { symbol: "THB/USD", name: "THB/USD", market: "forex", description: "Thai Baht to US Dollar" },
   ],
   "try": [
-    { symbol: "USDTRY=X", name: "USD/TRY", market: "forex", description: "US Dollar to Turkish Lira" },
-    { symbol: "TRYUSD=X", name: "TRY/USD", market: "forex", description: "Turkish Lira to US Dollar" },
+    { symbol: "USD/TRY", name: "USD/TRY", market: "forex", description: "US Dollar to Turkish Lira" },
+    { symbol: "TRY/USD", name: "TRY/USD", market: "forex", description: "Turkish Lira to US Dollar" },
   ],
   "usdtry": [
-    { symbol: "USDTRY=X", name: "USD/TRY", market: "forex", description: "US Dollar to Turkish Lira" },
+    { symbol: "USD/TRY", name: "USD/TRY", market: "forex", description: "US Dollar to Turkish Lira" },
   ],
   "tryusd": [
-    { symbol: "TRYUSD=X", name: "TRY/USD", market: "forex", description: "Turkish Lira to US Dollar" },
+    { symbol: "TRY/USD", name: "TRY/USD", market: "forex", description: "Turkish Lira to US Dollar" },
   ],
 
   // Major US Stocks

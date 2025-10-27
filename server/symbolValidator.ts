@@ -67,7 +67,17 @@ export function getQuoteCurrency(symbol: string): string | null {
   
   // Check if it's a 6-character forex pair
   if (upperSymbol.length === 6) {
-    const commonCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'INR', 'CNY', 'HKD', 'SGD', 'MXN', 'BRL', 'ZAR', 'TRY', 'SEK', 'NOK', 'DKK'];
+    // Comprehensive list of all supported currencies (expanded from 19 to 30+)
+    const commonCurrencies = [
+      'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD',  // Major currencies
+      'INR', 'CNY', 'HKD', 'SGD', 'KRW', 'THB',                // Asian currencies
+      'MXN', 'BRL', 'ARS', 'CLP', 'COP',                       // Latin American currencies
+      'ZAR', 'NGN', 'KES', 'EGP',                              // African currencies
+      'RUB', 'TRY', 'PLN', 'HUF', 'CZK', 'RON',              // Eastern European currencies
+      'SEK', 'NOK', 'DKK', 'ISK',                              // Nordic currencies
+      'ILS', 'AED', 'SAR', 'QAR', 'KWD',                       // Middle Eastern currencies
+      'PHP', 'IDR', 'MYR', 'VND'                               // Southeast Asian currencies
+    ];
     const quoteCurrency = upperSymbol.substring(3, 6);
     
     if (commonCurrencies.includes(quoteCurrency)) {
