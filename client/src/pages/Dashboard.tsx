@@ -296,11 +296,15 @@ export default function Dashboard() {
         
         // Smart currency conversion: skip for forex pairs, only convert when source currency !== user currency
         if (data.currentPrice && data.sourceCurrency) {
-          // Forex pairs like CAD/USD should NOT be converted - the pair itself is the currency relationship
-          if (data.sourceCurrency === 'FOREX_PAIR') {
+          // 🚨 FOREX PAIRS: NEVER convert forex pairs
+          // Forex pairs like USD/GBP are exchange RATES, not prices to convert
+          // The "price" IS the exchange rate itself (e.g., 0.75 means 1 USD = 0.75 GBP)
+          if (market === 'forex') {
             setConvertedPrice(data.currentPrice);
-            console.log(`💱 Forex pair detected - no currency conversion applied`);
+            console.log(`💱 Forex pair detected - showing quote currency price without conversion`);
+            console.log(`   ${data.correctedSymbol || symbol}: ${data.currentPrice} ${data.sourceCurrency}`);
           } else {
+            // For non-forex assets: convert to user's preferred currency
             const { convertedPrice, rate } = await convertPrice(
               data.currentPrice, 
               data.sourceCurrency, 
@@ -1077,7 +1081,11 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center border-t border-[#38e07b]/20 pt-3">
                     <span className="text-[#9eb7a8] text-sm">Current Price:</span>
                     <span className="text-[#38e07b] font-bold">
-                      {getCurrencySymbol(currency)}{convertedPrice.toFixed(2)}
+                      {/* For forex pairs, show quote currency (from validation result). For other assets, show user's preferred currency */}
+                      {market === 'forex' && validationResult?.sourceCurrency 
+                        ? `${getCurrencySymbol(validationResult.sourceCurrency)}${convertedPrice.toFixed(4)}`
+                        : `${getCurrencySymbol(currency)}${convertedPrice.toFixed(2)}`
+                      }
                     </span>
                   </div>
                 )}
