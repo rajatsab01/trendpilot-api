@@ -344,7 +344,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                   {analyses.map((analysis) => (
                     <div
                       key={analysis.id}
-                      onClick={() => setLocation(`/analysis/${analysis.id}`)}
+                      onClick={() => setLocation(`/analyzer?analysisId=${analysis.id}&fromCommunity=true`)}
                       className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33] cursor-pointer hover:border-[#38e07b]/50 transition-colors"
                       data-testid={`analysis-card-${analysis.id}`}
                     >
