@@ -1211,7 +1211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify minimum saved analyses requirement (10 trades)
-      const analyses = await storage.getAnalyses(userId);
+      const analyses = await storage.getSavedAnalysesByUser(userId);
       if (analyses.length < 10) {
         return res.status(403).json({ 
           error: "Minimum requirement not met",
@@ -1267,6 +1267,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(users);
     } catch (error) {
       console.error("Search users error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get user profile with stats
+  app.get("/api/community/user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const currentUserId = req.query.currentUserId as string;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Get stats
+      const followers = await storage.getFollowers(userId);
+      const following = await storage.getFollowing(userId);
+      const publishedAnalyses = await storage.getPublishedAnalysesFeed(userId);
+      
+      // Filter to get only this user's published analyses
+      const userPublishedAnalyses = publishedAnalyses.filter(item => item.author.id === userId);
+
+      // Check relationship with current user
+      let isFollowing = false;
+      let isBlocked = false;
+      if (currentUserId && currentUserId !== userId) {
+        isFollowing = await storage.isFollowing(currentUserId, userId);
+        isBlocked = await storage.isBlocked(currentUserId, userId);
+      }
+
+      res.json({
+        user: {
+          id: user.id,
+          name: user.name,
+          alias: user.alias,
+          isBanned: user.isBanned,
+          lastSeen: user.lastSeen,
+        },
+        stats: {
+          followers: followers.length,
+          following: following.length,
+          publishedAnalyses: userPublishedAnalyses.length,
+        },
+        relationship: {
+          isFollowing,
+          isBlocked,
+        },
+      });
+    } catch (error) {
+      console.error("Get user profile error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get user's published analyses
+  app.get("/api/community/user/:userId/analyses", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      const feed = await storage.getPublishedAnalysesFeed(userId);
+      
+      // Filter to only this user's published analyses
+      const userAnalyses = feed.filter(item => item.author.id === userId);
+
+      res.json(userAnalyses);
+    } catch (error) {
+      console.error("Get user analyses error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
