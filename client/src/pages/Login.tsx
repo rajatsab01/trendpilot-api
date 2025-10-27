@@ -4,6 +4,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import PWAInstallModal from "@/components/PWAInstallModal";
 
 declare global {
   interface Window {
@@ -18,6 +20,14 @@ export default function Login() {
   const [name, setName] = useState("");
   const [isVerified, setIsVerified] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState("");
+  
+  const {
+    showInstallModal,
+    incrementLoginCount,
+    triggerInstallPrompt,
+    handleInstall,
+    handleDismiss,
+  } = usePWAInstall();
 
   const verifyPhoneMutation = useMutation({
     mutationFn: async (userJsonUrl: string) => {
@@ -55,6 +65,11 @@ export default function Login() {
     onSuccess: (data) => {
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("loginCompleted", "true");
+      
+      // Increment login count and check if we should show PWA prompt
+      incrementLoginCount();
+      triggerInstallPrompt("login");
+      
       setLocation("/welcome");
     },
     onError: () => {
@@ -177,6 +192,13 @@ export default function Login() {
       </main>
 
       <footer className="flex-shrink-0 py-16"></footer>
+      
+      <PWAInstallModal
+        isOpen={showInstallModal}
+        onInstall={handleInstall}
+        onDismiss={handleDismiss}
+        trigger="login"
+      />
     </div>
   );
 }

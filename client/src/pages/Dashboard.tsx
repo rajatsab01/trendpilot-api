@@ -14,6 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import PWAInstallModal from "@/components/PWAInstallModal";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -28,6 +30,14 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  
+  const {
+    showInstallModal: showPWAModal,
+    incrementEnlightenMeCount,
+    triggerInstallPrompt,
+    handleInstall: handlePWAInstall,
+    handleDismiss: handlePWADismiss,
+  } = usePWAInstall();
   const [showInstallBonus, setShowInstallBonus] = useState(false);
   const [bonusTokensClaimed, setBonusTokensClaimed] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
@@ -339,6 +349,11 @@ export default function Dashboard() {
       
       // Mark that analysis just completed (for Phase 3 reminder timing)
       sessionStorage.setItem("analysisJustCompleted", "true");
+      
+      // Increment Enlighten Me count and check for PWA prompt (3rd press)
+      // Only count successful analyses, not failed attempts
+      incrementEnlightenMeCount();
+      triggerInstallPrompt("enlightenMe");
       
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
       setLocation(`/analyzer?analysisId=${data.analysisId}`);
@@ -1135,6 +1150,13 @@ export default function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+      
+      <PWAInstallModal
+        isOpen={showPWAModal}
+        onInstall={handlePWAInstall}
+        onDismiss={handlePWADismiss}
+        trigger="enlightenMe"
+      />
     </div>
   );
 }
