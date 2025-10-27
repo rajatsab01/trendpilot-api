@@ -1,6 +1,6 @@
 // Removed fetchMarketData import - Perplexity now handles all market data validation via real-time web search
 import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
-import { getExchangeCurrency } from "./symbolValidator";
+import { getExchangeCurrency, isForexPair } from "./symbolValidator";
 
 interface OHLCVData {
   symbol: string;
@@ -516,16 +516,19 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
 
     // 💱 Determine the original currency from the exchange FIRST
     // CRITICAL: This must happen BEFORE any conversion logic
+    // For forex pairs, this returns the QUOTE CURRENCY (2nd currency in pair)
     const sourceCurrency = getExchangeCurrency(data.correctedSymbol, detectedMarket);
     console.log(`💱 Source currency for ${data.correctedSymbol}: ${sourceCurrency}`);
     
     // 🚨 FOREX PAIR DETECTION: Skip conversion entirely for forex pairs
     // Forex pairs like CAD/USD represent an exchange rate, NOT a price to convert
-    const isForexPairSymbol = sourceCurrency === 'FOREX_PAIR';
+    // Now we detect forex pairs using the isForexPair function
+    const isForexPairSymbol = detectedMarket === 'forex' || isForexPair(data.correctedSymbol);
     
     // 🚨 SAME CURRENCY DETECTION: Skip conversion if source = target
     // If Yahoo Finance returns INR and user wants INR, prices are already correct!
-    const isSameCurrency = sourceCurrency === currency;
+    // For forex pairs, NEVER convert even if quote currency matches user preference
+    const isSameCurrency = !isForexPairSymbol && sourceCurrency === currency;
     
     let convertedLivePrice: string;
     let convertedCandleClosePrice: string;

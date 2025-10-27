@@ -56,14 +56,49 @@ export function isForexPair(symbol: string): boolean {
 }
 
 /**
+ * Extract quote currency (2nd currency) from forex pair
+ * Examples:
+ * - USD/GBP → GBP
+ * - GBPUSD → USD
+ * - EURUSD=X → USD
+ */
+export function getQuoteCurrency(symbol: string): string | null {
+  const upperSymbol = symbol.toUpperCase().replace(/=X$/g, '').replace(/\//g, '');
+  
+  // Check if it's a 6-character forex pair
+  if (upperSymbol.length === 6) {
+    const commonCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'INR', 'CNY', 'HKD', 'SGD', 'MXN', 'BRL', 'ZAR', 'TRY', 'SEK', 'NOK', 'DKK'];
+    const quoteCurrency = upperSymbol.substring(3, 6);
+    
+    if (commonCurrencies.includes(quoteCurrency)) {
+      return quoteCurrency;
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Get the currency that Yahoo Finance provides prices in for a given symbol
  * Maps exchange suffixes to their native currencies
+ * 
+ * For forex pairs, returns the QUOTE CURRENCY (2nd currency in pair)
+ * Examples:
+ * - USD/GBP → GBP (price is in GBP)
+ * - GBP/USD → USD (price is in USD)
+ * - EUR/USD → USD (price is in USD)
  */
 export function getExchangeCurrency(symbol: string, market: string): string {
-  // Forex pairs should return NULL to indicate "no conversion needed"
-  // The pair itself IS the currency relationship (e.g., CAD/USD)
+  // Forex pairs: return the quote currency (2nd currency)
+  // The pair price is always expressed in the quote currency
   if (market === 'forex' || isForexPair(symbol)) {
-    return 'FOREX_PAIR'; // Special marker to skip conversion
+    const quoteCurrency = getQuoteCurrency(symbol);
+    if (quoteCurrency) {
+      console.log(`[Forex] ${symbol} → Quote currency: ${quoteCurrency}`);
+      return quoteCurrency;
+    }
+    // Fallback: if we can't determine, return 'FOREX_PAIR' marker
+    return 'FOREX_PAIR';
   }
   
   // Cryptocurrency prices are always in USD from Binance/CoinGecko

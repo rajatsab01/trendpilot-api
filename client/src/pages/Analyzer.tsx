@@ -245,7 +245,11 @@ export default function Analyzer() {
       return currencySymbols[currency] || currency + ' ';
     };
 
-    const currencySymbol = getCurrencySymbol(analysis.currency || 'USD');
+    // For forex pairs, display price in the quote currency (2nd currency in pair)
+    // For other assets, display in user's preferred currency
+    const isForexPair = analysis.market?.toLowerCase() === 'forex';
+    const displayCurrency = isForexPair ? analysis.sourceCurrency : analysis.currency;
+    const currencySymbol = getCurrencySymbol(displayCurrency || 'USD');
 
     // Chart URL configuration - Yahoo Finance for stocks/commodities/forex
     const getYahooChartUrl = (symbol: string, duration?: string): string => {
@@ -392,10 +396,10 @@ export default function Analyzer() {
                   {/* Currency Conversion Info */}
                   {analysis.sourceCurrency && analysis.currency && (
                     <p className="text-[#6a7f72] text-xs mt-3 pt-3 border-t border-[#1c2620]">
-                      {analysis.sourceCurrency === 'FOREX_PAIR' ? (
+                      {isForexPair ? (
                         <>
                           <span className="material-symbols-outlined text-[#38e07b] text-xs align-middle mr-1">currency_exchange</span>
-                          <span className="text-[#9eb7a8]">Forex pair analysis - prices shown as exchange rate</span>
+                          <span className="text-[#9eb7a8]">Forex pair - prices shown in {analysis.sourceCurrency}</span>
                         </>
                       ) : analysis.sourceCurrency === analysis.currency ? (
                         <>
