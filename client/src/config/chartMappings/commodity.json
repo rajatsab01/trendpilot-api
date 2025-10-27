@@ -12,79 +12,79 @@
     {
       "pattern": "GC=F",
       "type": "exact",
-      "replacement": "GOLD FUTURES",
-      "comment": "Gold futures → plain name"
+      "replacement": "XAUUSD",
+      "comment": "Gold futures → TradingView spot gold symbol"
     },
     {
       "pattern": "SI=F",
       "type": "exact",
-      "replacement": "SILVER FUTURES",
-      "comment": "Silver futures → plain name"
+      "replacement": "XAGUSD",
+      "comment": "Silver futures → TradingView spot silver symbol"
     },
     {
       "pattern": "CL=F",
       "type": "exact",
-      "replacement": "CRUDE OIL FUTURES",
-      "comment": "Crude Oil futures → plain name"
+      "replacement": "USOIL",
+      "comment": "Crude Oil futures → TradingView WTI crude oil symbol"
     },
     {
       "pattern": "NG=F",
       "type": "exact",
-      "replacement": "NATURAL GAS FUTURES",
-      "comment": "Natural Gas futures → plain name"
+      "replacement": "NATURALGAS",
+      "comment": "Natural Gas futures → TradingView natural gas symbol"
     },
     {
       "pattern": "HG=F",
       "type": "exact",
-      "replacement": "COPPER FUTURES",
-      "comment": "Copper futures → plain name"
+      "replacement": "COPPER",
+      "comment": "Copper futures → TradingView copper symbol"
     },
     {
       "pattern": "ZC=F",
       "type": "exact",
-      "replacement": "CORN FUTURES",
-      "comment": "Corn futures → plain name"
+      "replacement": "CORN",
+      "comment": "Corn futures → TradingView corn symbol"
     },
     {
       "pattern": "ZW=F",
       "type": "exact",
-      "replacement": "WHEAT FUTURES",
-      "comment": "Wheat futures → plain name"
+      "replacement": "WHEAT",
+      "comment": "Wheat futures → TradingView wheat symbol"
     },
     {
       "pattern": "PL=F",
       "type": "exact",
-      "replacement": "PLATINUM FUTURES",
-      "comment": "Platinum futures → plain name"
+      "replacement": "PLATINUM",
+      "comment": "Platinum futures → TradingView platinum symbol"
     },
     {
       "pattern": "PA=F",
       "type": "exact",
-      "replacement": "PALLADIUM FUTURES",
-      "comment": "Palladium futures → plain name"
+      "replacement": "PALLADIUM",
+      "comment": "Palladium futures → TradingView palladium symbol"
     },
     {
       "pattern": "BZ=F",
       "type": "exact",
-      "replacement": "BRENT CRUDE OIL FUTURES",
-      "comment": "Brent Crude futures → plain name"
+      "replacement": "UKOIL",
+      "comment": "Brent Crude futures → TradingView Brent crude symbol"
     },
     {
       "pattern": "ZN=F",
       "type": "exact",
-      "replacement": "ZINC FUTURES",
-      "comment": "Zinc futures → plain name"
+      "replacement": "ZINC",
+      "comment": "Zinc futures → TradingView zinc symbol"
     },
     {
       "pattern": "LE=F",
       "type": "exact",
-      "replacement": "LEAD FUTURES",
-      "comment": "Lead futures → plain name"
+      "replacement": "LEAD",
+      "comment": "Lead futures → TradingView lead symbol"
     }
   ],
   "fallback": {
-    "suffix": " FUTURES",
+    "suffix": "",
     "removeSuffix": "=F",
-    "comment": "Add FUTURES suffix to unmapped commodities"
+    "comment": "Remove =F suffix and use clean symbol name"
   }
 }

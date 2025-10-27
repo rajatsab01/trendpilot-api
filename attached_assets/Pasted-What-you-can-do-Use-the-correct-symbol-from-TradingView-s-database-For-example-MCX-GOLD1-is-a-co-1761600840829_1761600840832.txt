@@ -1,0 +1,52 @@
+What you can do
+
+Use the correct symbol from TradingView’s database
+For example:
+
+MCX:GOLD1! is a continuous contract for gold futures on MCX. 
+TradingView
++1
+
+MCX:GOLDM1! is the “mini” contract for gold futures on MCX. 
+TradingView
+
+XAUINR is spot gold in Indian rupees (from ICE data) on TradingView. 
+TradingView
++1
+
+So you’ll want your code to use one of those valid symbols (depending on which contract/data you have rights to).
+
+Ensure your datafeed/permissions cover that symbol
+Many Indian commodity contracts require a licence or a feed subscription for real-time; even TradingView may require the exchange (MCX) to provide the data or you to login. For example, the page for MCX:GOLD1! says: “Sorry, this is only available to registered users” (i.e., you might need appropriate access). 
+TradingView
+
+If you’re embedding and your account doesn’t have feed for MCX commodities, you’ll get “invalid symbol”.
+
+Correct symbol format for your embed/library
+
+If using widget embed, use symbol: "MCX:GOLD1!".
+
+If using the Charting Library + custom datafeed, in your resolveSymbol you may map internal symbol strings (like GOLD) to exchange: "MCX" and ticker: "GOLD1!".
+
+Make sure you do not prematurely strip suffix like !, unless your datafeed architecture expects it.
+
+Session / Timezone / Exchange settings
+Ensure that the symbol’s exchange in your symbolInfo is set to MCX, timezone to Asia/Kolkata, session to MCX trading hours for that commodity (e.g., intraday session for futures), or else the library might mark it invalid or show no bars.
+This ties back to correct session definitions from the docs.
+
+Fallback or alternative symbol
+If MCX feed is too complex or you don’t have permissions, you might choose a globally available gold symbol like XAUUSD or XAUINR as an alternative. For example, XAUINR shows gold in INR on TradingView. 
+TradingView
++1
+
+But note: data may differ (spot vs futures) and licence considerations may still apply.
+
+🔍 What might be wrong in your case (based on screenshot)
+
+The symbol you entered is possibly incorrect or not existing in the feed you subscribed (e.g., maybe “GOLD FUTURES” generic name but not valid format).
+
+Your datafeed might not have access to MCX commodity contracts or isn’t mapped to them.
+
+You might be using a symbol for an exchange which isn’t supported in your widget/datafeed setup.
+
+The library might require exact contract names (including continuous contract suffix 1!, M1!, etc) and you might have omitted that.
