@@ -8,7 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
 import ReactionButtons from "@/components/ReactionButtons";
 import type { Analysis, User, Report } from "@shared/schema";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
 type FeedItem = Analysis & { author: User };
 
@@ -421,7 +421,7 @@ export default function Community() {
                         {analysis.createdAt && (
                           <p className="text-[#6a7f72] text-xs mb-2">
                             <span className="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
-                            {formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
+                            {format(new Date(analysis.createdAt), "MMM dd, yyyy 'at' h:mm a")}
                           </p>
                         )}
 
