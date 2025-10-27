@@ -468,9 +468,12 @@ async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ sym
  */
 async function validateYahooSymbol(symbol: string, market: string): Promise<SymbolValidationResult> {
   try {
+    console.log(`\n🔍 [validateYahooSymbol] Input: "${symbol}" (market: ${market})`);
+    
     // Use unified symbol normalization from symbolRegistry
     // Classification is auto-detected based on symbol pattern and market type
     const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
+    console.log(`📤 [validateYahooSymbol] Sending to Yahoo: "${yahooSymbol}"`);
     
     // Try fetching from Yahoo Finance
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
@@ -521,12 +524,24 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     const result = data.chart.result[0];
     const meta = result.meta;
     
+    console.log(`📥 [validateYahooSymbol] Yahoo returned symbol: "${meta.symbol || yahooSymbol}"`);
+    console.log(`📥 [validateYahooSymbol] Asset name: "${meta.longName || yahooSymbol}"`);
+    
     // Determine the currency this exchange provides prices in
     const sourceCurrency = getExchangeCurrency(yahooSymbol, market);
+    console.log(`💱 [validateYahooSymbol] Source currency: ${sourceCurrency}`);
+    
+    // IMPORTANT: Preserve user's original symbol direction for forex pairs
+    // Yahoo may return a different symbol (e.g., GBPUSD=X when we asked for USDGBP=X)
+    // But we want to keep the user's intent for display purposes
+    const shouldPreserveUserSymbol = market === 'forex' && meta.symbol && meta.symbol !== yahooSymbol;
+    const finalSymbol = shouldPreserveUserSymbol ? symbol : yahooSymbol;
+    
+    console.log(`✅ [validateYahooSymbol] Final corrected symbol: "${finalSymbol}" ${shouldPreserveUserSymbol ? '(preserved user direction)' : ''}`);
     
     return {
       isValid: true,
-      correctedSymbol: yahooSymbol,
+      correctedSymbol: finalSymbol,
       assetName: meta.longName || yahooSymbol,
       currentPrice: meta.regularMarketPrice || meta.previousClose,
       sourceCurrency: sourceCurrency,

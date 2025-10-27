@@ -125,15 +125,21 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
   // Major Forex Pairs (Explicit 6-letter format to prevent Yahoo Finance auto-conversion)
   // EUR Pairs
   "euro": [
-    { symbol: "EURUSD=X", name: "EUR/USD", market: "forex", description: "Euro to US Dollar" },
-    { symbol: "EURGBP=X", name: "EUR/GBP", market: "forex", description: "Euro to British Pound" },
-    { symbol: "EURJPY=X", name: "EUR/JPY", market: "forex", description: "Euro to Japanese Yen" },
+    { symbol: "EUR/USD", name: "EUR/USD", market: "forex", description: "Euro to US Dollar" },
+    { symbol: "EUR/GBP", name: "EUR/GBP", market: "forex", description: "Euro to British Pound" },
+    { symbol: "EUR/JPY", name: "EUR/JPY", market: "forex", description: "Euro to Japanese Yen" },
   ],
   "eurusd": [
-    { symbol: "EURUSD=X", name: "EUR/USD", market: "forex", description: "Euro to US Dollar" },
+    { symbol: "EUR/USD", name: "EUR/USD", market: "forex", description: "Euro to US Dollar" },
+  ],
+  "eur/usd": [
+    { symbol: "EUR/USD", name: "EUR/USD", market: "forex", description: "Euro to US Dollar" },
   ],
   "usdeur": [
-    { symbol: "USDEUR=X", name: "USD/EUR", market: "forex", description: "US Dollar to Euro" },
+    { symbol: "USD/EUR", name: "USD/EUR", market: "forex", description: "US Dollar to Euro" },
+  ],
+  "usd/eur": [
+    { symbol: "USD/EUR", name: "USD/EUR", market: "forex", description: "US Dollar to Euro" },
   ],
   "eurgbp": [
     { symbol: "EURGBP=X", name: "EUR/GBP", market: "forex", description: "Euro to British Pound" },
@@ -181,10 +187,16 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "GBPUSD=X", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
   ],
   "gbpusd": [
-    { symbol: "GBPUSD=X", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
+    { symbol: "GBP/USD", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
+  ],
+  "gbp/usd": [
+    { symbol: "GBP/USD", name: "GBP/USD", market: "forex", description: "British Pound to US Dollar" },
   ],
   "usdgbp": [
-    { symbol: "USDGBP=X", name: "USD/GBP", market: "forex", description: "US Dollar to British Pound" },
+    { symbol: "USD/GBP", name: "USD/GBP", market: "forex", description: "US Dollar to British Pound" },
+  ],
+  "usd/gbp": [
+    { symbol: "USD/GBP", name: "USD/GBP", market: "forex", description: "US Dollar to British Pound" },
   ],
   "gbpjpy": [
     { symbol: "GBPJPY=X", name: "GBP/JPY", market: "forex", description: "British Pound to Japanese Yen" },

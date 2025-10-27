@@ -209,6 +209,13 @@ export function normalizeSymbolForAPI(
     return normalized;
   }
 
+  // Handle forex pairs with slash separator (USD/GBP → USDGBP=X)
+  if (market === 'forex' && normalized.includes('/')) {
+    const cleanPair = normalized.replace('/', '');
+    console.log(`[SymbolRegistry] Forex pair with slash: ${normalized} → ${cleanPair}=X`);
+    return `${cleanPair}=X`;
+  }
+
   // PRIORITY 2: Handle commodity aliases (legacy support)
   if (market === 'commodity') {
     const commodityAliasMap: Record<string, string> = {
