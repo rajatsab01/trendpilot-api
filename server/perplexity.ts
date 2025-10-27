@@ -216,8 +216,8 @@ Based on all indicators + market sentiment + deep analysis using REAL data, prov
 
 Respond with JSON in this exact format:
 {
-  "correctedSymbol": "CORRECTED standard ticker symbol from your web search (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
-  "assetName": "Full official name of the asset from your web search (e.g., 'Bitcoin', 'Apple Inc.', 'Gold Spot', 'EUR/USD')",
+  "correctedSymbol": "Standard ticker symbol from your web search. CRITICAL FOR FOREX: Preserve EXACT pair direction as provided by user (if given 'USD/GBP', return 'USD/GBP' NOT 'GBP/USD'). For other markets, correct format (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
+  "assetName": "Full official name matching the EXACT symbol direction provided (e.g., if symbol is 'USD/GBP', name is 'US Dollar / British Pound', NOT 'British Pound / US Dollar')",
   "marketType": "${market}",
   "currentPrice": "DEPRECATED - Use candleClosePrice instead",
   "livePrice": "${priceData.livePrice?.toFixed(2) ?? '0.00'}",
