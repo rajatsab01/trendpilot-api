@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import ReactionButtons from "@/components/ReactionButtons";
 import { Bookmark, BookmarkCheck, Share2, Download } from "lucide-react";
 import type { Analysis } from "@shared/schema";
+import { APP_VERSION } from "@shared/schema";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import trendPilotLogo from "@assets/trendpilot-logo.png";
@@ -52,6 +53,7 @@ export default function Analyzer() {
         symbol,
         duration,
         market,
+        appVersion: APP_VERSION,
       });
       return await result.json();
     },
@@ -70,7 +72,9 @@ export default function Analyzer() {
 
   const saveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const result = await apiRequest("POST", `/api/analysis/${id}/save`, {});
+      const result = await apiRequest("POST", `/api/analysis/${id}/save`, {
+        appVersion: APP_VERSION,
+      });
       return await result.json();
     },
     onSuccess: (data) => {

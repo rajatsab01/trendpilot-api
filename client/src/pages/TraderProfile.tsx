@@ -7,6 +7,7 @@ import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
 import type { Analysis, User } from "@shared/schema";
+import { APP_VERSION } from "@shared/schema";
 
 type FeedItem = Analysis & { author: User };
 
@@ -62,6 +63,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
       return apiRequest("POST", `/api/community/${action}`, {
         followerId: userId,
         followingId: traderId,
+        appVersion: APP_VERSION,
       });
     },
     onSuccess: async (_, { action }) => {
@@ -88,6 +90,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
       return apiRequest("POST", `/api/community/${action}`, {
         blockerId: userId,
         blockedId: traderId,
+        appVersion: APP_VERSION,
       });
     },
     onSuccess: async (_, { action }) => {
@@ -111,12 +114,6 @@ export default function TraderProfile({ params }: { params: { traderId: string }
   // Check if trader is pinned
   const { data: isPinned = false } = useQuery<boolean>({
     queryKey: ["/api/community/pinned", userId, traderId],
-    queryFn: async () => {
-      const response = await fetch(`/api/community/pinned/${userId}/${traderId}`);
-      if (!response.ok) return false;
-      const data = await response.json();
-      return data.isPinned;
-    },
     enabled: !!userId && !!traderId && userId !== traderId,
   });
 
@@ -127,10 +124,11 @@ export default function TraderProfile({ params }: { params: { traderId: string }
         return apiRequest("POST", "/api/community/pin", {
           userId,
           traderId,
+          appVersion: APP_VERSION,
         });
       } else {
-        return fetch(`/api/community/pin/${userId}/${traderId}`, {
-          method: "DELETE",
+        return apiRequest("DELETE", `/api/community/pin/${userId}/${traderId}`, {
+          appVersion: APP_VERSION,
         });
       }
     },

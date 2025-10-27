@@ -35,23 +35,12 @@ export default function ReactionButtons({ analysisId, userId, showCounts = true 
   // Fetch reaction counts
   const { data: counts, isLoading: countsLoading } = useQuery<ReactionCounts>({
     queryKey: ["/api/reactions/counts", analysisId],
-    queryFn: async () => {
-      const response = await fetch(`/api/reactions/counts/${analysisId}`);
-      if (!response.ok) throw new Error("Failed to fetch reaction counts");
-      return response.json();
-    },
     enabled: !!analysisId,
   });
 
   // Fetch user's reaction
   const { data: userReaction } = useQuery<UserReaction | null>({
     queryKey: ["/api/reactions/user", userId, analysisId],
-    queryFn: async () => {
-      if (!userId) return null;
-      const response = await fetch(`/api/reactions/user/${userId}/${analysisId}`);
-      if (!response.ok) throw new Error("Failed to fetch user reaction");
-      return response.json();
-    },
     enabled: !!userId && !!analysisId,
   });
 
@@ -88,8 +77,8 @@ export default function ReactionButtons({ analysisId, userId, showCounts = true 
   // Remove reaction mutation
   const removeReactionMutation = useMutation({
     mutationFn: async (reactionType: ReactionType) => {
-      return fetch(`/api/reactions/${userId}/${analysisId}/${reactionType}`, {
-        method: "DELETE",
+      return apiRequest("DELETE", `/api/reactions/${userId}/${analysisId}/${reactionType}`, {
+        appVersion: APP_VERSION,
       });
     },
     onMutate: async () => {

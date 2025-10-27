@@ -3,6 +3,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useLocation } from "wouter";
 import BottomNav from "@/components/BottomNav";
 import type { Analysis } from "@shared/schema";
+import { APP_VERSION } from "@shared/schema";
 import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Trash2, Share2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +23,9 @@ export default function SavedAnalyses() {
 
   const deleteMutation = useMutation({
     mutationFn: async (analysisId: string) => {
-      const result = await apiRequest("DELETE", `/api/analysis/${analysisId}`, {});
+      const result = await apiRequest("DELETE", `/api/analysis/${analysisId}`, {
+        appVersion: APP_VERSION,
+      });
       return await result.json();
     },
     onSuccess: () => {
@@ -43,7 +46,9 @@ export default function SavedAnalyses() {
 
   const publishMutation = useMutation({
     mutationFn: async (analysisId: string) => {
-      const result = await apiRequest("POST", `/api/community/publish/${analysisId}`, {});
+      const result = await apiRequest("POST", `/api/community/publish/${analysisId}`, {
+        appVersion: APP_VERSION,
+      });
       return await result.json();
     },
     onSuccess: () => {
@@ -64,7 +69,9 @@ export default function SavedAnalyses() {
 
   const unpublishMutation = useMutation({
     mutationFn: async (analysisId: string) => {
-      const result = await apiRequest("POST", `/api/community/unpublish/${analysisId}`, {});
+      const result = await apiRequest("POST", `/api/community/unpublish/${analysisId}`, {
+        appVersion: APP_VERSION,
+      });
       return await result.json();
     },
     onSuccess: () => {
@@ -297,7 +304,7 @@ export default function SavedAnalyses() {
                   </div>
 
                   {/* Line 2: Entry, Current, TP1, TP2, SL */}
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-xs mb-1">
                     <div className="flex items-center gap-1">
                       <span className="text-[#9eb7a8]">Entry:</span>
                       <span className="text-white font-medium">{analysis.entry || "N/A"}</span>
@@ -318,6 +325,25 @@ export default function SavedAnalyses() {
                       <span className="text-red-500 font-medium">{analysis.stopLoss || "N/A"}</span>
                     </div>
                   </div>
+
+                  {/* Line 3: Timestamp */}
+                  {analysis.createdAt && (
+                    <div className="flex items-center gap-1 text-[10px] text-[#6a7f72]">
+                      <span className="material-symbols-outlined text-xs">schedule</span>
+                      <span>
+                        {new Date(analysis.createdAt).toLocaleDateString(undefined, { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                        {' '}
+                        {new Date(analysis.createdAt).toLocaleTimeString(undefined, { 
+                          hour: '2-digit', 
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}

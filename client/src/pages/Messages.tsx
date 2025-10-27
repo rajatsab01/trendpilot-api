@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import type { Message, User } from "@shared/schema";
+import { APP_VERSION } from "@shared/schema";
 
 type Conversation = {
   otherUser: User;
@@ -38,11 +39,6 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
   // Fetch chat messages if in a specific chat
   const { data: messages = [], isLoading: messagesLoading } = useQuery<MessageWithUser[]>({
     queryKey: ["/api/messages/conversation", userId, chatUserId],
-    queryFn: async () => {
-      const response = await fetch(`/api/messages/conversation/${userId}/${chatUserId}`);
-      if (!response.ok) throw new Error("Failed to fetch messages");
-      return response.json();
-    },
     enabled: !!userId && !!chatUserId,
     refetchInterval: 3000, // Poll every 3 seconds for new messages
   });
@@ -65,6 +61,7 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
         senderId: userId,
         receiverId: chatUserId,
         content: content.trim(),
+        appVersion: APP_VERSION,
       });
     },
     onSuccess: () => {
@@ -90,8 +87,14 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
         (msg) => msg.receiverId === userId && msg.isRead === 0
       );
 
-      unreadMessages.forEach((msg) => {
-        fetch(`/api/messages/${msg.id}/read`, { method: "POST" }).catch(console.error);
+      unreadMessages.forEach(async (msg) => {
+        try {
+          await apiRequest("POST", `/api/messages/${msg.id}/read`, {
+            appVersion: APP_VERSION,
+          });
+        } catch (error) {
+          console.error("Failed to mark message as read:", error);
+        }
       });
     }
   }, [chatUserId, messages, userId]);
@@ -249,14 +252,17 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
       {/* Chat Header */}
       <div className="bg-[#1a241f] border-b border-[#2a3c33] p-4 flex items-center gap-3 sticky top-0 z-10">
         <button
-          onClick={() => setLocation("/messages")}
+          onClick={() => setLocation(`/trader/${chatUserId}`)}
           className="text-white"
-          data-testid="button-back-to-messages"
+          data-testid="button-back-to-profile"
         >
           <span className="material-symbols-outlined text-2xl">arrow_back</span>
         </button>
         
-        <div className="flex-1 flex items-center gap-3">
+        <div 
+          className="flex-1 flex items-center gap-3 cursor-pointer"
+          onClick={() => setLocation(`/trader/${chatUserId}`)}
+        >
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
               <span className="text-[#38e07b] font-bold">
@@ -276,11 +282,12 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
         </div>
 
         <button
-          onClick={() => setLocation(`/trader/${chatUserId}`)}
+          onClick={() => setLocation("/messages")}
           className="text-white"
-          data-testid="button-view-profile"
+          data-testid="button-view-messages"
+          title="All Messages"
         >
-          <span className="material-symbols-outlined text-2xl">person</span>
+          <span className="material-symbols-outlined text-2xl">mail</span>
         </button>
       </div>
 
