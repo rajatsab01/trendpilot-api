@@ -523,7 +523,13 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     // 🚨 FOREX PAIR DETECTION: Skip conversion entirely for forex pairs
     // Forex pairs like CAD/USD represent an exchange rate, NOT a price to convert
     // Now we detect forex pairs using the isForexPair function
+    console.log(`🔍 FOREX DETECTION DEBUG:`);
+    console.log(`   correctedSymbol: "${data.correctedSymbol}"`);
+    console.log(`   detectedMarket: "${detectedMarket}"`);
+    console.log(`   isForexPair(correctedSymbol): ${isForexPair(data.correctedSymbol)}`);
+    console.log(`   detectedMarket === 'forex': ${detectedMarket === 'forex'}`);
     const isForexPairSymbol = detectedMarket === 'forex' || isForexPair(data.correctedSymbol);
+    console.log(`   FINAL isForexPairSymbol: ${isForexPairSymbol}`);
     
     // 🚨 SAME CURRENCY DETECTION: Skip conversion if source = target
     // If Yahoo Finance returns INR and user wants INR, prices are already correct!
