@@ -1,5 +1,5 @@
 {
-  "sourcePriority": ["assetName", "instrumentName", "correctedSymbol", "symbol"],
+  "sourcePriority": ["correctedSymbol", "symbol"],
   "transforms": [
     {
       "type": "uppercase"
@@ -8,9 +8,52 @@
       "type": "trim"
     }
   ],
-  "overrides": [],
+  "overrides": [
+    {
+      "pattern": "\\.NS$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Indian NSE stocks - remove .NS suffix, no prefix"
+    },
+    {
+      "pattern": "\\.BO$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Indian BSE stocks - remove .BO suffix, no prefix"
+    },
+    {
+      "pattern": "\\.L$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "London stocks - remove .L suffix, no prefix"
+    },
+    {
+      "pattern": "\\.T$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Tokyo stocks - remove .T suffix, no prefix"
+    },
+    {
+      "pattern": "\\.HK$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Hong Kong stocks - remove .HK suffix, no prefix"
+    },
+    {
+      "pattern": "\\.AX$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Australian stocks - remove .AX suffix, no prefix"
+    },
+    {
+      "pattern": "\\.TO$",
+      "type": "regex",
+      "action": "extractBase",
+      "comment": "Toronto stocks - remove .TO suffix, no prefix"
+    }
+  ],
   "fallback": {
     "useAsIs": true,
-    "comment": "Use clean asset name for TradingView - works for all exchanges"
+    "comment": "Use clean ticker without exchange prefix - TradingView auto-detects"
   }
 }

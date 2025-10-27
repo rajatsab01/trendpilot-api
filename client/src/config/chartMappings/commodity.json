@@ -1,5 +1,5 @@
 {
-  "sourcePriority": ["assetName", "instrumentName", "correctedSymbol", "symbol"],
+  "sourcePriority": ["correctedSymbol", "symbol"],
   "transforms": [
     {
       "type": "uppercase"
@@ -8,9 +8,64 @@
       "type": "trim"
     }
   ],
-  "overrides": [],
+  "overrides": [
+    {
+      "pattern": "GC=F",
+      "type": "exact",
+      "replacement": "GOLD",
+      "comment": "Gold futures → clean name"
+    },
+    {
+      "pattern": "SI=F",
+      "type": "exact",
+      "replacement": "SILVER",
+      "comment": "Silver futures → clean name"
+    },
+    {
+      "pattern": "CL=F",
+      "type": "exact",
+      "replacement": "USOIL",
+      "comment": "Crude Oil futures → clean name"
+    },
+    {
+      "pattern": "NG=F",
+      "type": "exact",
+      "replacement": "NATURALGAS",
+      "comment": "Natural Gas futures → clean name"
+    },
+    {
+      "pattern": "HG=F",
+      "type": "exact",
+      "replacement": "COPPER",
+      "comment": "Copper futures → clean name"
+    },
+    {
+      "pattern": "ZC=F",
+      "type": "exact",
+      "replacement": "CORN",
+      "comment": "Corn futures → clean name"
+    },
+    {
+      "pattern": "ZW=F",
+      "type": "exact",
+      "replacement": "WHEAT",
+      "comment": "Wheat futures → clean name"
+    },
+    {
+      "pattern": "PL=F",
+      "type": "exact",
+      "replacement": "PLATINUM",
+      "comment": "Platinum futures → clean name"
+    },
+    {
+      "pattern": "PA=F",
+      "type": "exact",
+      "replacement": "PALLADIUM",
+      "comment": "Palladium futures → clean name"
+    }
+  ],
   "fallback": {
-    "useAsIs": true,
-    "comment": "Use clean asset name for TradingView - e.g., 'GOLD', 'NATURAL GAS', 'CRUDE OIL'"
+    "removeSuffix": "=F",
+    "comment": "Remove futures suffix for other commodities"
   }
 }
