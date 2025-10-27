@@ -249,7 +249,19 @@ export default function Analyzer() {
     // For other assets, display in user's preferred currency
     const isForexPair = analysis.market?.toLowerCase() === 'forex';
     const displayCurrency = isForexPair ? analysis.sourceCurrency : analysis.currency;
+    
+    // Debug logging for currency display
+    console.log('🔍 Analyzer Currency Debug:', {
+      symbol: analysis.correctedSymbol || analysis.symbol,
+      market: analysis.market,
+      isForexPair,
+      sourceCurrency: analysis.sourceCurrency,
+      userCurrency: analysis.currency,
+      displayCurrency,
+    });
+    
     const currencySymbol = getCurrencySymbol(displayCurrency || 'USD');
+    console.log(`💵 Currency symbol: "${currencySymbol}" for currency: ${displayCurrency || 'USD'}`);
 
     // Chart URL configuration - Yahoo Finance for stocks/commodities/forex
     const getYahooChartUrl = (symbol: string, duration?: string): string => {
