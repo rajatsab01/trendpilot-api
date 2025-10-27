@@ -17,6 +17,7 @@ import Charity from "@/pages/Charity";
 import SavedAnalyses from "@/pages/SavedAnalyses";
 import Community from "@/pages/Community";
 import TraderProfile from "@/pages/TraderProfile";
+import Messages from "@/pages/Messages";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
@@ -53,6 +54,8 @@ function SmartRouter() {
       <Route path="/saved" component={SavedAnalyses} />
       <Route path="/community" component={Community} />
       <Route path="/trader/:traderId" component={TraderProfile} />
+      <Route path="/messages" component={Messages} />
+      <Route path="/messages/:chatUserId" component={Messages} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
