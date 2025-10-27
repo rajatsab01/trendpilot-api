@@ -263,6 +263,24 @@ export default function Analyzer() {
     const currencySymbol = getCurrencySymbol(displayCurrency || 'USD');
     console.log(`💵 Currency symbol: "${currencySymbol}" for currency: ${displayCurrency || 'USD'}`);
 
+    // Format price with correct currency symbol and decimal places
+    // Forex: 4 decimals (e.g., £0.7500) - precision matters in forex
+    // Others: 2 decimals (e.g., ₹1234.56)
+    const formatPrice = (price: string | number | undefined | null): string => {
+      if (!price) return 'N/A';
+      
+      // Remove any existing currency symbols from the price string
+      const cleanPrice = typeof price === 'string' 
+        ? price.replace(/[₹$£¥€₽Fr]/g, '').trim()
+        : price.toString();
+      
+      const numericPrice = parseFloat(cleanPrice);
+      if (isNaN(numericPrice)) return price.toString();
+      
+      const decimals = isForexPair ? 4 : 2;
+      return `${currencySymbol}${numericPrice.toFixed(decimals)}`;
+    };
+
     // Chart URL configuration - Yahoo Finance for stocks/commodities/forex
     const getYahooChartUrl = (symbol: string, duration?: string): string => {
       const timeRangeMap: Record<string, string> = {
@@ -365,7 +383,7 @@ export default function Analyzer() {
                   <p className="text-[#9eb7a8] text-sm">{t.currentMarketPrice}</p>
                 </div>
                 <p className="text-[#38e07b] text-4xl font-bold tracking-tight" data-testid="text-live-price">
-                  {currencySymbol}{parseFloat(analysis.livePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatPrice(analysis.livePrice)}
                 </p>
               </div>
             )}
@@ -378,7 +396,7 @@ export default function Analyzer() {
                   <p className="text-[#6a7f72] text-xs">{t.analysisBasedOn}</p>
                 </div>
                 <p className="text-white text-2xl font-bold tracking-tight" data-testid="text-analysis-price">
-                  {currencySymbol}{parseFloat(analysis.candleClosePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatPrice(analysis.candleClosePrice)}
                 </p>
                 {/* Display timeframe and timestamp */}
                 <div className="mt-2 text-[#6a7f72] text-xs">
@@ -568,7 +586,7 @@ export default function Analyzer() {
                   <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
                     <p className="text-[#9eb7a8] text-sm font-normal">{t.entry}</p>
                     <p className="text-white text-lg font-bold mt-1" data-testid="text-entry">
-                      {analysis.entry}
+                      {formatPrice(analysis.entry)}
                     </p>
                     <div className="flex justify-center mt-2">
                       <input
@@ -582,7 +600,7 @@ export default function Analyzer() {
                   <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
                     <p className="text-[#9eb7a8] text-sm font-normal">{t.takeProfit}</p>
                     <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-take-profit">
-                      {analysis.takeProfit}
+                      {formatPrice(analysis.takeProfit)}
                     </p>
                     <div className="flex justify-center mt-2">
                       <input
@@ -597,7 +615,7 @@ export default function Analyzer() {
                   <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
                     <p className="text-[#9eb7a8] text-sm font-normal">{t.stopLoss}</p>
                     <p className="text-red-500 text-lg font-bold mt-1" data-testid="text-stop-loss">
-                      {analysis.stopLoss}
+                      {formatPrice(analysis.stopLoss)}
                     </p>
                     <div className="flex justify-center mt-2">
                       <input
@@ -681,7 +699,7 @@ export default function Analyzer() {
                     <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
                       <p className="text-[#9eb7a8] text-sm font-normal">TP1 (1:1)</p>
                       <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp1">
-                        {analysis.tp1}
+                        {formatPrice(analysis.tp1)}
                       </p>
                       <p className="text-[#6a7f72] text-xs mt-1">{t.bookProfit}</p>
                     </div>
@@ -690,7 +708,7 @@ export default function Analyzer() {
                     <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
                       <p className="text-[#9eb7a8] text-sm font-normal">TP2 (1:2)</p>
                       <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp2">
-                        {analysis.tp2}
+                        {formatPrice(analysis.tp2)}
                       </p>
                       <p className="text-[#6a7f72] text-xs mt-1">{t.trailToBreakeven}</p>
                     </div>
@@ -699,7 +717,7 @@ export default function Analyzer() {
                     <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
                       <p className="text-[#9eb7a8] text-sm font-normal">TP3 (1:3)</p>
                       <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp3">
-                        {analysis.tp3}
+                        {formatPrice(analysis.tp3)}
                       </p>
                       <p className="text-[#6a7f72] text-xs mt-1">{t.maxTarget}</p>
                     </div>
@@ -723,7 +741,7 @@ export default function Analyzer() {
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/10 border-l-4 border-red-500" data-testid="text-r3">
                           <div className="flex-1">
                             <p className="text-red-400 text-xs font-medium">R3</p>
-                            <p className="text-red-500 text-lg font-bold">{analysis.r3}</p>
+                            <p className="text-red-500 text-lg font-bold">{formatPrice(analysis.r3)}</p>
                           </div>
                           <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
                         </div>
@@ -733,7 +751,7 @@ export default function Analyzer() {
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border-l-4 border-orange-500" data-testid="text-r2">
                           <div className="flex-1">
                             <p className="text-orange-400 text-xs font-medium">R2</p>
-                            <p className="text-orange-500 text-lg font-bold">{analysis.r2}</p>
+                            <p className="text-orange-500 text-lg font-bold">{formatPrice(analysis.r2)}</p>
                           </div>
                           <div className="w-2 h-2 rounded-full bg-orange-500/50"></div>
                         </div>
@@ -743,7 +761,7 @@ export default function Analyzer() {
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-500/10 border-l-4 border-yellow-500" data-testid="text-r1">
                           <div className="flex-1">
                             <p className="text-yellow-400 text-xs font-medium">R1</p>
-                            <p className="text-yellow-500 text-lg font-bold">{analysis.r1}</p>
+                            <p className="text-yellow-500 text-lg font-bold">{formatPrice(analysis.r1)}</p>
                           </div>
                           <div className="w-2 h-2 rounded-full bg-yellow-500/50"></div>
                         </div>
@@ -753,7 +771,7 @@ export default function Analyzer() {
                       <div className="flex items-center gap-3 p-4 rounded-xl bg-[#38e07b]/20 border-2 border-[#38e07b]" data-testid="text-entry-price">
                         <div className="flex-1 text-center">
                           <p className="text-[#38e07b] text-xs font-bold uppercase tracking-wide">Entry Price</p>
-                          <p className="text-white text-2xl font-bold mt-1">{analysis.entry}</p>
+                          <p className="text-white text-2xl font-bold mt-1">{formatPrice(analysis.entry)}</p>
                         </div>
                       </div>
                       
@@ -762,7 +780,7 @@ export default function Analyzer() {
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-lime-500/10 border-l-4 border-lime-500" data-testid="text-s1">
                           <div className="flex-1">
                             <p className="text-lime-400 text-xs font-medium">S1</p>
-                            <p className="text-lime-500 text-lg font-bold">{analysis.s1}</p>
+                            <p className="text-lime-500 text-lg font-bold">{formatPrice(analysis.s1)}</p>
                           </div>
                           <div className="w-2 h-2 rounded-full bg-lime-500/50"></div>
                         </div>
@@ -772,7 +790,7 @@ export default function Analyzer() {
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border-l-4 border-emerald-500" data-testid="text-s2">
                           <div className="flex-1">
                             <p className="text-emerald-400 text-xs font-medium">S2</p>
-                            <p className="text-emerald-500 text-lg font-bold">{analysis.s2}</p>
+                            <p className="text-emerald-500 text-lg font-bold">{formatPrice(analysis.s2)}</p>
                           </div>
                           <div className="w-2 h-2 rounded-full bg-emerald-500/50"></div>
                         </div>
@@ -782,7 +800,7 @@ export default function Analyzer() {
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-[#38e07b]/10 border-l-4 border-[#38e07b]" data-testid="text-s3">
                           <div className="flex-1">
                             <p className="text-[#38e07b] text-xs font-medium">S3</p>
-                            <p className="text-[#38e07b] text-lg font-bold">{analysis.s3}</p>
+                            <p className="text-[#38e07b] text-lg font-bold">{formatPrice(analysis.s3)}</p>
                           </div>
                           <div className="w-2 h-2 rounded-full bg-[#38e07b]/50"></div>
                         </div>

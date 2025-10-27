@@ -1081,7 +1081,8 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center border-t border-[#38e07b]/20 pt-3">
                     <span className="text-[#9eb7a8] text-sm">Current Price:</span>
                     <span className="text-[#38e07b] font-bold">
-                      {/* For forex pairs, show quote currency (from validation result). For other assets, show user's preferred currency */}
+                      {/* For forex pairs: show 4 decimals in quote currency (precision matters in forex)
+                          For other assets: show 2 decimals in user's preferred currency */}
                       {market === 'forex' && validationResult?.sourceCurrency 
                         ? `${getCurrencySymbol(validationResult.sourceCurrency)}${convertedPrice.toFixed(4)}`
                         : `${getCurrencySymbol(currency)}${convertedPrice.toFixed(2)}`
