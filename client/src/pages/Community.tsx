@@ -265,12 +265,12 @@ export default function Community() {
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-12 h-12 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
                       <span className="text-[#38e07b] text-lg font-bold">
-                        {(trader.alias || trader.name).charAt(0).toUpperCase()}
+                        {trader.alias?.charAt(0).toUpperCase() || '?'}
                       </span>
                     </div>
                     <div className="text-center">
                       <p className="text-white font-semibold text-sm truncate max-w-[120px]">
-                        {trader.alias || trader.name}
+                        {trader.alias || 'Anonymous'}
                       </p>
                       <p className="text-[#6a7f72] text-xs">
                         {trader.publishedCount} {trader.publishedCount === 1 ? t.post : t.posts}
@@ -323,7 +323,7 @@ export default function Community() {
                 if (!searchQuery.trim()) return true;
                 
                 const query = searchQuery.toLowerCase().trim();
-                const usernameMatch = (user.alias || user.name).toLowerCase().includes(query);
+                const usernameMatch = user.alias?.toLowerCase().includes(query) || false;
                 const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
                 
                 return usernameMatch || symbolMatch;
@@ -352,12 +352,12 @@ export default function Community() {
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
                       <span className="text-[#111714] font-bold">
-                        {(traderUser.alias || traderUser.name).charAt(0).toUpperCase()}
+                        {traderUser.alias?.charAt(0).toUpperCase() || '?'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-semibold text-sm truncate">
-                        {traderUser.alias || traderUser.name}
+                        {traderUser.alias || 'Anonymous'}
                       </p>
                       <p className="text-[#6a7f72] text-xs">
                         {analyses.length} {analyses.length === 1 ? t.analysis : t.analyses} {t.published}

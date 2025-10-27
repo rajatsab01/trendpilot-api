@@ -183,7 +183,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
     setLocation(`/messages/${traderId}`);
   };
 
-  const displayName = profile?.user.alias || profile?.user.name || "Trader";
+  const displayName = profile?.user.alias || "Anonymous";
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
   return (
