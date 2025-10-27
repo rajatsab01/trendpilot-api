@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
+import { useLanguage } from "@/context/LanguageContext";
 import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
 import type { Analysis, User } from "@shared/schema";
@@ -34,6 +35,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
+  const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -71,8 +73,8 @@ export default function TraderProfile({ params }: { params: { traderId: string }
       await queryClient.invalidateQueries({ queryKey: ["/api/community/user", traderId, userId] });
       
       toast({
-        title: "Success",
-        description: action === "follow" ? "Following trader" : "Unfollowed trader",
+        title: t.success,
+        description: action === "follow" ? t.followingTrader : t.unfollowedTrader,
       });
     },
     onError: () => {
@@ -98,8 +100,8 @@ export default function TraderProfile({ params }: { params: { traderId: string }
       await queryClient.invalidateQueries({ queryKey: ["/api/community/user", traderId, userId] });
       
       toast({
-        title: "Success",
-        description: action === "block" ? "Blocked trader" : "Unblocked trader",
+        title: t.success,
+        description: action === "block" ? t.blockedTrader : t.unblockedTrader,
       });
     },
     onError: () => {
@@ -197,13 +199,13 @@ export default function TraderProfile({ params }: { params: { traderId: string }
         >
           <span className="material-symbols-outlined text-2xl">arrow_back</span>
         </button>
-        <h1 className="text-white font-semibold text-lg">Trader Profile</h1>
+        <h1 className="text-white font-semibold text-lg">{t.traderProfile}</h1>
         {userId !== traderId && (
           <button
             onClick={() => setShowReportModal(true)}
             className="text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 p-1 rounded-lg"
             data-testid="button-report-user"
-            title="Report user"
+            title={t.reportUser}
           >
             <span className="material-symbols-outlined text-xl">flag</span>
           </button>
@@ -215,21 +217,21 @@ export default function TraderProfile({ params }: { params: { traderId: string }
       <div className="flex-1 overflow-y-auto">
         {profileLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-[#9eb7a8]">Loading profile...</div>
+            <div className="text-[#9eb7a8]">{t.loadingProfile}</div>
           </div>
         ) : !profile ? (
           <div className="p-4 text-center">
             <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">person_off</span>
-            <h3 className="text-white font-semibold mb-2">Trader Not Found</h3>
+            <h3 className="text-white font-semibold mb-2">{t.traderNotFound}</h3>
             <p className="text-[#9eb7a8] text-sm mb-4">
-              This trader may have been removed or blocked
+              {t.traderNotFoundDesc}
             </p>
             <button
               onClick={() => setLocation("/community")}
               className="bg-[#38e07b] text-[#111714] px-6 py-2 rounded-xl font-semibold"
               data-testid="button-back-to-community"
             >
-              Back to Community
+              {t.backToCommunity}
             </button>
           </div>
         ) : (
@@ -246,7 +248,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                     <h2 className="text-white font-semibold text-xl">{displayName}</h2>
                     {profile.user.isBanned === 1 && (
                       <span className="inline-block mt-1 px-2 py-1 bg-red-500/20 text-red-500 text-xs rounded-md">
-                        Banned
+                        {t.banned}
                       </span>
                     )}
                   </div>
@@ -257,15 +259,15 @@ export default function TraderProfile({ params }: { params: { traderId: string }
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="text-center">
                   <div className="text-white font-bold text-2xl">{profile.stats.publishedAnalyses}</div>
-                  <div className="text-[#9eb7a8] text-sm">Analyses</div>
+                  <div className="text-[#9eb7a8] text-sm">{t.analyses}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-white font-bold text-2xl">{profile.stats.followers}</div>
-                  <div className="text-[#9eb7a8] text-sm">Followers</div>
+                  <div className="text-[#9eb7a8] text-sm">{t.followers}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-white font-bold text-2xl">{profile.stats.following}</div>
-                  <div className="text-[#9eb7a8] text-sm">Following</div>
+                  <div className="text-[#9eb7a8] text-sm">{t.following}</div>
                 </div>
               </div>
 
@@ -283,7 +285,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                       }`}
                       data-testid="button-follow"
                     >
-                      {profile.relationship.isFollowing ? "Unfollow" : "Follow"}
+                      {profile.relationship.isFollowing ? t.unfollow : t.follow}
                     </button>
                     <button
                       onClick={handlePin}
@@ -298,7 +300,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                       <span className="material-symbols-outlined text-lg">
                         {isPinned ? "push_pin" : "push_pin"}
                       </span>
-                      {isPinned ? "Pinned" : "Pin"}
+                      {isPinned ? t.pinned : t.pin}
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -308,7 +310,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                       className="bg-[#2a3c33] text-white px-4 py-2 rounded-xl font-semibold disabled:opacity-50"
                       data-testid="button-message"
                     >
-                      Message
+                      {t.message}
                     </button>
                     <button
                       onClick={handleBlock}
@@ -316,7 +318,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                       className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl font-semibold"
                       data-testid="button-block"
                     >
-                      {profile.relationship.isBlocked ? "Unblock" : "Block"}
+                      {profile.relationship.isBlocked ? t.unblock : t.block}
                     </button>
                   </div>
                 </div>
@@ -325,18 +327,18 @@ export default function TraderProfile({ params }: { params: { traderId: string }
 
             {/* Published Analyses */}
             <div>
-              <h3 className="text-white font-semibold text-lg mb-3">Published Analyses</h3>
+              <h3 className="text-white font-semibold text-lg mb-3">{t.publishedAnalyses}</h3>
               
               {analysesLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-[#9eb7a8]">Loading analyses...</div>
+                  <div className="text-[#9eb7a8]">{t.loadingAnalyses}</div>
                 </div>
               ) : analyses.length === 0 ? (
                 <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
                   <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">analytics</span>
-                  <h3 className="text-white font-semibold mb-2">No Published Analyses</h3>
+                  <h3 className="text-white font-semibold mb-2">{t.noPublishedAnalyses}</h3>
                   <p className="text-[#9eb7a8] text-sm">
-                    This trader hasn't shared any analyses yet
+                    {t.noPublishedAnalysesDesc}
                   </p>
                 </div>
               ) : (

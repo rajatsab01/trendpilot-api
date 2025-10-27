@@ -31,14 +31,14 @@ export default function SavedAnalyses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
       toast({
-        title: "Deleted",
-        description: "Analysis deleted successfully",
+        title: t.deleted,
+        description: t.analysisDeletedSuccessfully,
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete analysis",
+        title: t.error,
+        description: t.failedToDeleteAnalysis,
         variant: "destructive",
       });
     },
@@ -54,14 +54,14 @@ export default function SavedAnalyses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
       toast({
-        title: "Published",
-        description: "Your analysis is now visible to your followers!",
+        title: t.published,
+        description: t.analysisPublishedSuccessfully,
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to publish analysis",
+        title: t.error,
+        description: t.failedToPublishAnalysis,
         variant: "destructive",
       });
     },
@@ -77,14 +77,14 @@ export default function SavedAnalyses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
       toast({
-        title: "Unpublished",
-        description: "Analysis removed from community feed",
+        title: t.unpublished,
+        description: t.analysisUnpublishedSuccessfully,
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to unpublish analysis",
+        title: t.error,
+        description: t.failedToUnpublishAnalysis,
         variant: "destructive",
       });
     },
@@ -128,7 +128,7 @@ export default function SavedAnalyses() {
           color: "text-[#38e07b]",
           bgColor: "bg-[#38e07b]/10",
           borderColor: "border-[#38e07b]",
-          label: "Won",
+          label: t.won,
         };
       case "lost":
         return {
@@ -136,7 +136,7 @@ export default function SavedAnalyses() {
           color: "text-red-500",
           bgColor: "bg-red-500/10",
           borderColor: "border-red-500",
-          label: "Lost",
+          label: t.lost,
         };
       case "expired":
         return {
@@ -144,7 +144,7 @@ export default function SavedAnalyses() {
           color: "text-gray-500",
           bgColor: "bg-gray-500/10",
           borderColor: "border-gray-500",
-          label: "Expired",
+          label: t.expired,
         };
       default:
         return {
@@ -152,7 +152,7 @@ export default function SavedAnalyses() {
           color: "text-blue-500",
           bgColor: "bg-blue-500/10",
           borderColor: "border-blue-500",
-          label: "Active",
+          label: t.active,
         };
     }
   };
@@ -160,7 +160,7 @@ export default function SavedAnalyses() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#111714] flex items-center justify-center">
-        <div className="text-white">Loading saved analyses...</div>
+        <div className="text-white">{t.loadingSavedAnalyses}</div>
       </div>
     );
   }
@@ -179,9 +179,9 @@ export default function SavedAnalyses() {
   return (
     <div className="min-h-screen bg-[#111714] pb-24">
       <header className="bg-[#1c2620] border-b border-[#29382f] px-4 py-6">
-        <h1 className="text-white text-2xl font-bold">Saved Analyses</h1>
+        <h1 className="text-white text-2xl font-bold">{t.savedAnalyses}</h1>
         <p className="text-[#9eb7a8] text-sm mt-1">
-          Track your saved trades and performance
+          {t.trackYourSavedTrades}
         </p>
       </header>
 
@@ -191,34 +191,34 @@ export default function SavedAnalyses() {
           <div className="grid grid-cols-5 gap-2 mb-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-white">{totalTrades}</div>
-              <div className="text-xs text-[#9eb7a8]">Total</div>
+              <div className="text-xs text-[#9eb7a8]">{t.total}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-[#38e07b]">{greenTrades}</div>
-              <div className="text-xs text-[#9eb7a8]">Won</div>
+              <div className="text-xs text-[#9eb7a8]">{t.won}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-500">{redTrades}</div>
-              <div className="text-xs text-[#9eb7a8]">Lost</div>
+              <div className="text-xs text-[#9eb7a8]">{t.lost}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-500">{yellowTrades}</div>
-              <div className="text-xs text-[#9eb7a8]">Active</div>
+              <div className="text-xs text-[#9eb7a8]">{t.active}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-500">{grayTrades}</div>
-              <div className="text-xs text-[#9eb7a8]">Expired</div>
+              <div className="text-xs text-[#9eb7a8]">{t.expired}</div>
             </div>
           </div>
           {totalClosed > 0 && (
             <div className="flex gap-2">
               <div className="flex-1 bg-[#111714] rounded-lg p-2 text-center">
                 <div className="text-sm font-medium text-[#38e07b]">{winRate}%</div>
-                <div className="text-xs text-[#9eb7a8]">Win Rate</div>
+                <div className="text-xs text-[#9eb7a8]">{t.winRate}</div>
               </div>
               <div className="flex-1 bg-[#111714] rounded-lg p-2 text-center">
                 <div className="text-sm font-medium text-red-500">{lossRate}%</div>
-                <div className="text-xs text-[#9eb7a8]">Loss Rate</div>
+                <div className="text-xs text-[#9eb7a8]">{t.lossRate}</div>
               </div>
             </div>
           )}
@@ -228,16 +228,16 @@ export default function SavedAnalyses() {
       <main className="px-4 py-6">
         {savedAnalyses.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-[#9eb7a8] text-lg mb-2">No saved analyses yet</div>
+            <div className="text-[#9eb7a8] text-lg mb-2">{t.noSavedAnalysesYet}</div>
             <p className="text-[#9eb7a8] text-sm mb-6">
-              Save analyses from the analyzer to track them here
+              {t.saveAnalysesToTrack}
             </p>
             <button
               onClick={() => setLocation("/analyzer")}
               className="bg-[#38e07b] text-[#111714] font-bold py-3 px-6 rounded-full hover:bg-opacity-90 transition-colors"
               data-testid="button-go-to-analyzer"
             >
-              Analyze Market
+              {t.analyzeMarket}
             </button>
           </div>
         ) : (

@@ -148,7 +148,7 @@ export default function Settings() {
             {/* App Information */}
             <section className="flex flex-col gap-4">
               <h2 className="text-[22px] font-bold leading-tight tracking-[-0.015em] text-white">
-                App Information
+                {t.appInformation}
               </h2>
               <div className="rounded-xl bg-[#1C2620] divide-y divide-[#29382f]">
                 <div className="flex items-center justify-between gap-4 p-4">
@@ -159,9 +159,9 @@ export default function Settings() {
                       </span>
                     </div>
                     <div>
-                      <p className="text-base font-medium text-white">Version</p>
+                      <p className="text-base font-medium text-white">{t.version}</p>
                       <p className="text-sm font-normal text-[#9eb7a8]">
-                        Current app version
+                        {t.currentVersion}
                       </p>
                     </div>
                   </div>

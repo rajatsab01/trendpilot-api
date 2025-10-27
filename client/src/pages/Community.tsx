@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
+import { useLanguage } from "@/context/LanguageContext";
 import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
 import ReactionButtons from "@/components/ReactionButtons";
@@ -16,6 +17,7 @@ export default function Community() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
+  const { t } = useLanguage();
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ userId?: string; analysisId?: string; type: "abuse_user" | "abuse_post" | "bug" }>({ type: "bug" });
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -81,8 +83,8 @@ export default function Community() {
     // Check minimum saved analyses
     if (analyses.length < 10) {
       toast({
-        title: "Minimum Requirement",
-        description: "You need at least 10 saved trades to access the community. Keep trading!",
+        title: t.minimumRequirement,
+        description: t.need10Trades,
         variant: "destructive",
       });
       return;
@@ -91,8 +93,8 @@ export default function Community() {
     // Validate alias
     if (!alias || alias.trim().length === 0) {
       toast({
-        title: "Alias Required",
-        description: "Please enter a username for the community",
+        title: t.aliasRequired,
+        description: t.enterCommunityUsername,
         variant: "destructive",
       });
       return;
@@ -100,8 +102,8 @@ export default function Community() {
 
     if (alias.length > 10) {
       toast({
-        title: "Alias Too Long",
-        description: "Username must be 10 characters or less",
+        title: t.aliasTooLong,
+        description: t.usernameTooLong,
         variant: "destructive",
       });
       return;
@@ -122,16 +124,16 @@ export default function Community() {
       });
 
       toast({
-        title: "Welcome to the Community!",
-        description: "You can now share and discover trading insights",
+        title: t.welcomeToCommunity,
+        description: t.shareDiscoverInsights,
       });
 
       setShowRulesModal(false);
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to join community",
+        title: t.error,
+        description: error.message || t.failedToJoinCommunity,
         variant: "destructive",
       });
     } finally {
@@ -170,26 +172,26 @@ export default function Community() {
       {showRulesModal && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-[#1c2620] rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h2 className="text-white text-2xl font-bold">Join the Community</h2>
+            <h2 className="text-white text-2xl font-bold">{t.joinCommunity}</h2>
             
             <div className="space-y-2">
               <p className="text-[#9eb7a8] text-sm">
-                To access the community, you need:
+                {t.toAccessCommunity}
               </p>
               <ul className="list-disc list-inside text-[#9eb7a8] text-sm space-y-1">
-                <li>At least 10 saved trades ({analyses.length}/10)</li>
-                <li>A unique username (max 10 characters)</li>
-                <li>Accept our community rules</li>
+                <li>{t.atLeast10Trades.replace('{count}', analyses.length.toString())}</li>
+                <li>{t.uniqueUsername}</li>
+                <li>{t.acceptRules}</li>
               </ul>
             </div>
 
             <div className="space-y-2">
-              <label className="text-white text-sm font-medium">Choose Username</label>
+              <label className="text-white text-sm font-medium">{t.chooseUsername}</label>
               <input
                 type="text"
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
-                placeholder="Enter username..."
+                placeholder={t.enterUsername}
                 maxLength={10}
                 className="w-full bg-[#111714] text-white rounded-xl px-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none"
                 data-testid="input-alias"
@@ -197,12 +199,12 @@ export default function Community() {
             </div>
 
             <div className="bg-[#111714] rounded-xl p-4 space-y-2">
-              <h3 className="text-white font-semibold text-sm">Community Rules</h3>
+              <h3 className="text-white font-semibold text-sm">{t.communityRules}</h3>
               <ul className="list-disc list-inside text-[#9eb7a8] text-xs space-y-1">
-                <li>Be respectful and professional</li>
-                <li>No spam or promotional content</li>
-                <li>Share genuine trading insights</li>
-                <li>Report inappropriate behavior</li>
+                <li>{t.rule1}</li>
+                <li>{t.rule2}</li>
+                <li>{t.rule3}</li>
+                <li>{t.rule4}</li>
               </ul>
             </div>
 
@@ -212,14 +214,14 @@ export default function Community() {
               className="w-full py-3 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               data-testid="button-accept-rules"
             >
-              {isAcceptingRules ? "Processing..." : "I Agree - Join Community"}
+              {isAcceptingRules ? t.processing : t.iAgreeJoinCommunity}
             </button>
           </div>
         </div>
       )}
 
       <div className="p-4 space-y-4">
-        <h1 className="text-white text-2xl font-bold">Community</h1>
+        <h1 className="text-white text-2xl font-bold">{t.community}</h1>
 
         {/* Search Bar */}
         <div className="relative">
@@ -230,7 +232,7 @@ export default function Community() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by username or symbol..."
+            placeholder={t.searchByUsername}
             className="w-full bg-[#1a241f] text-white rounded-xl pl-11 pr-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
             data-testid="input-search-community"
           />
@@ -250,7 +252,7 @@ export default function Community() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#38e07b] text-lg">push_pin</span>
-              <h2 className="text-white font-semibold text-sm">Pinned Traders</h2>
+              <h2 className="text-white font-semibold text-sm">{t.pinnedTraders}</h2>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {pinnedTraders.map((trader) => (
@@ -271,7 +273,7 @@ export default function Community() {
                         {trader.alias || trader.name}
                       </p>
                       <p className="text-[#6a7f72] text-xs">
-                        {trader.publishedCount} {trader.publishedCount === 1 ? 'post' : 'posts'}
+                        {trader.publishedCount} {trader.publishedCount === 1 ? t.post : t.posts}
                       </p>
                     </div>
                   </div>
@@ -283,21 +285,21 @@ export default function Community() {
         
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-[#9eb7a8]">Loading feed...</div>
+            <div className="text-[#9eb7a8]">{t.loadingFeed}</div>
           </div>
         ) : feed.length === 0 ? (
           <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
             <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">group</span>
-            <h3 className="text-white font-semibold mb-2">No Analyses Yet</h3>
+            <h3 className="text-white font-semibold mb-2">{t.noAnalysesYet}</h3>
             <p className="text-[#9eb7a8] text-sm mb-4">
-              The community is growing! Published analyses will appear here
+              {t.communityGrowing}
             </p>
             <button
               onClick={() => setLocation("/analyzer")}
               className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
               data-testid="button-start-analyzing"
             >
-              Start Analyzing
+              {t.startAnalyzing}
             </button>
           </div>
         ) : (
@@ -332,9 +334,9 @@ export default function Community() {
                 return (
                   <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
                     <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">search_off</span>
-                    <h3 className="text-white font-semibold mb-2">No Results Found</h3>
+                    <h3 className="text-white font-semibold mb-2">{t.noResultsFound}</h3>
                     <p className="text-[#9eb7a8] text-sm">
-                      No traders or symbols match "{searchQuery}"
+                      {t.noMatchingTraders.replace('{query}', searchQuery)}
                     </p>
                   </div>
                 );
@@ -358,14 +360,14 @@ export default function Community() {
                         {traderUser.alias || traderUser.name}
                       </p>
                       <p className="text-[#6a7f72] text-xs">
-                        {analyses.length} {analyses.length === 1 ? 'analysis' : 'analyses'} published
+                        {analyses.length} {analyses.length === 1 ? t.analysis : t.analyses} {t.published}
                       </p>
                     </div>
                     <button
                       onClick={() => handleReportUser(traderUser.id)}
                       className="p-2 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
                       data-testid={`button-report-user-${traderUser.id}`}
-                      title="Report user"
+                      title={t.reportUser}
                     >
                       <span className="material-symbols-outlined text-lg">flag</span>
                     </button>
@@ -374,7 +376,7 @@ export default function Community() {
                       className="px-3 py-1.5 bg-[#29382f] text-[#38e07b] text-xs font-semibold rounded-lg hover-elevate active-elevate-2"
                       data-testid={`button-view-trader-${traderUser.id}`}
                     >
-                      View Profile
+                      {t.viewProfile}
                     </button>
                   </div>
 
@@ -438,7 +440,7 @@ export default function Community() {
                         onClick={() => setLocation(`/trader/${traderUser.id}`)}
                         className="w-full px-3 py-2 rounded-lg text-sm font-semibold bg-[#29382f] text-[#9eb7a8] hover-elevate active-elevate-2"
                       >
-                        View {analyses.length - 3} more {analyses.length - 3 === 1 ? 'analysis' : 'analyses'}
+                        {t.viewMore.replace('{count}', (analyses.length - 3).toString()).replace('{item}', analyses.length - 3 === 1 ? t.analysis : t.analyses)}
                       </button>
                     )}
                   </div>

@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
+import { useLanguage } from "@/context/LanguageContext";
 import BottomNav from "@/components/BottomNav";
 import type { Message, User } from "@shared/schema";
 import { APP_VERSION } from "@shared/schema";
@@ -23,6 +24,7 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
+  const { t } = useLanguage();
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -159,7 +161,7 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
           >
             <span className="material-symbols-outlined text-2xl">arrow_back</span>
           </button>
-          <h1 className="text-white font-semibold text-lg">Messages</h1>
+          <h1 className="text-white font-semibold text-lg">{t.messages}</h1>
           <div className="w-6" />
         </div>
 
@@ -167,21 +169,21 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
         <div className="flex-1 overflow-y-auto p-4">
           {conversationsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-[#9eb7a8]">Loading conversations...</div>
+              <div className="text-[#9eb7a8]">{t.loadingMessages}</div>
             </div>
           ) : conversations.length === 0 ? (
             <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
               <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">mail</span>
-              <h3 className="text-white font-semibold mb-2">No Messages Yet</h3>
+              <h3 className="text-white font-semibold mb-2">{t.noMessagesYet}</h3>
               <p className="text-[#9eb7a8] text-sm mb-4">
-                Start a conversation from a trader's profile
+                {t.startConversation}
               </p>
               <button
                 onClick={() => setLocation("/community")}
                 className="bg-[#38e07b] text-[#111714] px-6 py-2 rounded-xl font-semibold"
                 data-testid="button-go-to-community"
               >
-                Browse Traders
+                {t.browseTraders}
               </button>
             </div>
           ) : (
@@ -295,13 +297,13 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messagesLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-[#9eb7a8]">Loading messages...</div>
+            <div className="text-[#9eb7a8]">{t.loadingMessages}</div>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">chat</span>
-              <p className="text-[#9eb7a8] text-sm">No messages yet. Say hello!</p>
+              <p className="text-[#9eb7a8] text-sm">{t.noMessagesInThread}</p>
             </div>
           </div>
         ) : (
@@ -348,7 +350,7 @@ export default function Messages({ params }: { params?: { chatUserId?: string } 
             onChange={(e) => setMessageText(e.target.value)}
             onPaste={handlePaste}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
+            placeholder={t.typeMessage}
             className="flex-1 bg-[#111714] text-white rounded-xl px-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
             disabled={isSending}
             maxLength={1000}
