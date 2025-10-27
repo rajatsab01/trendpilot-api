@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import type { Broker } from "@shared/schema";
+import { APP_VERSION } from "@shared/schema";
 
 export default function Settings() {
   const [, setLocation] = useLocation();
@@ -140,6 +141,50 @@ export default function Settings() {
                     />
                     <span className="absolute left-1 size-6 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-6"></span>
                   </label>
+                </div>
+              </div>
+            </section>
+
+            {/* App Information */}
+            <section className="flex flex-col gap-4">
+              <h2 className="text-[22px] font-bold leading-tight tracking-[-0.015em] text-white">
+                App Information
+              </h2>
+              <div className="rounded-xl bg-[#1C2620] divide-y divide-[#29382f]">
+                <div className="flex items-center justify-between gap-4 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#29382f]">
+                      <span className="material-symbols-outlined text-[#38e07b]">
+                        info
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-base font-medium text-white">Version</p>
+                      <p className="text-sm font-normal text-[#9eb7a8]">
+                        Current app version
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-[#38e07b]/20 rounded-lg">
+                    <p className="text-[#38e07b] font-semibold" data-testid="text-app-version">
+                      v{APP_VERSION}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-4 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#29382f]">
+                      <span className="material-symbols-outlined text-[#38e07b]">
+                        rocket_launch
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-base font-medium text-white">Trend Pilot</p>
+                      <p className="text-sm font-normal text-[#9eb7a8]">
+                        AI-powered trading assistant
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
