@@ -216,75 +216,90 @@ export default function Community() {
               <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">group</span>
               <h3 className="text-white font-semibold mb-2">No Analyses Yet</h3>
               <p className="text-[#9eb7a8] text-sm mb-4">
-                Follow traders to see their published analyses here
+                The community is growing! Published analyses will appear here
               </p>
               <button
-                onClick={() => setLocation("/saved")}
+                onClick={() => setLocation("/analyzer")}
                 className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
-                data-testid="button-discover-traders"
+                data-testid="button-start-analyzing"
               >
-                Discover Traders
+                Start Analyzing
               </button>
             </div>
           ) : (
             <div className="space-y-3">
-              {feed.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleAnalysisClick(item.id)}
-                  className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33] hover-elevate active-elevate-2 cursor-pointer"
-                  data-testid={`feed-item-${item.id}`}
-                >
-                  {/* Author Info */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-full bg-[#38e07b] flex items-center justify-center">
-                      <span className="text-[#111714] font-bold text-sm">
-                        {item.author.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white font-semibold text-sm">{item.author.name}</p>
-                      <p className="text-[#6a7f72] text-xs">
-                        {new Date(item.createdAt!).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      item.recommendation === "BUY" 
-                        ? "bg-[#38e07b]/20 text-[#38e07b]" 
-                        : "bg-red-500/20 text-red-500"
-                    }`}>
-                      {item.recommendation}
-                    </span>
-                  </div>
+              {(() => {
+                // Group analyses by user
+                const userGroups = feed.reduce((acc, item) => {
+                  const userId = item.author.id;
+                  if (!acc[userId]) {
+                    acc[userId] = {
+                      user: item.author,
+                      analyses: []
+                    };
+                  }
+                  acc[userId].analyses.push(item);
+                  return acc;
+                }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
 
-                  {/* Analysis Info */}
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <p className="text-[#6a7f72] text-xs">Symbol</p>
-                      <p className="text-white font-bold">{item.symbol}</p>
+                return Object.values(userGroups).map(({ user, analyses }) => (
+                  <div
+                    key={user.id}
+                    className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33]"
+                    data-testid={`trader-card-${user.id}`}
+                  >
+                    {/* Trader Header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
+                        <span className="text-[#111714] font-bold">
+                          {(user.alias || user.name).charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-semibold text-sm truncate">
+                          {user.alias || user.name}
+                        </p>
+                        <p className="text-[#6a7f72] text-xs">
+                          {analyses.length} {analyses.length === 1 ? 'analysis' : 'analyses'} published
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setLocation(`/trader/${user.id}`)}
+                        className="px-3 py-1.5 bg-[#29382f] text-[#38e07b] text-xs font-semibold rounded-lg hover-elevate active-elevate-2"
+                        data-testid={`button-view-trader-${user.id}`}
+                      >
+                        View Profile
+                      </button>
                     </div>
-                    <div>
-                      <p className="text-[#6a7f72] text-xs">Timeframe</p>
-                      <p className="text-white font-semibold capitalize text-sm">{item.duration.replace("_", " ")}</p>
-                    </div>
-                  </div>
 
-                  {/* Confidence & Sentiment */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[#38e07b] text-sm">speed</span>
-                      <span className="text-white text-sm font-semibold">{item.confidence}%</span>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      item.sentiment === "Bullish" 
-                        ? "bg-[#38e07b]/20 text-[#38e07b]" 
-                        : "bg-red-500/20 text-red-500"
-                    }`}>
-                      {item.sentiment}
+                    {/* Analysis Chips */}
+                    <div className="space-y-2">
+                      <p className="text-[#9eb7a8] text-xs font-medium">Recent Analyses</p>
+                      <div className="flex flex-wrap gap-2">
+                        {analyses.slice(0, 6).map((analysis) => (
+                          <button
+                            key={analysis.id}
+                            onClick={() => handleAnalysisClick(analysis.id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold hover-elevate active-elevate-2 ${
+                              analysis.recommendation === "BUY"
+                                ? "bg-[#38e07b]/20 text-[#38e07b] border border-[#38e07b]/30"
+                                : "bg-red-500/20 text-red-500 border border-red-500/30"
+                            }`}
+                            data-testid={`analysis-chip-${analysis.id}`}
+                          >
+                            {analysis.recommendation} {analysis.symbol}
+                          </button>
+                        ))}
+                        {analyses.length > 6 && (
+                          <div className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#29382f] text-[#9eb7a8]">
+                            +{analyses.length - 6} more
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           )}
         </div>
