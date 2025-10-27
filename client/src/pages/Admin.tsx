@@ -3,12 +3,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import type { Report, User } from "@shared/schema";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { guardAction, UpdateModal } = useVersionGuard();
   const [activeTab, setActiveTab] = useState<"reports" | "symbols">("reports");
   const [isRunningTests, setIsRunningTests] = useState(false);
   const userId = localStorage.getItem("userId");
