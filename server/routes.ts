@@ -1546,6 +1546,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Message must be at least 10 characters" });
       }
 
+      // 🔒 PROFANITY FILTER: Validate report subject and message
+      try {
+        validateContent(subject, "Subject");
+        validateContent(message, "Message");
+      } catch (validationError: any) {
+        return res.status(400).json({ error: validationError.message });
+      }
+
       const report = await storage.createReport({
         userId,
         type,
