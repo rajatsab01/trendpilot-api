@@ -4,23 +4,19 @@
  */
 
 // Comprehensive bad words list (English - expandable for 12 languages)
+// NOTE: Only actual profanity and explicit scam phrases - NO legitimate trading terms
 const BAD_WORDS = [
   // Profanity
-  "fuck", "shit", "bitch", "asshole", "bastard", "damn", "hell",
+  "fuck", "shit", "bitch", "asshole", "bastard",
   "crap", "piss", "dick", "cock", "pussy", "cunt", "whore",
-  "slut", "fag", "nigger", "nigga", "retard", "retarded",
+  "slut", "fag", "faggot", "nigger", "nigga", "retard", "retarded",
   
   // Variants and obfuscations
   "f*ck", "sh*t", "b*tch", "a$$", "a**", "f***", "s***",
   "fck", "fuk", "shyt", "azz", "biotch", "beatch",
   
-  // Spam/scam indicators
-  "viagra", "cialis", "bitcoin", "crypto", "forex", "doubledown",
-  "guaranteed", "risk-free", "100% profit", "get rich",
-  
-  // Trading scams
-  "pump and dump", "insider tip", "guaranteed returns",
-  "risk free profit", "secret strategy", "holy grail",
+  // Non-trading spam
+  "viagra", "cialis", "enlargement", "pills",
 ];
 
 // Pattern-based detection for obfuscated words
