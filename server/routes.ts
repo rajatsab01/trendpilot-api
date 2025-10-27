@@ -7,6 +7,7 @@ import { searchCryptoSymbols } from "./marketData";
 import { fetchMarketPrice } from "./priceData";
 import { validateSymbol } from "./symbolValidator";
 import { symbolRegistry } from "./symbolRegistry";
+import { validateContent, validateUsername } from "./profanityFilter";
 import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "@shared/schema";
 import Razorpay from "razorpay";
@@ -1186,6 +1187,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (alias.length > 10) {
         return res.status(400).json({ error: "Alias must be 10 characters or less" });
+      }
+
+      // 🔒 PROFANITY FILTER: Validate alias for inappropriate content
+      try {
+        validateUsername(alias);
+      } catch (validationError: any) {
+        return res.status(400).json({ error: validationError.message });
       }
 
       const user = await storage.updateAlias(userId, alias);
