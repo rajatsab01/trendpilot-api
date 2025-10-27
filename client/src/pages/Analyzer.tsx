@@ -504,7 +504,11 @@ export default function Analyzer() {
                   {t.marketSentiments}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-market-sentiment">
-                  {analysis.marketSentiment}
+                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                  {isForexPair 
+                    ? analysis.marketSentiment.replace(/[₹$£¥€₽]/g, currencySymbol)
+                    : analysis.marketSentiment
+                  }
                 </p>
               </div>
             )}
@@ -516,7 +520,11 @@ export default function Analyzer() {
                   {t.deepAnalysis}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-deep-analysis">
-                  {analysis.deepAnalysis}
+                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                  {isForexPair 
+                    ? analysis.deepAnalysis.replace(/[₹$£¥€₽]/g, currencySymbol)
+                    : analysis.deepAnalysis
+                  }
                 </p>
               </div>
             )}
@@ -573,7 +581,11 @@ export default function Analyzer() {
                 </div>
               </div>
               <p className="text-[#9eb7a8] text-base font-normal leading-relaxed text-center" data-testid="text-ai-analysis">
-                {analysis.analysis}
+                {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                {isForexPair 
+                  ? analysis.analysis.replace(/[₹$£¥€₽]/g, currencySymbol)
+                  : analysis.analysis
+                }
               </p>
             </div>
 
@@ -830,7 +842,11 @@ export default function Analyzer() {
                   {t.trailingStopStrategy}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-trailing-stop">
-                  {analysis.trailingStopStrategy}
+                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                  {isForexPair 
+                    ? analysis.trailingStopStrategy.replace(/[₹$£¥€₽]/g, currencySymbol)
+                    : analysis.trailingStopStrategy
+                  }
                 </p>
               </div>
             )}
@@ -843,7 +859,11 @@ export default function Analyzer() {
                   {t.importantNotesDisclaimers}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-explanatory-notes">
-                  {analysis.explanatoryNotes}
+                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
+                  {isForexPair 
+                    ? analysis.explanatoryNotes.replace(/[₹$£¥€₽]/g, currencySymbol)
+                    : analysis.explanatoryNotes
+                  }
                 </p>
               </div>
             )}
