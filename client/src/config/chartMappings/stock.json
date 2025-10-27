@@ -1,5 +1,5 @@
 {
-  "sourcePriority": ["assetName", "instrumentName", "correctedSymbol", "symbol"],
+  "sourcePriority": ["correctedSymbol", "symbol", "assetName", "instrumentName"],
   "transforms": [
     {
       "type": "uppercase"
