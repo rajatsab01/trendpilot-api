@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
@@ -30,6 +30,13 @@ export default function ReportModal({
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync internal type state with defaultType when modal opens or defaultType changes
+  useEffect(() => {
+    if (isOpen) {
+      setType(defaultType);
+    }
+  }, [isOpen, defaultType]);
 
   if (!isOpen) return null;
 

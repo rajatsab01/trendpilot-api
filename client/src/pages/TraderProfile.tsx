@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
+import ReportModal from "@/components/ReportModal";
 import type { Analysis, User } from "@shared/schema";
 
 type FeedItem = Analysis & { author: User };
@@ -33,6 +34,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const userId = localStorage.getItem("userId");
   const traderId = params.traderId;
@@ -146,7 +148,17 @@ export default function TraderProfile({ params }: { params: { traderId: string }
           <span className="material-symbols-outlined text-2xl">arrow_back</span>
         </button>
         <h1 className="text-white font-semibold text-lg">Trader Profile</h1>
-        <div className="w-6" />
+        {userId !== traderId && (
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 p-1 rounded-lg"
+            data-testid="button-report-user"
+            title="Report user"
+          >
+            <span className="material-symbols-outlined text-xl">flag</span>
+          </button>
+        )}
+        {userId === traderId && <div className="w-6" />}
       </div>
 
       {/* Content */}
@@ -299,6 +311,16 @@ export default function TraderProfile({ params }: { params: { traderId: string }
           </div>
         )}
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        userId={userId!}
+        reportedUserId={traderId}
+        defaultType="abuse_user"
+        title="Report User"
+      />
 
       <BottomNav />
     </div>

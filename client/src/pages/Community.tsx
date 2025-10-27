@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
+import ReportModal from "@/components/ReportModal";
 import type { Analysis, User, Report } from "@shared/schema";
 
 type FeedItem = Analysis & { author: User };
@@ -14,10 +15,7 @@ export default function Community() {
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportType, setReportType] = useState<"bug" | "feedback" | "feature_request" | "abuse">("bug");
-  const [reportSubject, setReportSubject] = useState("");
-  const [reportMessage, setReportMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ userId?: string; analysisId?: string; type: "abuse_user" | "abuse_post" | "bug" }>({ type: "bug" });
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [alias, setAlias] = useState("");
   const [isAcceptingRules, setIsAcceptingRules] = useState(false);
@@ -121,47 +119,24 @@ export default function Community() {
     }
   };
 
-  const handleSubmitReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // VERSION CHECKPOINT
-    const versionOk = await guardAction();
-    if (!versionOk) return;
-
-    if (!userId) return;
-
-    setIsSubmitting(true);
-
-    try {
-      await apiRequest("POST", "/api/reports", {
-        userId,
-        type: reportType,
-        subject: reportSubject,
-        message: reportMessage,
-      });
-
-      toast({
-        title: "Report Submitted",
-        description: "Thank you! We'll review your feedback soon.",
-      });
-
-      setShowReportModal(false);
-      setReportSubject("");
-      setReportMessage("");
-      queryClient.invalidateQueries({ queryKey: ["/api/reports", userId] });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit report",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleAnalysisClick = (analysisId: string) => {
     setLocation(`/analyzer?analysisId=${analysisId}&fromCommunity=true`);
+  };
+
+  const handleReportUser = (reportedUserId: string) => {
+    setReportTarget({ userId: reportedUserId, type: "abuse_user" });
+    setShowReportModal(true);
+  };
+
+  const handleReportAnalysis = (analysisId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent analysis click
+    setReportTarget({ analysisId, type: "abuse_post" });
+    setShowReportModal(true);
+  };
+
+  const handleGeneralReport = () => {
+    setReportTarget({ type: "bug" });
+    setShowReportModal(true);
   };
 
   return (
@@ -172,7 +147,7 @@ export default function Community() {
           <div className="flex items-center justify-between">
             <h1 className="text-white text-xl font-bold">Community</h1>
             <button
-              onClick={() => setShowReportModal(true)}
+              onClick={handleGeneralReport}
               className="flex items-center gap-2 px-4 py-2 bg-[#29382f] text-white rounded-lg hover-elevate active-elevate-2"
               data-testid="button-report"
             >
@@ -319,6 +294,14 @@ export default function Community() {
                         </p>
                       </div>
                       <button
+                        onClick={() => handleReportUser(user.id)}
+                        className="p-2 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
+                        data-testid={`button-report-user-${user.id}`}
+                        title="Report user"
+                      >
+                        <span className="material-symbols-outlined text-lg">flag</span>
+                      </button>
+                      <button
                         onClick={() => setLocation(`/trader/${user.id}`)}
                         className="px-3 py-1.5 bg-[#29382f] text-[#38e07b] text-xs font-semibold rounded-lg hover-elevate active-elevate-2"
                         data-testid={`button-view-trader-${user.id}`}
@@ -332,18 +315,30 @@ export default function Community() {
                       <p className="text-[#9eb7a8] text-xs font-medium">Recent Analyses</p>
                       <div className="flex flex-wrap gap-2">
                         {analyses.slice(0, 6).map((analysis) => (
-                          <button
+                          <div
                             key={analysis.id}
-                            onClick={() => handleAnalysisClick(analysis.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold hover-elevate active-elevate-2 ${
-                              analysis.recommendation === "BUY"
-                                ? "bg-[#38e07b]/20 text-[#38e07b] border border-[#38e07b]/30"
-                                : "bg-red-500/20 text-red-500 border border-red-500/30"
-                            }`}
-                            data-testid={`analysis-chip-${analysis.id}`}
+                            className="relative inline-flex group"
                           >
-                            {analysis.recommendation} {analysis.symbol}
-                          </button>
+                            <button
+                              onClick={() => handleAnalysisClick(analysis.id)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold hover-elevate active-elevate-2 ${
+                                analysis.recommendation === "BUY"
+                                  ? "bg-[#38e07b]/20 text-[#38e07b] border border-[#38e07b]/30"
+                                  : "bg-red-500/20 text-red-500 border border-red-500/30"
+                              }`}
+                              data-testid={`analysis-chip-${analysis.id}`}
+                            >
+                              {analysis.recommendation} {analysis.symbol}
+                            </button>
+                            <button
+                              onClick={(e) => handleReportAnalysis(analysis.id, e)}
+                              className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#111714] p-1 rounded-full border border-[#2a3c33] text-[#6a7f72] hover:text-red-500"
+                              data-testid={`button-report-analysis-${analysis.id}`}
+                              title="Report analysis"
+                            >
+                              <span className="material-symbols-outlined text-xs">flag</span>
+                            </button>
+                          </div>
                         ))}
                         {analyses.length > 6 && (
                           <div className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#29382f] text-[#9eb7a8]">
@@ -393,75 +388,21 @@ export default function Community() {
         )}
 
         {/* Report Modal */}
-        {showReportModal && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#1a1f1c] rounded-xl max-w-md w-full p-6 border border-[#2a3530]">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-white font-bold text-lg">Report Issue</h2>
-                <button
-                  onClick={() => setShowReportModal(false)}
-                  className="text-[#9eb7a8] hover:text-white"
-                  data-testid="button-close-report"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmitReport} className="space-y-4">
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Type</label>
-                  <select
-                    value={reportType}
-                    onChange={(e) => setReportType(e.target.value as any)}
-                    className="w-full bg-[#29382f] text-white rounded-lg px-4 py-3 border border-transparent focus:ring-2 focus:ring-[#38e07b] outline-none"
-                    data-testid="select-report-type"
-                  >
-                    <option value="bug">Bug Report</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="feature_request">Feature Request</option>
-                    <option value="abuse">Report Abuse</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Subject</label>
-                  <input
-                    type="text"
-                    value={reportSubject}
-                    onChange={(e) => setReportSubject(e.target.value)}
-                    placeholder="Brief description"
-                    required
-                    className="w-full bg-[#29382f] text-white rounded-lg px-4 py-3 border border-transparent focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72]"
-                    data-testid="input-report-subject"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Message</label>
-                  <textarea
-                    value={reportMessage}
-                    onChange={(e) => setReportMessage(e.target.value)}
-                    placeholder="Describe the issue in detail (min 10 characters)"
-                    required
-                    minLength={10}
-                    rows={4}
-                    className="w-full bg-[#29382f] text-white rounded-lg px-4 py-3 border border-transparent focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72] resize-none"
-                    data-testid="textarea-report-message"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#38e07b] text-[#111714] font-bold py-3 rounded-lg hover:bg-[#2fc76a] transition-colors disabled:opacity-50"
-                  data-testid="button-submit-report"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Report"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          userId={userId!}
+          reportedUserId={reportTarget.userId}
+          reportedAnalysisId={reportTarget.analysisId}
+          defaultType={reportTarget.type}
+          title={
+            reportTarget.type === "abuse_user"
+              ? "Report User"
+              : reportTarget.type === "abuse_post"
+              ? "Report Analysis"
+              : "Submit Report"
+          }
+        />
 
         {/* Community Rules Modal */}
         {showRulesModal && (
