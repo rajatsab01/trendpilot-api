@@ -29,7 +29,7 @@ export const translations = {
     aiGuidedTrading: "AI-Guided Trading",
     aiDescription: "Experience the future of trading with AI-powered intelligence that outperforms traditional human analysis. Our advanced algorithms continuously study market data, price patterns, and sentiment in real time to uncover opportunities that human traders might miss. By removing emotional bias and fatigue, AI ensures faster, data-driven decisions with consistent precision. Whether in volatile crypto markets or dynamic stock movements, AI-guided trading empowers you to act confidently, adapt instantly, and stay ahead of the curve.",
     disclaimer: "Disclaimer",
-    disclaimerText: "Trading involves risk of loss and is not suitable for all investors. Past performance is not indicative of future results. Trend Pilot provides AI-guided analysis for informational purposes only and should not be considered financial advice. Always consult with a qualified financial advisor before making any investment decisions.",
+    disclaimerText: "Trading involves risk of loss and is not suitable for all investors. Past performance is not indicative of future results. Trend Pilot provides AI-guided analysis for informational purposes only and should not be considered financial recommendations. Always do your own research and consult with a qualified professional before making any investment decisions.",
     iAgree: "I Agree",
     
     // PWA Installation
@@ -378,7 +378,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "Price Chart (TradingView)",
-    aiPoweredAdvisory: "AI-Powered Trading Advisory",
+    aiPoweredAnalyzer: "AI-Powered Trading Analyzer",
     technicalIndicators: "Technical Indicators",
     confidence: "Confidence",
     
@@ -406,7 +406,7 @@ export const translations = {
     deviceInfo: "Device Information: Browser type, device type, IP address",
     howWeUse: "3. How We Use Your Information",
     useInfoFor: "We use your information to:",
-    provideService: "Provide and maintain our AI trading advisory service",
+    provideService: "Provide and maintain our AI trading analyzer service",
     processPayments: "Process payments and manage your token balance",
     personalizeExp: "Personalize your experience with language and currency preferences",
     analyzeMarkets: "Generate market analysis based on your requests",
@@ -467,12 +467,11 @@ export const translations = {
     businessHoursDesc: "Monday - Friday: 9:00 AM - 6:00 PM (IST)",
     weekendSupport: "Weekend: Limited support",
     importantNotice: "Important Notice",
-    noticeDesc: "Trend Pilot is an advisory-only service. We do not execute trades or manage funds. All trading decisions and actions are your sole responsibility. Please include your user ID or registered phone number when contacting us for faster assistance.",
+    noticeDesc: "Trend Pilot is an analyzer-only service. We do not execute trades or manage funds. All trading decisions and actions are your sole responsibility. Please include your user ID or registered phone number when contacting us for faster assistance.",
     emailNow: "Email Now",
     
     // Community
     activeTraders: "Active Traders",
-    posts: "posts",
   },
   hi: {
     // Language Selection
@@ -851,7 +850,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "मूल्य चार्ट (TradingView)",
-    aiPoweredAdvisory: "AI-संचालित ट्रेडिंग सलाहकार",
+    aiPoweredAnalyzer: "AI-संचालित ट्रेडिंग विश्लेषक",
     technicalIndicators: "तकनीकी संकेतक",
     confidence: "आत्मविश्वास",
     
@@ -1200,7 +1199,7 @@ export const translations = {
     reject: "Rechazar",
     banUser: "Prohibir Usuario",
     priceChart: "Gráfico de Precios (TradingView)",
-    aiPoweredAdvisory: "Asesoramiento de Trading con IA",
+    aiPoweredAnalyzer: "Analizador de Trading con IA",
     technicalIndicators: "Indicadores Técnicos",
     confidence: "Confianza",
     cancel: "Cancelar",
@@ -1573,7 +1572,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "价格图表 (TradingView)",
-    aiPoweredAdvisory: "AI驱动的交易咨询",
+    aiPoweredAnalyzer: "AI驱动的交易分析器",
     technicalIndicators: "技术指标",
     confidence: "信心",
     
@@ -1949,7 +1948,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "Preisdiagramm (TradingView)",
-    aiPoweredAdvisory: "KI-gestützte Trading-Beratung",
+    aiPoweredAnalyzer: "KI-gestützte Trading-Analyse",
     technicalIndicators: "Technische Indikatoren",
     confidence: "Vertrauen",
     
@@ -2325,7 +2324,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "Graphique de Prix (TradingView)",
-    aiPoweredAdvisory: "Conseil de Trading Alimenté par l'IA",
+    aiPoweredAnalyzer: "Analyseur de Trading Alimenté par l'IA",
     technicalIndicators: "Indicateurs Techniques",
     confidence: "Confiance",
     
@@ -2701,7 +2700,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "الرسم البياني للسعر (TradingView)",
-    aiPoweredAdvisory: "استشارات التداول المدعومة بالذكاء الاصطناعي",
+    aiPoweredAnalyzer: "محلل التداول المدعوم بالذكاء الاصطناعي",
     technicalIndicators: "المؤشرات الفنية",
     confidence: "الثقة",
     
@@ -3077,7 +3076,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "Gráfico de Preços (TradingView)",
-    aiPoweredAdvisory: "Consultoria de Trading com IA",
+    aiPoweredAnalyzer: "Analisador de Trading com IA",
     technicalIndicators: "Indicadores Técnicos",
     confidence: "Confiança",
     
@@ -3453,7 +3452,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "График Цены (TradingView)",
-    aiPoweredAdvisory: "Торговые Консультации на ИИ",
+    aiPoweredAnalyzer: "Торговый Анализатор на ИИ",
     technicalIndicators: "Технические Индикаторы",
     confidence: "Уверенность",
     
@@ -3829,7 +3828,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "価格チャート (TradingView)",
-    aiPoweredAdvisory: "AI駆動のトレーディングアドバイザリー",
+    aiPoweredAnalyzer: "AI駆動のトレーディングアナライザー",
     technicalIndicators: "テクニカルインジケーター",
     confidence: "信頼度",
     
@@ -4205,7 +4204,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "가격 차트 (TradingView)",
-    aiPoweredAdvisory: "AI 기반 트레이딩 자문",
+    aiPoweredAnalyzer: "AI 기반 트레이딩 분석기",
     technicalIndicators: "기술적 지표",
     confidence: "신뢰도",
     
@@ -4581,7 +4580,7 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: "Grafico dei Prezzi (TradingView)",
-    aiPoweredAdvisory: "Consulenza di Trading Alimentata dall'IA",
+    aiPoweredAnalyzer: "Analizzatore di Trading Alimentato dall'IA",
     technicalIndicators: "Indicatori Tecnici",
     confidence: "Fiducia",
     
