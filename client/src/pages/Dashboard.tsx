@@ -675,79 +675,81 @@ export default function Dashboard() {
               </label>
             </div>
 
-            <label className="flex flex-col relative">
+            <label className="flex flex-col">
               <span className="text-sm font-medium text-[#9eb7a8] mb-2">
                 {t.financialSymbol}
               </span>
-              <input
-                className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
-                placeholder="Type symbol or name (e.g., gold, bitcoin, AAPL)"
-                value={symbol}
-                onChange={(e) => handleSymbolSearch(e.target.value)}
-                onFocus={() => {
-                  if (searchSuggestions.length > 0) {
-                    setShowSearchDropdown(true);
-                  }
-                }}
-                data-testid="input-symbol"
-              />
+              <div className="relative">
+                <input
+                  className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
+                  placeholder="Type symbol or name (e.g., gold, bitcoin, AAPL)"
+                  value={symbol}
+                  onChange={(e) => handleSymbolSearch(e.target.value)}
+                  onFocus={() => {
+                    if (searchSuggestions.length > 0) {
+                      setShowSearchDropdown(true);
+                    }
+                  }}
+                  data-testid="input-symbol"
+                />
+                
+                {/* Intelligent Search Dropdown - appears directly below input */}
+                {showSearchDropdown && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#1c2620] border border-[#38e07b]/20 rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
+                    <div className="p-2 space-y-1">
+                      <p className="text-xs text-[#9eb7a8] px-3 py-2">Suggestions:</p>
+                      {searchSuggestions.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSelectSearchSuggestion(suggestion)}
+                          className="w-full px-3 py-3 bg-[#29382f] rounded-lg hover-elevate active-elevate-2 flex items-start justify-between group"
+                          data-testid={`search-suggestion-${idx}`}
+                        >
+                          <div className="flex flex-col items-start text-left flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-medium text-sm">{suggestion.name}</span>
+                              {suggestion.classification && (
+                                <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase bg-[#38e07b]/20 text-[#38e07b] rounded-md border border-[#38e07b]/30">
+                                  {suggestion.classification}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
+                          </div>
+                          <span className="text-xs text-[#38e07b] capitalize ml-2 mt-1 shrink-0">
+                            {suggestion.market.replace(/_/g, ' ')}
+                          </span>
+                        </button>
+                      ))}
+                      
+                      {/* None of these? Proceed anyway */}
+                      <button
+                        onClick={() => {
+                          setShowSearchDropdown(false);
+                          toast({
+                            title: "Manual Entry Mode",
+                            description: "Please select market and click Enlighten Me",
+                          });
+                        }}
+                        className="w-full px-3 py-2 mt-1 bg-[#38e07b]/10 border border-[#38e07b]/30 rounded-lg hover-elevate active-elevate-2 text-[#38e07b] text-sm font-medium"
+                        data-testid="button-proceed-manual"
+                      >
+                        None of these? Proceed anyway
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setShowSearchDropdown(false)}
+                      className="w-full px-3 py-2 text-xs text-[#9eb7a8] hover:text-white transition-colors border-t border-[#38e07b]/10"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-[#6a7f72] mt-2 flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">info</span>
                 App analyzes SPOT charts - use spot symbols (XAUUSD for Gold spot, BTCUSDT for Bitcoin), NOT futures symbols like NG=F (Natural Gas futures). Search by name (e.g., "gold") to find spot options.
               </p>
-              
-              {/* Intelligent Search Dropdown */}
-              {showSearchDropdown && searchSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1c2620] border border-[#38e07b]/20 rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
-                  <div className="p-2 space-y-1">
-                    <p className="text-xs text-[#9eb7a8] px-3 py-2">Suggestions:</p>
-                    {searchSuggestions.map((suggestion, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSelectSearchSuggestion(suggestion)}
-                        className="w-full px-3 py-3 bg-[#29382f] rounded-lg hover-elevate active-elevate-2 flex items-start justify-between group"
-                        data-testid={`search-suggestion-${idx}`}
-                      >
-                        <div className="flex flex-col items-start text-left flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-medium text-sm">{suggestion.name}</span>
-                            {suggestion.classification && (
-                              <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase bg-[#38e07b]/20 text-[#38e07b] rounded-md border border-[#38e07b]/30">
-                                {suggestion.classification}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-[#9eb7a8]">{suggestion.symbol}</span>
-                        </div>
-                        <span className="text-xs text-[#38e07b] capitalize ml-2 mt-1 shrink-0">
-                          {suggestion.market.replace(/_/g, ' ')}
-                        </span>
-                      </button>
-                    ))}
-                    
-                    {/* None of these? Proceed anyway */}
-                    <button
-                      onClick={() => {
-                        setShowSearchDropdown(false);
-                        toast({
-                          title: "Manual Entry Mode",
-                          description: "Please select market and click Enlighten Me",
-                        });
-                      }}
-                      className="w-full px-3 py-2 mt-1 bg-[#38e07b]/10 border border-[#38e07b]/30 rounded-lg hover-elevate active-elevate-2 text-[#38e07b] text-sm font-medium"
-                      data-testid="button-proceed-manual"
-                    >
-                      None of these? Proceed anyway
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => setShowSearchDropdown(false)}
-                    className="w-full px-3 py-2 text-xs text-[#9eb7a8] hover:text-white transition-colors border-t border-[#38e07b]/10"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
             </label>
 
             <label className="flex flex-col">
