@@ -122,8 +122,17 @@ export function getExchangeCurrency(symbol: string, market: string): string {
   // CRITICAL: Commodity futures (=F suffix) MUST be checked BEFORE exchange suffixes
   // to prevent false matches (e.g., SI=F should NOT match Singapore .SI)
   // ALL commodity futures from Yahoo Finance are priced in USD
+  // Using .includes() instead of .endsWith() to catch any =F anywhere in the symbol
   if (upperSymbol.includes('=F')) {
-    console.log(`[Commodity Futures] ${symbol} → Source currency: USD`);
+    console.log(`[Commodity Futures] ${symbol} → Source currency: USD (=F suffix detected)`);
+    return 'USD';
+  }
+  
+  // ADDITIONAL SAFETY CHECK: If symbol starts with common commodity ticker + =F pattern
+  // Examples: GC=F, SI=F, CL=F, NG=F, BZ=F, etc.
+  const commodityFuturesPattern = /^[A-Z]{1,3}=F$/;
+  if (commodityFuturesPattern.test(upperSymbol)) {
+    console.log(`[Commodity Futures Pattern Match] ${symbol} → Source currency: USD`);
     return 'USD';
   }
   
@@ -488,10 +497,22 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
   try {
     console.log(`\n🔍 [validateYahooSymbol] Input: "${symbol}" (market: ${market})`);
     
-    // Use unified symbol normalization from symbolRegistry
-    // Classification is auto-detected based on symbol pattern and market type
-    const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
-    console.log(`📤 [validateYahooSymbol] Sending to Yahoo: "${yahooSymbol}"`);
+    // CRITICAL SHORT-CIRCUIT: Commodity futures symbols BYPASS normalization entirely
+    // This prevents any aliasing that could convert SI=F to SI.SI
+    const isCommodityFutures = symbol.toUpperCase().includes('=F');
+    let yahooSymbol: string;
+    
+    if (isCommodityFutures) {
+      // Use original symbol directly, only uppercasing it
+      yahooSymbol = symbol.toUpperCase();
+      console.log(`🛡️ [FUTURES SHORT-CIRCUIT] Commodity futures detected - bypassing normalization`);
+      console.log(`📤 [validateYahooSymbol] Using original symbol: "${yahooSymbol}" (NO normalization)`);
+    } else {
+      // Use unified symbol normalization from symbolRegistry for non-futures
+      // Classification is auto-detected based on symbol pattern and market type
+      yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
+      console.log(`📤 [validateYahooSymbol] Normalized symbol: "${symbol}" → "${yahooSymbol}"`);
+    }
     
     // Try fetching from Yahoo Finance
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
@@ -543,10 +564,39 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     const meta = result.meta;
     
     console.log(`📥 [validateYahooSymbol] Yahoo returned symbol: "${meta.symbol || yahooSymbol}"`);
+    console.log(`📥 [validateYahooSymbol] Yahoo meta.currency: "${meta.currency}"`);
     console.log(`📥 [validateYahooSymbol] Asset name: "${meta.longName || yahooSymbol}"`);
     
+    // CRITICAL RESPONSE VALIDATION: If we requested a futures symbol, verify Yahoo didn't alias it
+    if (isCommodityFutures) {
+      const yahooReturnedSymbol = (meta.symbol || yahooSymbol).toUpperCase();
+      if (!yahooReturnedSymbol.includes('=F')) {
+        console.error(`❌ [YAHOO ALIAS CORRUPTION] Requested "${yahooSymbol}" but Yahoo returned "${meta.symbol}"`);
+        console.error(`⚠️ Yahoo Finance aliased the futures contract. This will cause incorrect pricing.`);
+        return {
+          isValid: false,
+          error: `Yahoo Finance returned incorrect data for commodity futures ${yahooSymbol}. Please verify the symbol is correct.`,
+        };
+      }
+      console.log(`✅ [FUTURES VALIDATION] Yahoo preserved =F suffix in response`);
+    }
+    
     // Determine the currency this exchange provides prices in
-    const sourceCurrency = getExchangeCurrency(yahooSymbol, market);
+    let sourceCurrency = getExchangeCurrency(yahooSymbol, market);
+    
+    // CRITICAL DEFENSIVE CHECK: Commodity futures (=F suffix) MUST ALWAYS be in USD
+    // This prevents Yahoo Finance from returning wrong exchange data (e.g., SI=F → SGD instead of USD)
+    if (isCommodityFutures) {
+      console.log(`🛡️ [COMMODITY FUTURES GUARD] Symbol "${yahooSymbol}" has =F suffix - FORCING USD currency`);
+      if (sourceCurrency !== 'USD') {
+        console.error(`⚠️ [CURRENCY MISMATCH] getExchangeCurrency returned "${sourceCurrency}" for "${yahooSymbol}" but =F suffix requires USD. Overriding to USD.`);
+      }
+      if (meta.currency && meta.currency !== 'USD') {
+        console.error(`⚠️ [YAHOO CURRENCY MISMATCH] Yahoo meta.currency is "${meta.currency}" but futures must be USD. Overriding.`);
+      }
+      sourceCurrency = 'USD'; // Force USD for all commodity futures
+    }
+    
     console.log(`💱 [validateYahooSymbol] Source currency: ${sourceCurrency}`);
     
     // IMPORTANT: Preserve user's original symbol direction for forex pairs
