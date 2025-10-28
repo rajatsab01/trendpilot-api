@@ -119,6 +119,14 @@ export function getExchangeCurrency(symbol: string, market: string): string {
   // Check exchange suffix for stocks/commodities
   const upperSymbol = symbol.toUpperCase();
   
+  // CRITICAL: Commodity futures (=F suffix) MUST be checked BEFORE exchange suffixes
+  // to prevent false matches (e.g., SI=F should NOT match Singapore .SI)
+  // ALL commodity futures from Yahoo Finance are priced in USD
+  if (upperSymbol.includes('=F')) {
+    console.log(`[Commodity Futures] ${symbol} → Source currency: USD`);
+    return 'USD';
+  }
+  
   // Indian exchanges
   if (upperSymbol.endsWith('.NS') || upperSymbol.endsWith('.BO')) {
     return 'INR';
