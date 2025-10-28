@@ -524,6 +524,188 @@ const COMMODITY_FUTURES_EXCHANGE_MAP: Record<string, string> = {
 };
 
 /**
+ * Commodity futures metadata with full names and expected price ranges
+ * Used to help Yahoo Finance disambiguate symbols and validate returned prices
+ */
+interface CommodityMetadata {
+  name: string;           // Full descriptive name (e.g., "Silver Futures")
+  minPrice: number;       // Minimum expected price in USD
+  maxPrice: number;       // Maximum expected price in USD
+  exchange: string;       // Trading exchange
+  unit: string;           // Trading unit description
+}
+
+const COMMODITY_FUTURES_METADATA: Record<string, CommodityMetadata> = {
+  // Precious Metals - COMEX
+  'GC': {
+    name: 'Gold Futures',
+    minPrice: 1800,
+    maxPrice: 3000,
+    exchange: 'COMEX',
+    unit: 'per troy ounce'
+  },
+  'SI': {
+    name: 'Silver Futures',
+    minPrice: 20,
+    maxPrice: 50,
+    exchange: 'COMEX',
+    unit: 'per troy ounce'
+  },
+  'HG': {
+    name: 'Copper Futures',
+    minPrice: 3,
+    maxPrice: 6,
+    exchange: 'COMEX',
+    unit: 'per pound'
+  },
+  'PL': {
+    name: 'Platinum Futures',
+    minPrice: 800,
+    maxPrice: 1500,
+    exchange: 'NYMEX',
+    unit: 'per troy ounce'
+  },
+  'PA': {
+    name: 'Palladium Futures',
+    minPrice: 900,
+    maxPrice: 3000,
+    exchange: 'NYMEX',
+    unit: 'per troy ounce'
+  },
+  
+  // Energy - NYMEX
+  'CL': {
+    name: 'Crude Oil Futures (WTI)',
+    minPrice: 50,
+    maxPrice: 150,
+    exchange: 'NYMEX',
+    unit: 'per barrel'
+  },
+  'NG': {
+    name: 'Natural Gas Futures',
+    minPrice: 1.5,
+    maxPrice: 10,
+    exchange: 'NYMEX',
+    unit: 'per MMBtu'
+  },
+  'RB': {
+    name: 'RBOB Gasoline Futures',
+    minPrice: 1.5,
+    maxPrice: 5,
+    exchange: 'NYMEX',
+    unit: 'per gallon'
+  },
+  'HO': {
+    name: 'Heating Oil Futures',
+    minPrice: 1.5,
+    maxPrice: 5,
+    exchange: 'NYMEX',
+    unit: 'per gallon'
+  },
+  'BZ': {
+    name: 'Brent Crude Oil Futures',
+    minPrice: 50,
+    maxPrice: 150,
+    exchange: 'NYMEX',
+    unit: 'per barrel'
+  },
+  
+  // Agricultural - CBOT
+  'ZC': {
+    name: 'Corn Futures',
+    minPrice: 3,
+    maxPrice: 9,
+    exchange: 'CBOT',
+    unit: 'per bushel'
+  },
+  'ZS': {
+    name: 'Soybean Futures',
+    minPrice: 8,
+    maxPrice: 18,
+    exchange: 'CBOT',
+    unit: 'per bushel'
+  },
+  'ZW': {
+    name: 'Wheat Futures',
+    minPrice: 4,
+    maxPrice: 12,
+    exchange: 'CBOT',
+    unit: 'per bushel'
+  },
+  'ZL': {
+    name: 'Soybean Oil Futures',
+    minPrice: 30,
+    maxPrice: 80,
+    exchange: 'CBOT',
+    unit: 'per pound'
+  },
+  'ZM': {
+    name: 'Soybean Meal Futures',
+    minPrice: 300,
+    maxPrice: 550,
+    exchange: 'CBOT',
+    unit: 'per short ton'
+  },
+  'KE': {
+    name: 'Kansas Wheat Futures',
+    minPrice: 4,
+    maxPrice: 12,
+    exchange: 'CBOT',
+    unit: 'per bushel'
+  },
+  
+  // Livestock - CME
+  'LE': {
+    name: 'Live Cattle Futures',
+    minPrice: 100,
+    maxPrice: 200,
+    exchange: 'CME',
+    unit: 'per hundredweight'
+  },
+  'HE': {
+    name: 'Lean Hogs Futures',
+    minPrice: 50,
+    maxPrice: 150,
+    exchange: 'CME',
+    unit: 'per hundredweight'
+  },
+  'GF': {
+    name: 'Feeder Cattle Futures',
+    minPrice: 150,
+    maxPrice: 300,
+    exchange: 'CME',
+    unit: 'per hundredweight'
+  },
+};
+
+/**
+ * Validate commodity futures price is within expected range
+ * Returns null if valid, error message if invalid
+ */
+function validateCommodityPrice(symbol: string, price: number): string | null {
+  const baseSymbol = symbol.replace(/=F$/i, '').toUpperCase();
+  const metadata = COMMODITY_FUTURES_METADATA[baseSymbol];
+  
+  if (!metadata) {
+    // Unknown commodity - skip validation
+    console.log(`⚠️ [COMMODITY VALIDATION] No metadata for "${baseSymbol}" - skipping price validation`);
+    return null;
+  }
+  
+  console.log(`🔍 [COMMODITY VALIDATION] Checking "${symbol}": $${price} USD`);
+  console.log(`📊 [COMMODITY VALIDATION] Expected range for ${metadata.name}: $${metadata.minPrice}-${metadata.maxPrice} USD`);
+  
+  if (price < metadata.minPrice || price > metadata.maxPrice) {
+    console.error(`❌ [PRICE OUT OF RANGE] ${symbol} price $${price} is outside expected range $${metadata.minPrice}-${metadata.maxPrice}`);
+    console.error(`⚠️ Yahoo Finance may have returned data for wrong asset!`);
+    return `Price $${price} USD is outside expected range for ${metadata.name} ($${metadata.minPrice}-${metadata.maxPrice} ${metadata.unit}). Yahoo Finance may have returned incorrect data. Please verify the symbol.`;
+  }
+  
+  console.log(`✅ [PRICE VALID] ${symbol} price $${price} is within expected range`);
+  return null;
+}
+
+/**
  * Add exchange prefix to commodity futures symbols for Yahoo Finance
  * This helps resolve ambiguous 2-letter symbols like SI=F (Silver) which might
  * otherwise be confused with stock symbols or other exchanges
@@ -656,6 +838,22 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     
     console.log(`💱 [validateYahooSymbol] Source currency: ${sourceCurrency}`);
     
+    // Get current price from Yahoo
+    const currentPrice = meta.regularMarketPrice || meta.previousClose;
+    
+    // COMMODITY FUTURES PRICE VALIDATION
+    // Validate the price is within expected range for the commodity
+    if (isCommodityFutures) {
+      const priceError = validateCommodityPrice(yahooSymbol, currentPrice);
+      if (priceError) {
+        // Price is out of range - Yahoo returned wrong asset!
+        return {
+          isValid: false,
+          error: priceError,
+        };
+      }
+    }
+    
     // Determine final symbol for display
     let finalSymbol: string;
     
@@ -675,11 +873,22 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
       console.log(`✅ [validateYahooSymbol] Using Yahoo's normalized symbol: "${finalSymbol}"`);
     }
     
+    // Enhanced asset name for commodities - use full descriptive name from metadata
+    let assetName = meta.longName || yahooSymbol;
+    if (isCommodityFutures) {
+      const baseSymbol = yahooSymbol.replace(/=F$/i, '').toUpperCase();
+      const metadata = COMMODITY_FUTURES_METADATA[baseSymbol];
+      if (metadata) {
+        assetName = metadata.name;
+        console.log(`📝 [COMMODITY NAME] Using metadata name: "${assetName}"`);
+      }
+    }
+    
     return {
       isValid: true,
       correctedSymbol: finalSymbol,
-      assetName: meta.longName || yahooSymbol,
-      currentPrice: meta.regularMarketPrice || meta.previousClose,
+      assetName: assetName,
+      currentPrice: currentPrice,
       sourceCurrency: sourceCurrency,
     };
   } catch (error: any) {
