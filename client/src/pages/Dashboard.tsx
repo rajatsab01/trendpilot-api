@@ -516,6 +516,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
+      <style>{`
+        @media (max-width: 767px) {
+          body {
+            zoom: 0.9;
+          }
+        }
+      `}</style>
       <div className="flex flex-col flex-1">
         <header className="flex flex-col p-4 pb-2">
           <div className="flex items-center justify-end mb-2">
