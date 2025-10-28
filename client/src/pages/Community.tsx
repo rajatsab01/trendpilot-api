@@ -12,6 +12,10 @@ import type { Analysis, User, Report } from "@shared/schema";
 import { format } from "date-fns";
 
 type FeedItem = Analysis & { author: User };
+type PinnedTraderWithNotifications = {
+  user: User;
+  unreadCount: number;
+};
 
 export default function Community() {
   const [, setLocation] = useLocation();
@@ -45,22 +49,16 @@ export default function Community() {
     enabled: !!userId && user?.rulesAccepted === 1,
   });
 
-  // Fetch pinned traders
-  type PinnedTrader = {
-    id: string;
-    name: string;
-    alias: string | null;
-    publishedCount: number;
-  };
-  
-  const { data: pinnedTraders = [] } = useQuery<PinnedTrader[]>({
-    queryKey: ["/api/community/pinned-traders", userId],
+  // Fetch pinned traders with notification counts
+  const { data: pinnedTradersWithNotifications = [] } = useQuery<PinnedTraderWithNotifications[]>({
+    queryKey: ["/api/community/pinned-with-notifications", userId],
     queryFn: async () => {
-      const response = await fetch(`/api/community/pinned/${userId}`);
+      const response = await fetch(`/api/community/pinned-with-notifications/${userId}`);
       if (!response.ok) return [];
       return response.json();
     },
     enabled: !!userId && user?.rulesAccepted === 1,
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 
   // Fetch user's reports
@@ -145,6 +143,22 @@ export default function Community() {
     setLocation(`/analyzer?analysisId=${analysisId}&fromCommunity=true`);
   };
 
+  const handleTraderClick = async (traderId: string) => {
+    // Mark notifications as read for this trader
+    if (userId) {
+      try {
+        await apiRequest("POST", "/api/community/mark-trader-notifications-read", {
+          userId,
+          traderId,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/community/pinned-with-notifications", userId] });
+      } catch (error) {
+        console.error("Failed to mark notifications as read:", error);
+      }
+    }
+    setLocation(`/trader/${traderId}`);
+  };
+
   const handleReportUser = async (reportedUserId: string) => {
     const versionOk = await guardAction();
     if (!versionOk) return;
@@ -165,6 +179,30 @@ export default function Community() {
   if (!user) {
     return null;
   }
+
+  // Group analyses by trader
+  const traderGroups = feed.reduce((acc, item) => {
+    const traderId = item.author.id;
+    if (!acc[traderId]) {
+      acc[traderId] = {
+        user: item.author,
+        analyses: []
+      };
+    }
+    acc[traderId].analyses.push(item);
+    return acc;
+  }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
+
+  // Filter groups based on search query
+  const filteredTraderGroups = Object.values(traderGroups).filter(({ user, analyses }) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase().trim();
+    const usernameMatch = user.alias?.toLowerCase().includes(query) || false;
+    const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
+    
+    return usernameMatch || symbolMatch;
+  });
 
   return (
     <div className="min-h-screen bg-[#111714] pb-20">
@@ -226,80 +264,44 @@ export default function Community() {
           <h1 className="text-white text-2xl font-bold">{t.community}</h1>
         </div>
 
-        {/* Active Traders Horizontal Scroll Banner */}
-        {!searchQuery && feed.length > 0 && (
-          <div className="space-y-2 px-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#38e07b] text-lg">group</span>
-              <h2 className="text-white font-semibold text-sm">{t.activeTraders || "Active Traders"}</h2>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-              {(() => {
-                // Get unique traders from feed
-                const uniqueTraders = Array.from(
-                  new Map(feed.map(item => [item.author.id, item.author])).values()
-                );
-                
-                return uniqueTraders.map((trader) => {
-                  const traderAnalyses = feed.filter(a => a.author.id === trader.id);
-                  return (
-                    <button
-                      key={trader.id}
-                      onClick={() => setLocation(`/trader/${trader.id}`)}
-                      className="flex-shrink-0 bg-[#1a241f] rounded-lg p-2 border border-[#2a3c33] hover-elevate active-elevate-2 w-[120px]"
-                      data-testid={`active-trader-${trader.id}`}
-                    >
-                      <div className="flex flex-col items-center gap-1.5">
-                        <div className="w-10 h-10 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
-                          <span className="text-[#38e07b] text-sm font-bold">
-                            {trader.alias?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
-                        <div className="text-center w-full">
-                          <p className="text-white font-semibold text-xs truncate">
-                            {trader.alias || 'Anonymous'}
-                          </p>
-                          <p className="text-[#6a7f72] text-[10px]">
-                            {traderAnalyses.length} {t.posts || "posts"}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                });
-              })()}
-            </div>
-          </div>
-        )}
-
-        {/* Pinned Traders Section */}
-        {pinnedTraders.length > 0 && !searchQuery && (
+        {/* Pinned Traders Section - Show ONLY pinned traders with notifications */}
+        {pinnedTradersWithNotifications.length > 0 && !searchQuery && (
           <div className="space-y-2 px-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#38e07b] text-lg">push_pin</span>
               <h2 className="text-white font-semibold text-sm">{t.pinnedTraders}</h2>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-              {pinnedTraders.map((trader) => (
+              {pinnedTradersWithNotifications.map(({ user: trader, unreadCount }) => (
                 <button
                   key={trader.id}
-                  onClick={() => setLocation(`/trader/${trader.id}`)}
+                  onClick={() => handleTraderClick(trader.id)}
                   className="flex-shrink-0 bg-[#1a241f] rounded-lg p-2 border border-[#38e07b]/30 hover-elevate active-elevate-2 w-[120px]"
                   data-testid={`pinned-trader-${trader.id}`}
                 >
                   <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-10 h-10 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
-                      <span className="text-[#38e07b] text-sm font-bold">
-                        {trader.alias?.charAt(0).toUpperCase() || '?'}
-                      </span>
+                    <div className="relative w-10 h-10">
+                      <div className="w-10 h-10 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
+                        {unreadCount > 0 ? (
+                          <span className="text-[#38e07b] text-sm font-bold">
+                            {unreadCount}
+                          </span>
+                        ) : (
+                          <span className="text-[#38e07b] text-sm font-bold">
+                            {trader.alias?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-center w-full">
                       <p className="text-white font-semibold text-xs truncate">
                         {trader.alias || 'Anonymous'}
                       </p>
-                      <p className="text-[#6a7f72] text-[10px]">
-                        {trader.publishedCount} {trader.publishedCount === 1 ? t.post : t.posts}
-                      </p>
+                      {unreadCount > 0 && (
+                        <p className="text-[#38e07b] text-[10px] font-semibold">
+                          {unreadCount} new
+                        </p>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -339,214 +341,143 @@ export default function Community() {
             <div className="text-[#9eb7a8]">{t.loadingFeed}</div>
           </div>
         ) : feed.length === 0 ? (
-          <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
-            <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">group</span>
-            <h3 className="text-white font-semibold mb-2">{t.noAnalysesYet}</h3>
-            <p className="text-[#9eb7a8] text-sm mb-4">
-              {t.communityGrowing}
-            </p>
-            <button
-              onClick={() => setLocation("/analyzer")}
-              className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
-              data-testid="button-start-analyzing"
-            >
-              {t.startAnalyzing}
-            </button>
+          <div className="px-4">
+            <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
+              <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">group</span>
+              <h3 className="text-white font-semibold mb-2">{t.noAnalysesYet}</h3>
+              <p className="text-[#9eb7a8] text-sm mb-4">
+                {t.communityGrowing}
+              </p>
+              <button
+                onClick={() => setLocation("/analyzer")}
+                className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
+                data-testid="button-start-analyzing"
+              >
+                {t.startAnalyzing}
+              </button>
+            </div>
+          </div>
+        ) : filteredTraderGroups.length === 0 && searchQuery.trim() ? (
+          <div className="px-4">
+            <div className="bg-[#1a241f] rounded-xl p-6 text-center border border-[#2a3c33]">
+              <span className="material-symbols-outlined text-[#6a7f72] text-4xl mb-2 block">search_off</span>
+              <h3 className="text-white font-semibold text-sm mb-1">{t.noResultsFound}</h3>
+              <p className="text-[#9eb7a8] text-xs">
+                {t.noMatchingTraders.replace('{query}', searchQuery)}
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="px-4 space-y-2">
-            {(() => {
-              // Group analyses by user
-              const userGroups = feed.reduce((acc, item) => {
-                const userId = item.author.id;
-                if (!acc[userId]) {
-                  acc[userId] = {
-                    user: item.author,
-                    analyses: []
-                  };
-                }
-                acc[userId].analyses.push(item);
-                return acc;
-              }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
-
-              // Filter groups based on search query
-              const filteredGroups = Object.values(userGroups).filter(({ user, analyses }) => {
-                if (!searchQuery.trim()) return true;
-                
-                const query = searchQuery.toLowerCase().trim();
-                const usernameMatch = user.alias?.toLowerCase().includes(query) || false;
-                const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
-                
-                return usernameMatch || symbolMatch;
-              });
-
-              // Show "no results" if search returns empty
-              if (filteredGroups.length === 0 && searchQuery.trim()) {
-                return (
-                  <div className="bg-[#1a241f] rounded-xl p-6 text-center border border-[#2a3c33]">
-                    <span className="material-symbols-outlined text-[#6a7f72] text-4xl mb-2 block">search_off</span>
-                    <h3 className="text-white font-semibold text-sm mb-1">{t.noResultsFound}</h3>
-                    <p className="text-[#9eb7a8] text-xs">
-                      {t.noMatchingTraders.replace('{query}', searchQuery)}
-                    </p>
-                  </div>
-                );
-              }
-
-              return filteredGroups.map(({ user: traderUser, analyses }) => (
-                <div
-                  key={traderUser.id}
-                  className="bg-[#1a241f] rounded-lg p-3 border border-[#2a3c33]"
-                  data-testid={`trader-card-${traderUser.id}`}
-                >
-                  {/* Trader Header - Compact */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-[#38e07b] flex items-center justify-center flex-shrink-0">
-                      <span className="text-[#111714] text-sm font-bold">
-                        {traderUser.alias?.charAt(0).toUpperCase() || '?'}
+          <div className="space-y-4">
+            {/* Feed grouped by trader - each trader gets 1 horizontal scrollable row */}
+            {filteredTraderGroups.map(({ user: trader, analyses }) => (
+              <div key={trader.id} className="space-y-2">
+                {/* Trader Header */}
+                <div className="px-4 flex items-center justify-between">
+                  <button
+                    onClick={() => handleTraderClick(trader.id)}
+                    className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg p-1.5 -ml-1.5"
+                    data-testid={`trader-header-${trader.id}`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
+                      <span className="text-[#38e07b] text-xs font-bold">
+                        {trader.alias?.charAt(0).toUpperCase() || '?'}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-xs truncate">
-                        {traderUser.alias || 'Anonymous'}
+                    <div>
+                      <p className="text-white font-semibold text-sm">
+                        {trader.alias || 'Anonymous'}
                       </p>
-                      <p className="text-[#6a7f72] text-[10px]">
-                        {analyses.length} {analyses.length === 1 ? t.analysis : t.analyses}
+                      <p className="text-[#6a7f72] text-xs">
+                        {analyses.length} {analyses.length === 1 ? 'trade' : 'trades'}
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleReportUser(traderUser.id)}
-                      className="p-1 text-[#6a7f72] hover:text-red-500 hover-elevate active-elevate-2 rounded-lg"
-                      data-testid={`button-report-user-${traderUser.id}`}
-                      title={t.reportUser}
-                    >
-                      <span className="material-symbols-outlined text-base">flag</span>
-                    </button>
-                    <button
-                      onClick={() => setLocation(`/trader/${traderUser.id}`)}
-                      className="px-2 py-1 bg-[#29382f] text-[#38e07b] text-[10px] font-semibold rounded-md hover-elevate active-elevate-2"
-                      data-testid={`button-view-trader-${traderUser.id}`}
-                    >
-                      {t.viewProfile}
-                    </button>
-                  </div>
+                  </button>
+                  <button
+                    onClick={() => handleReportUser(trader.id)}
+                    className="text-[#6a7f72] hover:text-white p-1"
+                    data-testid={`button-report-trader-${trader.id}`}
+                  >
+                    <span className="material-symbols-outlined text-lg">flag</span>
+                  </button>
+                </div>
 
-                  {/* Analysis Cards with Reactions - Compact */}
-                  <div className="space-y-2">
-                    {analyses.slice(0, 3).map((analysis) => (
-                      <div
-                        key={analysis.id}
-                        className="bg-[#111714] rounded-lg p-2 border border-[#2a3c33]"
-                      >
-                        {/* Analysis Header - Compact */}
-                        <div className="flex items-start justify-between mb-1.5">
-                          <button
-                            onClick={() => handleAnalysisClick(analysis.id)}
-                            className="flex-1 text-left"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                {/* Horizontal Scrollable Row of Analyses */}
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-4">
+                  {analyses.map((analysis) => (
+                    <div
+                      key={analysis.id}
+                      onClick={() => handleAnalysisClick(analysis.id)}
+                      className="flex-shrink-0 w-[280px] bg-[#1a241f] rounded-xl p-3 border border-[#2a3c33] hover-elevate active-elevate-2 cursor-pointer"
+                      data-testid={`analysis-card-${analysis.id}`}
+                    >
+                      <div className="space-y-2">
+                        {/* Symbol and Action */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`px-2 py-0.5 rounded text-xs font-bold ${
                                 analysis.recommendation === "BUY"
                                   ? "bg-[#38e07b]/20 text-[#38e07b]"
                                   : "bg-red-500/20 text-red-500"
-                              }`}>
-                                {analysis.recommendation}
-                              </span>
-                              <span className="text-white font-semibold text-xs">
-                                {analysis.symbol}
-                              </span>
+                              }`}
+                            >
+                              {analysis.recommendation}
                             </div>
-                            <p className="text-[#9eb7a8] text-[10px] mt-0.5 line-clamp-1">
-                              {analysis.marketSentiment?.substring(0, 80)}...
-                            </p>
-                          </button>
+                            <span className="text-white font-bold text-sm">
+                              {analysis.correctedSymbol || analysis.symbol}
+                            </span>
+                          </div>
                           <button
                             onClick={(e) => handleReportAnalysis(analysis.id, e)}
-                            className="p-0.5 text-[#6a7f72] hover:text-red-500"
-                            data-testid={`button-report-analysis-${analysis.id}`}
-                            title="Report analysis"
+                            className="text-[#6a7f72] hover:text-white"
                           >
-                            <span className="material-symbols-outlined text-sm">flag</span>
+                            <span className="material-symbols-outlined text-base">flag</span>
                           </button>
                         </div>
 
-                        {/* Timestamp - Compact */}
-                        {analysis.createdAt && (
-                          <p className="text-[#6a7f72] text-[9px] mb-1.5">
-                            <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">schedule</span>
-                            {format(new Date(analysis.createdAt), "MMM dd, h:mm a")}
-                          </p>
-                        )}
+                        {/* Analysis snippet */}
+                        <p className="text-[#9eb7a8] text-xs line-clamp-2">
+                          {analysis.analysis}
+                        </p>
 
-                        {/* Reaction Buttons - Compact */}
-                        <ReactionButtons 
-                          analysisId={analysis.id} 
-                          userId={userId}
-                          showCounts={true}
+                        {/* Price and time */}
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[#6a7f72]">
+                            {analysis.candleClosePrice && `₹${analysis.candleClosePrice}`}
+                          </span>
+                          <span className="text-[#6a7f72]">
+                            {analysis.createdAt && format(new Date(analysis.createdAt), "MMM dd")}
+                          </span>
+                        </div>
+
+                        {/* Reactions */}
+                        <ReactionButtons
+                          analysisId={analysis.id}
+                          userId={userId!}
                         />
                       </div>
-                    ))}
-                    {analyses.length > 3 && (
-                      <button
-                        onClick={() => setLocation(`/trader/${traderUser.id}`)}
-                        className="w-full px-2 py-1.5 rounded-md text-xs font-semibold bg-[#29382f] text-[#9eb7a8] hover-elevate active-elevate-2"
-                      >
-                        {t.viewMore.replace('{count}', (analyses.length - 3).toString()).replace('{item}', analyses.length - 3 === 1 ? t.analysis : t.analyses)}
-                      </button>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ));
-            })()}
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Your Reports Section */}
-      {reports.length > 0 && (
-        <div className="p-4 space-y-4 mt-4 border-t border-[#2a3c33]">
-          <h2 className="text-white font-semibold text-lg">Your Reports</h2>
-          <div className="space-y-2">
-            {reports.slice(0, 3).map((report) => (
-              <div
-                key={report.id}
-                className="bg-[#1a241f] rounded-lg p-3 border border-[#2a3c33]"
-                data-testid={`report-${report.id}`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-white font-semibold text-sm">{report.subject}</p>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                    report.status === "resolved" 
-                      ? "bg-[#38e07b]/20 text-[#38e07b]" 
-                      : report.status === "reviewing"
-                      ? "bg-blue-500/20 text-blue-500"
-                      : "bg-yellow-500/20 text-yellow-500"
-                  }`}>
-                    {report.status}
-                  </span>
-                </div>
-                <p className="text-[#9eb7a8] text-xs line-clamp-2">{report.message}</p>
-                <p className="text-[#6a7f72] text-xs mt-2">
-                  {new Date(report.createdAt!).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Report Modal */}
+      {showReportModal && (
+        <ReportModal
+          userId={userId!}
+          reportType={reportTarget.type}
+          reportedUserId={reportTarget.userId}
+          reportedAnalysisId={reportTarget.analysisId}
+          onClose={() => setShowReportModal(false)}
+        />
       )}
 
-      {/* Report Modal */}
-      <ReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        userId={userId!}
-        reportedUserId={reportTarget.userId || null}
-        reportedAnalysisId={reportTarget.analysisId || null}
-      />
-
-      {/* Version Guard Modal */}
       <UpdateModal />
-
       <BottomNav />
     </div>
   );
