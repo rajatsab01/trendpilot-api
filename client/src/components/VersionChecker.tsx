@@ -58,7 +58,7 @@ export default function VersionChecker() {
             </DialogTitle>
           </div>
           <DialogDescription className="text-[#9eb7a8] text-center leading-relaxed">
-            We've made important improvements to enhance your experience. Please update to continue using Trend Pilot.
+            A new version is available. Installing the update ensures uninterrupted service, as older versions may stop working.
           </DialogDescription>
         </DialogHeader>
 
@@ -168,11 +168,11 @@ export default function VersionChecker() {
               className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#38e07b]/20"
               data-testid="button-download-version"
             >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Download New Version
+              <span className="material-symbols-outlined text-lg">install_desktop</span>
+              Install New Version
             </button>
             <p className="text-center text-[#6a7f72] text-xs mt-3">
-              The new version will automatically replace the old one
+              Installing the new version prevents service interruptions
             </p>
           </div>
         </div>
