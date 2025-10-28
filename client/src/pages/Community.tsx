@@ -469,8 +469,9 @@ export default function Community() {
       {/* Report Modal */}
       {showReportModal && (
         <ReportModal
+          isOpen={showReportModal}
           userId={userId!}
-          reportType={reportTarget.type}
+          defaultType={reportTarget.type}
           reportedUserId={reportTarget.userId}
           reportedAnalysisId={reportTarget.analysisId}
           onClose={() => setShowReportModal(false)}
