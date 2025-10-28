@@ -138,7 +138,7 @@ export default function ReactionButtons({ analysisId, userId, showCounts = true 
     <div className="flex items-center gap-3" data-testid="reaction-buttons">
       {/* Like Button */}
       <button
-        onClick={() => handleReaction("like")}
+        onClick={(e) => { e.stopPropagation(); handleReaction("like"); }}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover-elevate active-elevate-2 ${
           currentReaction === "like"
             ? "bg-[#38e07b]/20 border border-[#38e07b]"
@@ -159,7 +159,7 @@ export default function ReactionButtons({ analysisId, userId, showCounts = true 
 
       {/* Heart Button */}
       <button
-        onClick={() => handleReaction("heart")}
+        onClick={(e) => { e.stopPropagation(); handleReaction("heart"); }}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover-elevate active-elevate-2 ${
           currentReaction === "heart"
             ? "bg-red-500/20 border border-red-500"
@@ -180,7 +180,7 @@ export default function ReactionButtons({ analysisId, userId, showCounts = true 
 
       {/* Dislike Button */}
       <button
-        onClick={() => handleReaction("dislike")}
+        onClick={(e) => { e.stopPropagation(); handleReaction("dislike"); }}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover-elevate active-elevate-2 ${
           currentReaction === "dislike"
             ? "bg-[#6a7f72]/20 border border-[#6a7f72]"
