@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import BottomNav from "@/components/BottomNav";
+import trendPilotLogo from "@assets/trendpilot-logo.png";
 
 export default function ContactUs() {
   const [, setLocation] = useLocation();
@@ -24,7 +25,15 @@ export default function ContactUs() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="bg-[#1a241f] rounded-xl p-6 border border-[#2a3c33] space-y-6">
           <div className="text-center">
-            <span className="material-symbols-outlined text-[#38e07b] text-5xl mb-3 block">support_agent</span>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <img 
+                src={trendPilotLogo}
+                alt="TrendPilot Logo"
+                className="h-12 w-12 object-contain rounded-lg"
+                data-testid="img-contact-logo"
+              />
+              <h1 className="text-[#38e07b] text-2xl font-bold tracking-tight">TrendPilot</h1>
+            </div>
             <h2 className="text-white font-bold text-xl mb-2">{t.getInTouch || "Get in Touch"}</h2>
             <p className="text-[#9eb7a8] text-sm">
               {t.contactIntro || "We're here to help! Reach out to us for support, questions, or feedback."}
