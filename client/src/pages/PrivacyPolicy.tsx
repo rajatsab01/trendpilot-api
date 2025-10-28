@@ -5,13 +5,22 @@ import BottomNav from "@/components/BottomNav";
 export default function PrivacyPolicy() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  const userId = localStorage.getItem("userId");
+
+  const handleBack = () => {
+    if (userId) {
+      setLocation("/dashboard");
+    } else {
+      setLocation("/language-selection");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#111714] flex flex-col pb-20">
+    <div className={`min-h-screen bg-[#111714] flex flex-col ${userId ? 'pb-20' : ''}`}>
       {/* Header */}
       <div className="bg-[#1a241f] border-b border-[#2a3c33] p-4 flex items-center gap-3 sticky top-0 z-10">
         <button
-          onClick={() => setLocation("/")}
+          onClick={handleBack}
           className="text-white"
           data-testid="button-back"
         >
@@ -175,7 +184,7 @@ export default function PrivacyPolicy() {
         </button>
       </div>
 
-      <BottomNav />
+      {userId && <BottomNav />}
     </div>
   );
 }
