@@ -1,7 +1,7 @@
 {
   "name": "Trend Pilot - AI Trading Assistant",
   "short_name": "Trend Pilot",
-  "description": "AI-powered trading advisory tool delivering intelligent buy/sell recommendations across crypto, stocks, forex, commodities, and bonds markets",
+  "description": "AI-powered trading analyzer delivering intelligent buy/sell recommendations across crypto, stocks, forex, commodities, and bonds markets",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111714",

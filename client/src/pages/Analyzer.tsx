@@ -347,7 +347,7 @@ export default function Analyzer() {
                 />
                 <h1 className="text-[#38e07b] text-3xl font-bold tracking-tight">TrendPilot</h1>
               </div>
-              <p className="text-[#9eb7a8] text-sm">AI-Powered Trading Advisory</p>
+              <p className="text-[#9eb7a8] text-sm">{t.aiPoweredAnalyzer || "AI-Powered Trading Analyzer"}</p>
             </div>
 
             {/* Symbol and Price Display - Perplexity Validated */}
