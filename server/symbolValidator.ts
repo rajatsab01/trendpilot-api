@@ -491,6 +491,63 @@ async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ sym
 }
 
 /**
+ * Commodity futures exchange mapping
+ * Maps commodity futures symbols to their trading exchanges for proper Yahoo Finance resolution
+ */
+const COMMODITY_FUTURES_EXCHANGE_MAP: Record<string, string> = {
+  // COMEX (Commodities Exchange) - Metals
+  'GC': 'COMEX',  // Gold
+  'SI': 'COMEX',  // Silver
+  'HG': 'COMEX',  // Copper
+  'PL': 'NYMEX',  // Platinum (sometimes listed under NYMEX)
+  'PA': 'NYMEX',  // Palladium
+  
+  // NYMEX (New York Mercantile Exchange) - Energy
+  'CL': 'NYMEX',  // Crude Oil
+  'NG': 'NYMEX',  // Natural Gas
+  'RB': 'NYMEX',  // RBOB Gasoline
+  'HO': 'NYMEX',  // Heating Oil
+  'BZ': 'NYMEX',  // Brent Crude
+  
+  // CBOT (Chicago Board of Trade) - Agricultural
+  'ZC': 'CBOT',   // Corn
+  'ZS': 'CBOT',   // Soybeans
+  'ZW': 'CBOT',   // Wheat
+  'ZL': 'CBOT',   // Soybean Oil
+  'ZM': 'CBOT',   // Soybean Meal
+  'KE': 'CBOT',   // Kansas Wheat
+  
+  // CME (Chicago Mercantile Exchange) - Livestock & Others
+  'LE': 'CME',    // Live Cattle
+  'HE': 'CME',    // Lean Hogs
+  'GF': 'CME',    // Feeder Cattle
+};
+
+/**
+ * Add exchange prefix to commodity futures symbols for Yahoo Finance
+ * This helps resolve ambiguous 2-letter symbols like SI=F (Silver) which might
+ * otherwise be confused with stock symbols or other exchanges
+ */
+function addCommodityExchangePrefix(symbol: string): string {
+  // Extract the base symbol (remove =F suffix)
+  const baseSymbol = symbol.replace(/=F$/i, '').toUpperCase();
+  
+  // Check if we have a mapping for this symbol
+  const exchange = COMMODITY_FUTURES_EXCHANGE_MAP[baseSymbol];
+  
+  if (exchange) {
+    // Return with exchange prefix: COMEX:SI=F
+    const prefixedSymbol = `${exchange}:${symbol.toUpperCase()}`;
+    console.log(`🏛️ [EXCHANGE PREFIX] Mapped "${symbol}" → "${prefixedSymbol}" (${exchange} exchange)`);
+    return prefixedSymbol;
+  }
+  
+  // No mapping found - return original symbol
+  console.log(`⚠️ [NO EXCHANGE MAPPING] Symbol "${symbol}" not in exchange map, using as-is`);
+  return symbol.toUpperCase();
+}
+
+/**
  * Validate stock/forex/commodity symbol using Yahoo Finance
  */
 async function validateYahooSymbol(symbol: string, market: string): Promise<SymbolValidationResult> {
@@ -503,10 +560,10 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     let yahooSymbol: string;
     
     if (isCommodityFutures) {
-      // Use original symbol directly, only uppercasing it
+      // Use original symbol directly (Yahoo Finance doesn't accept exchange prefixes like "COMEX:SI=F")
       yahooSymbol = symbol.toUpperCase();
       console.log(`🛡️ [FUTURES SHORT-CIRCUIT] Commodity futures detected - bypassing normalization`);
-      console.log(`📤 [validateYahooSymbol] Using original symbol: "${yahooSymbol}" (NO normalization)`);
+      console.log(`📤 [validateYahooSymbol] Using original futures symbol: "${yahooSymbol}" (NO exchange prefix)`);
     } else {
       // Use unified symbol normalization from symbolRegistry for non-futures
       // Classification is auto-detected based on symbol pattern and market type
@@ -599,13 +656,24 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     
     console.log(`💱 [validateYahooSymbol] Source currency: ${sourceCurrency}`);
     
-    // IMPORTANT: Preserve user's original symbol direction for forex pairs
-    // Yahoo may return a different symbol (e.g., GBPUSD=X when we asked for USDGBP=X)
-    // But we want to keep the user's intent for display purposes
-    const shouldPreserveUserSymbol = market === 'forex' && meta.symbol && meta.symbol !== yahooSymbol;
-    const finalSymbol = shouldPreserveUserSymbol ? symbol : yahooSymbol;
+    // Determine final symbol for display
+    let finalSymbol: string;
     
-    console.log(`✅ [validateYahooSymbol] Final corrected symbol: "${finalSymbol}" ${shouldPreserveUserSymbol ? '(preserved user direction)' : ''}`);
+    if (isCommodityFutures) {
+      // For commodity futures, always use the user's original input (without exchange prefix)
+      // User entered "SI=F", we queried "COMEX:SI=F", but we want to show "SI=F"
+      finalSymbol = symbol.toUpperCase();
+      console.log(`✅ [validateYahooSymbol] Commodity futures - using user's original symbol: "${finalSymbol}"`);
+    } else if (market === 'forex' && meta.symbol && meta.symbol !== yahooSymbol) {
+      // For forex pairs, preserve user's original direction
+      // Yahoo may return a different symbol (e.g., GBPUSD=X when we asked for USDGBP=X)
+      finalSymbol = symbol;
+      console.log(`✅ [validateYahooSymbol] Forex pair - preserved user direction: "${finalSymbol}"`);
+    } else {
+      // For other markets, use Yahoo's normalized symbol
+      finalSymbol = yahooSymbol;
+      console.log(`✅ [validateYahooSymbol] Using Yahoo's normalized symbol: "${finalSymbol}"`);
+    }
     
     return {
       isValid: true,
