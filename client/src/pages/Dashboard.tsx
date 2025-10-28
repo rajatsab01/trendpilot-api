@@ -546,7 +546,7 @@ export default function Dashboard() {
               />
               <h1 className="text-[#38e07b] text-xl font-bold tracking-tight">TrendPilot</h1>
             </div>
-            <p className="text-[#9eb7a8] text-xs">{t("aiPoweredAnalyzer")} • v1.2.0</p>
+            <p className="text-[#9eb7a8] text-xs">{t.aiPoweredAnalyzer} • v1.2.0</p>
           </div>
         </header>
 
@@ -557,7 +557,7 @@ export default function Dashboard() {
               {/* Currency Selector */}
               <label className="flex flex-col">
                 <span className="text-sm font-medium text-[#9eb7a8] mb-2">
-                  {t("currency")}
+                  {t.currency}
                 </span>
                 <select
                   className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-3 text-base font-normal leading-normal cursor-pointer"
@@ -607,7 +607,7 @@ export default function Dashboard() {
               {/* Exchange Selector */}
               <label className="flex flex-col">
                 <span className="text-sm font-medium text-[#9eb7a8] mb-2">
-                  {t("exchange")}
+                  {t.exchange}
                 </span>
                 <select
                   className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] px-3 text-base font-normal leading-normal cursor-pointer"

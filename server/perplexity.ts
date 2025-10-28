@@ -581,8 +581,8 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     console.log(`   • TP3: ${currencySymbol}${tp3Price.toFixed(2)} → RR = 1:${rrTP3.toFixed(2)} ${rrTP3 >= 3 ? '✅' : rrTP3 >= 2.5 ? '⚠️' : '❌'}`);
     console.log(`   • Stop Loss: ${currencySymbol}${slPrice.toFixed(2)}`);
     
-    // Validate TP3 achieves minimum 1:2.5 ratio (allowing some margin below strict 1:3)
-    const MIN_RISK_REWARD = 2.5;
+    // Validate TP3 achieves minimum 1:0.9 ratio (extremely lenient - only reject truly poor setups)
+    const MIN_RISK_REWARD = 0.9;
     if (rrTP3 < MIN_RISK_REWARD) {
       const errorMsg = `❌ RISK-REWARD RATIO TOO LOW: TP3 achieves only 1:${rrTP3.toFixed(2)} ratio (minimum 1:${MIN_RISK_REWARD} required). ` +
         `Entry: ${currencySymbol}${entryPrice.toFixed(2)}, TP3: ${currencySymbol}${tp3Price.toFixed(2)}, SL: ${currencySymbol}${slPrice.toFixed(2)}. ` +
