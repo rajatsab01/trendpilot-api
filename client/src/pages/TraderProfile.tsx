@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
 import type { Analysis, User } from "@shared/schema";
 import { APP_VERSION } from "@shared/schema";
+import { formatDistanceToNow } from "date-fns";
 
 type FeedItem = Analysis & { author: User };
 
@@ -372,7 +373,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                         <span>•</span>
                         <span>{analysis.confidence}% Confidence</span>
                         <span>•</span>
-                        <span>{analysis.createdAt ? new Date(analysis.createdAt).toLocaleDateString() : "N/A"}</span>
+                        <span>{analysis.createdAt ? formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true }) : "N/A"}</span>
                       </div>
                     </div>
                   ))}

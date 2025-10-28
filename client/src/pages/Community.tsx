@@ -9,7 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import ReportModal from "@/components/ReportModal";
 import ReactionButtons from "@/components/ReactionButtons";
 import type { Analysis, User, Report } from "@shared/schema";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 type FeedItem = Analysis & { author: User };
 type PinnedTraderWithNotifications = {
@@ -447,7 +447,7 @@ export default function Community() {
                             {analysis.candleClosePrice && `₹${analysis.candleClosePrice}`}
                           </span>
                           <span className="text-[#6a7f72]">
-                            {analysis.createdAt && format(new Date(analysis.createdAt), "MMM dd")}
+                            {analysis.createdAt && formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
                           </span>
                         </div>
 
