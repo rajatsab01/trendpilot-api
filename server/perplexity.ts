@@ -220,6 +220,14 @@ Examine chart patterns, support/resistance levels, volume analysis, and momentum
 **Layer 3: AI Final Verdict**
 Based on all indicators + market sentiment + deep analysis using REAL data, provide your final trading recommendation with justification. 2-3 sentences. Write in ${languageName}.
 
+⚠️ **CRITICAL WARNING**: The JSON values below are EXAMPLE FORMAT ONLY to show the structure and demonstrate a 1:4 risk-reward ratio.
+You MUST calculate YOUR OWN realistic targets based on:
+- Actual current price levels and volatility
+- Support and resistance zones from technical analysis
+- Market conditions and trend strength
+- ${duration.toUpperCase()} timeframe requirements
+DO NOT copy these example percentage multipliers - they are placeholders. Calculate real targets that maximize reward while minimizing risk based on actual chart analysis.
+
 Respond with JSON in this exact format:
 {
   "correctedSymbol": "Standard ticker symbol from your web search. CRITICAL FOR FOREX: Preserve EXACT pair direction as provided by user (if given 'USD/GBP', return 'USD/GBP' NOT 'GBP/USD'). For other markets, correct format (e.g., 'BTC' not 'btcusdt.p', 'AAPL' not 'apple stock')",
@@ -245,23 +253,33 @@ Respond with JSON in this exact format:
   "entry": "${isScalping ? (priceData.livePrice?.toFixed(2) ?? '0.00') : (priceData.candleClosePrice?.toFixed(2) ?? '0.00')}",
   "takeProfit": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
-    return (basePrice * 1.005).toFixed(2);
+    // Duration-appropriate examples showing 1:4 RR - CALCULATE YOUR OWN based on real S/R levels!
+    const multiplier = duration === 'scalping' ? 1.008 : duration === 'long_term' ? 1.04 : 1.016;
+    return (basePrice * multiplier).toFixed(2);
   })()}",
   "stopLoss": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
-    return (basePrice * 0.997).toFixed(2);
+    // Duration-appropriate examples showing 1:4 RR - CALCULATE YOUR OWN based on real S/R levels!
+    const multiplier = duration === 'scalping' ? 0.998 : duration === 'long_term' ? 0.99 : 0.996;
+    return (basePrice * multiplier).toFixed(2);
   })()}",
   "tp1": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
-    return (basePrice * 1.002).toFixed(2);
+    // TP1 examples (1:1 to 1:1.5 RR) - CALCULATE YOUR OWN based on real support/resistance!
+    const multiplier = duration === 'scalping' ? 1.002 : duration === 'long_term' ? 1.01 : 1.004;
+    return (basePrice * multiplier).toFixed(2);
   })()}",
   "tp2": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
-    return (basePrice * 1.003).toFixed(2);
+    // TP2 examples (1:2 to 1:2.5 RR) - CALCULATE YOUR OWN based on real support/resistance!
+    const multiplier = duration === 'scalping' ? 1.004 : duration === 'long_term' ? 1.02 : 1.008;
+    return (basePrice * multiplier).toFixed(2);
   })()}",
   "tp3": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
-    return (basePrice * 1.005).toFixed(2);
+    // TP3 examples (1:4 RR - aim higher when possible!) - CALCULATE YOUR OWN based on real resistance!
+    const multiplier = duration === 'scalping' ? 1.008 : duration === 'long_term' ? 1.04 : 1.016;
+    return (basePrice * multiplier).toFixed(2);
   })()}",
   "s1": "Support Level 1 - Nearest support below current price",
   "s2": "Support Level 2 - Medium support below current price",
@@ -502,6 +520,59 @@ IMPORTANT: Return ONLY valid JSON, no additional text before or after. The corre
     console.log(`   • Take Profit: ${data.takeProfit}`);
     console.log(`   • Stop Loss: ${data.stopLoss}`);
     console.log(`   • TP1: ${data.tp1}, TP2: ${data.tp2}, TP3: ${data.tp3}`);
+
+    // 🎯 RISK-REWARD RATIO VALIDATION
+    // Calculate and validate that TP3 achieves minimum 1:2.5 risk-reward ratio
+    const calculateRiskRewardRatio = (entry: number, takeProfit: number, stopLoss: number, recommendation: string): number => {
+      if (recommendation === "BUY") {
+        const reward = takeProfit - entry;
+        const risk = entry - stopLoss;
+        if (risk <= 0) return 0; // Invalid: SL should be below entry for BUY
+        return reward / risk;
+      } else {  // SELL
+        const reward = entry - takeProfit;
+        const risk = stopLoss - entry;
+        if (risk <= 0) return 0; // Invalid: SL should be above entry for SELL
+        return reward / risk;
+      }
+    };
+
+    const entryPrice = parseFloat(data.entry);
+    const tp1Price = parseFloat(data.tp1);
+    const tp2Price = parseFloat(data.tp2);
+    const tp3Price = parseFloat(data.tp3);
+    const slPrice = parseFloat(data.stopLoss);
+    
+    const rrTP1 = calculateRiskRewardRatio(entryPrice, tp1Price, slPrice, data.recommendation);
+    const rrTP2 = calculateRiskRewardRatio(entryPrice, tp2Price, slPrice, data.recommendation);
+    const rrTP3 = calculateRiskRewardRatio(entryPrice, tp3Price, slPrice, data.recommendation);
+    
+    console.log(`📈 RISK-REWARD ANALYSIS for ${data.correctedSymbol} (${data.recommendation}):`);
+    console.log(`   • Duration: ${duration.toUpperCase()}`);
+    console.log(`   • Price Used: ${isScalping ? 'LIVE' : 'CANDLE CLOSE'} (${currencySymbol}${entryPrice.toFixed(2)})`);
+    console.log(`   • Entry: ${currencySymbol}${entryPrice.toFixed(2)}`);
+    console.log(`   • TP1: ${currencySymbol}${tp1Price.toFixed(2)} → RR = 1:${rrTP1.toFixed(2)}`);
+    console.log(`   • TP2: ${currencySymbol}${tp2Price.toFixed(2)} → RR = 1:${rrTP2.toFixed(2)}`);
+    console.log(`   • TP3: ${currencySymbol}${tp3Price.toFixed(2)} → RR = 1:${rrTP3.toFixed(2)} ${rrTP3 >= 3 ? '✅' : rrTP3 >= 2.5 ? '⚠️' : '❌'}`);
+    console.log(`   • Stop Loss: ${currencySymbol}${slPrice.toFixed(2)}`);
+    
+    // Validate TP3 achieves minimum 1:2.5 ratio (allowing some margin below strict 1:3)
+    const MIN_RISK_REWARD = 2.5;
+    if (rrTP3 < MIN_RISK_REWARD) {
+      const errorMsg = `❌ RISK-REWARD RATIO TOO LOW: TP3 achieves only 1:${rrTP3.toFixed(2)} ratio (minimum 1:${MIN_RISK_REWARD} required). ` +
+        `Entry: ${currencySymbol}${entryPrice.toFixed(2)}, TP3: ${currencySymbol}${tp3Price.toFixed(2)}, SL: ${currencySymbol}${slPrice.toFixed(2)}. ` +
+        `Perplexity AI must calculate wider TP targets or tighter SL to maximize reward while minimizing risk.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    if (rrTP3 < 3) {
+      console.warn(`⚠️  TP3 ratio (1:${rrTP3.toFixed(2)}) is below ideal 1:3 target but acceptable. Strong setups should aim for 1:4+`);
+    } else if (rrTP3 >= 4) {
+      console.log(`🎯 EXCELLENT! TP3 achieves 1:${rrTP3.toFixed(2)} ratio - maximizing profit potential!`);
+    } else {
+      console.log(`✅ TP3 ratio (1:${rrTP3.toFixed(2)}) meets minimum 1:3 requirement`);
+    }
 
     // FIX: For SELL trades, AI often returns inverted bracket values
     // For SELL: take profit should be BELOW entry, stop loss should be ABOVE entry
