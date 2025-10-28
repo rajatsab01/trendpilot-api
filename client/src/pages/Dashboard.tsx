@@ -690,7 +690,7 @@ export default function Dashboard() {
               <div className="relative">
                 <input
                   className="flex w-full h-14 rounded-xl text-white focus:outline-0 focus:ring-2 focus:ring-[#38e07b] border-none bg-[#29382f] placeholder:text-[#6a7f72] px-4 text-base font-normal leading-normal"
-                  placeholder="Type symbol or name (e.g., gold, bitcoin, AAPL)"
+                  placeholder={t.symbolInputPlaceholder || "Type symbol or name (e.g., gold, bitcoin, AAPL)"}
                   value={symbol}
                   onChange={(e) => handleSymbolSearch(e.target.value)}
                   onFocus={() => {
@@ -756,7 +756,7 @@ export default function Dashboard() {
               </div>
               <p className="text-xs text-[#6a7f72] mt-2 flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">info</span>
-                App analyzes SPOT charts - use spot symbols (XAUUSD for Gold spot, BTCUSDT for Bitcoin), NOT futures symbols like NG=F (Natural Gas futures). Search by name (e.g., "gold") to find spot options.
+                {t.spotChartsInfo || 'App analyzes SPOT charts - use spot symbols (XAUUSD for Gold spot, BTCUSDT for Bitcoin), NOT futures symbols like NG=F (Natural Gas futures). Search by name (e.g., "gold") to find spot options.'}
               </p>
             </label>
 

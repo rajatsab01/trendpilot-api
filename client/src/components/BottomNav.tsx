@@ -16,8 +16,8 @@ export default function BottomNav() {
 
   const navItems = [
     { path: "/dashboard", icon: "home", label: t.home, testId: "nav-home" },
-    { path: "/saved", icon: "bookmark", label: "Saved", testId: "nav-saved" },
-    { path: "/community", icon: "group", label: "Community", testId: "nav-community", badge: unreadCount },
+    { path: "/saved", icon: "bookmark", label: t.saved || "Saved", testId: "nav-saved" },
+    { path: "/community", icon: "group", label: t.community || "Community", testId: "nav-community", badge: unreadCount },
     { path: "/privacy", icon: "policy", label: t.policy || "Policy", testId: "nav-policy" },
   ];
 
