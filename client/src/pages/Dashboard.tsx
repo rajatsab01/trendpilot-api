@@ -546,7 +546,7 @@ export default function Dashboard() {
               />
               <h1 className="text-[#38e07b] text-xl font-bold tracking-tight">TrendPilot</h1>
             </div>
-            <p className="text-[#9eb7a8] text-xs">AI-Powered Trading Advisory</p>
+            <p className="text-[#9eb7a8] text-xs">AI-Powered Trading Analyzer</p>
           </div>
         </header>
 

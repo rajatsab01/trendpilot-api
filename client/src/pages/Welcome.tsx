@@ -117,6 +117,8 @@ export default function Welcome() {
           <h1 className="text-[#38e07b] text-3xl font-bold tracking-tight">TrendPilot</h1>
         </div>
         
+        <p className="text-[#9eb7a8] text-sm mb-4">AI-Powered Trading Analyzer</p>
+        
         <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
           {t.aiGuidedTrading}
         </h2>
