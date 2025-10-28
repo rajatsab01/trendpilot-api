@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
 import logoImage from "@assets/trendpilot-logo.png";
@@ -71,13 +71,13 @@ export default function LanguageSelection() {
       <footer className="p-4 text-center pb-8">
         <p className="text-xs text-[#6a7f72] max-w-xs mx-auto">
           By continuing, you agree to our{" "}
-          <a href="#" className="underline">
+          <Link href="/terms" className="underline text-[#38e07b] hover:text-[#2fc76a]">
             Terms of Service
-          </a>{" "}
+          </Link>{" "}
           and{" "}
-          <a href="#" className="underline">
+          <Link href="/privacy" className="underline text-[#38e07b] hover:text-[#2fc76a]">
             Privacy Policy
-          </a>
+          </Link>
           .
         </p>
       </footer>
