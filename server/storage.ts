@@ -118,6 +118,8 @@ export interface IStorage {
   reorderPinnedTrader(userId: string, pinnedUserId: string, newOrder: number): Promise<PinnedTrader | undefined>;
   getPinnedTraders(userId: string): Promise<Array<PinnedTrader & { pinnedUser: User }>>;
   isPinned(userId: string, pinnedUserId: string): Promise<boolean>;
+  getPinnedTradersWithNotifications(userId: string): Promise<Array<{ user: User; unreadCount: number }>>;
+  markTraderNotificationsRead(userId: string, traderId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -511,6 +513,14 @@ export class MemStorage implements IStorage {
   }
 
   async isPinned(): Promise<boolean> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async getPinnedTradersWithNotifications(): Promise<Array<{ user: User; unreadCount: number }>> {
+    throw new Error("Community features require PostgreSQL database");
+  }
+
+  async markTraderNotificationsRead(): Promise<void> {
     throw new Error("Community features require PostgreSQL database");
   }
 }
@@ -1329,6 +1339,49 @@ export class PgStorage implements IStorage {
         )
       );
     return result.length > 0;
+  }
+
+  async getPinnedTradersWithNotifications(userId: string): Promise<Array<{ user: User; unreadCount: number }>> {
+    // Get pinned traders
+    const pinned = await this.getPinnedTraders(userId);
+    
+    // For each pinned trader, count unread "new_analysis" notifications
+    const result = await Promise.all(
+      pinned.map(async (p) => {
+        const unreadNotifications = await this.db
+          .select()
+          .from(notifications)
+          .where(
+            and(
+              eq(notifications.userId, userId),
+              eq(notifications.actorId, p.pinnedUserId),
+              eq(notifications.type, 'new_analysis'),
+              eq(notifications.isRead, 0)
+            )
+          );
+        
+        return {
+          user: p.pinnedUser,
+          unreadCount: unreadNotifications.length,
+        };
+      })
+    );
+    
+    return result;
+  }
+
+  async markTraderNotificationsRead(userId: string, traderId: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({ isRead: 1 })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.actorId, traderId),
+          eq(notifications.type, 'new_analysis'),
+          eq(notifications.isRead, 0)
+        )
+      );
   }
 }
 

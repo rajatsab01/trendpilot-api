@@ -1794,6 +1794,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pinned traders with notification counts
+  app.get("/api/community/pinned-with-notifications/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const traders = await storage.getPinnedTradersWithNotifications(userId);
+      res.json(traders);
+    } catch (error) {
+      console.error("Get pinned traders with notifications error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Mark trader notifications as read
+  app.post("/api/community/mark-trader-notifications-read", async (req, res) => {
+    try {
+      const { userId, traderId } = req.body;
+
+      if (!userId || !traderId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      await storage.markTraderNotificationsRead(userId, traderId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark trader notifications read error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Test all symbols in the database (admin only)
   app.post("/api/admin/test-symbols", async (req, res) => {
     try {
