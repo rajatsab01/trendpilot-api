@@ -996,11 +996,11 @@ export default function Dashboard() {
               <div className="pt-3 border-t border-[#1c2620]">
                 <p className="text-[#9eb7a8] text-xs mb-1">Contact for sponsorship:</p>
                 <a 
-                  href="mailto:rockstarbaba.ut@gmail.com"
+                  href="mailto:info@tradepilot.in"
                   className="text-[#38e07b] text-xs font-semibold hover:underline break-all"
                   data-testid="link-sponsorship-email"
                 >
-                  rockstarbaba.ut@gmail.com
+                  info@tradepilot.in
                 </a>
               </div>
             </div>

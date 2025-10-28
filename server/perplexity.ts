@@ -159,6 +159,9 @@ export async function analyzeMarketWithPerplexity(
 
     const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "JPY" ? "¥" : currency === "INR" ? "₹" : currency;
     const exchangeContext = exchange ? ` User prefers ${exchange} exchange/market. Use this to prioritize symbol resolution (e.g., India → prefer .NS/.BO suffixes, Japan → .T, UK → .L).` : "";
+    
+    // Use 4 decimal places for forex to preserve pip precision, 2 for other markets
+    const decimalPlaces = market === 'forex' ? 4 : 2;
 
     const prompt = `You are an expert financial analyst. Analyze the trading symbol "${symbol}" (${marketName} market) for ${durationContext}.
 
@@ -167,14 +170,14 @@ export async function analyzeMarketWithPerplexity(
 **PRICE DATA PROVIDED** (from ${priceData.dataSource}):
 - Symbol: ${priceData.symbol}
 - User's Preferred Currency: ${currency}
-- Live Current Price: ${currencySymbol}${priceData.livePrice?.toFixed(2) ?? 'N/A'}
-- Candle Close Price (${priceData.timeframe}): ${currencySymbol}${priceData.candleClosePrice?.toFixed(2) ?? 'N/A'}
+- Live Current Price: ${currencySymbol}${priceData.livePrice?.toFixed(decimalPlaces) ?? 'N/A'}
+- Candle Close Price (${priceData.timeframe}): ${currencySymbol}${priceData.candleClosePrice?.toFixed(decimalPlaces) ?? 'N/A'}
 - Candle Close Time: ${priceData.candleCloseTime ?? 'N/A'}
 - Next Candle Close: ${nextCandleCloseTime}
-- OHLCV Data: Open ${currencySymbol}${priceData.open?.toFixed(2) ?? 'N/A'}, High ${currencySymbol}${priceData.high?.toFixed(2) ?? 'N/A'}, Low ${currencySymbol}${priceData.low?.toFixed(2) ?? 'N/A'}, Close ${currencySymbol}${priceData.close?.toFixed(2) ?? 'N/A'}, Volume ${priceData.volume?.toLocaleString() ?? 'N/A'}
+- OHLCV Data: Open ${currencySymbol}${priceData.open?.toFixed(decimalPlaces) ?? 'N/A'}, High ${currencySymbol}${priceData.high?.toFixed(decimalPlaces) ?? 'N/A'}, Low ${currencySymbol}${priceData.low?.toFixed(decimalPlaces) ?? 'N/A'}, Close ${currencySymbol}${priceData.close?.toFixed(decimalPlaces) ?? 'N/A'}, Volume ${priceData.volume?.toLocaleString() ?? 'N/A'}
 
 CRITICAL REQUIREMENTS:
-1. **USE EXACT PRICES PROVIDED ABOVE & EXPRESS IN ${currency}** - Do NOT fetch new prices. Use the exact live price (${currencySymbol}${priceData.livePrice?.toFixed(2) ?? 'N/A'}) and candle close price (${currencySymbol}${priceData.candleClosePrice?.toFixed(2) ?? 'N/A'}) provided. ALL monetary values in your response MUST be in ${currency}.
+1. **USE EXACT PRICES PROVIDED ABOVE & EXPRESS IN ${currency}** - Do NOT fetch new prices. Use the exact live price (${currencySymbol}${priceData.livePrice?.toFixed(decimalPlaces) ?? 'N/A'}) and candle close price (${currencySymbol}${priceData.candleClosePrice?.toFixed(decimalPlaces) ?? 'N/A'}) provided. ALL monetary values in your response MUST be in ${currency}.
 2. **VALIDATE THE SYMBOL${exchange ? ` FOR ${exchange.toUpperCase()} EXCHANGE` : ""}**: Use web search to find the CORRECT standard symbol name${exchange ? ` prioritizing ${exchange} exchange/market (e.g., India stocks use .NS or .BO suffix, Japan uses .T, UK uses .L)` : ""} and full asset name (e.g., if symbol is "BTC", full name is "Bitcoin")
 3. **MANDATORY RESEARCH SOURCES** - Search these ${marketName}-specific sites for news, sentiment, and trends:
    ${recommendedSources}
@@ -191,7 +194,29 @@ CRITICAL REQUIREMENTS:
    - Only use 1:3 as the ABSOLUTE MINIMUM for weaker setups or high-volatility conditions
    - Analyze support/resistance levels, volatility, and technical setup strength to determine optimal targets
    - Strong setups with clear trends and multiple confirmations should have 1:4+ ratios
-   - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE (${currencySymbol}${priceData.livePrice?.toFixed(2) ?? 'N/A'}) for entry/TP/SL calculations in ${currency}. Tight stops with minimum 1:3 RR, aim for 1:4+ when possible.` : `For ${duration.toUpperCase()}: Use CANDLE CLOSE PRICE (${currencySymbol}${priceData.candleClosePrice?.toFixed(2) ?? 'N/A'}) for entry/TP/SL in ${currency}. Wider targets justified by timeframe, aim for 1:4+ RR.`}
+   - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE (${currencySymbol}${priceData.livePrice?.toFixed(decimalPlaces) ?? 'N/A'}) for entry/TP/SL calculations in ${currency}. Tight stops with minimum 1:3 RR, aim for 1:4+ when possible.` : `For ${duration.toUpperCase()}: Use CANDLE CLOSE PRICE (${currencySymbol}${priceData.candleClosePrice?.toFixed(decimalPlaces) ?? 'N/A'}) for entry/TP/SL in ${currency}. Wider targets justified by timeframe, aim for 1:4+ RR.`}
+   
+🔥 **SPECIAL FOREX PIP-BASED CALCULATIONS** (CRITICAL FOR ${market === 'forex' ? 'THIS FOREX ANALYSIS' : 'FOREX MARKETS'}):
+${market === 'forex' ? `
+   **YOU ARE ANALYZING A FOREX PAIR - USE PIP-BASED TARGETS, NOT PERCENTAGE MOVES!**
+   
+   Forex pairs require WIDER pip distances to achieve proper risk-reward ratios:
+   - **Scalping (15min)**: SL = 30-50 pips, TP1 = 40-60 pips (1:1.2 RR), TP2 = 70-100 pips (1:2 RR), TP3 = 120-200 pips (1:3 to 1:4 RR)
+   - **Short-term (1hr/4hr)**: SL = 50-100 pips, TP1 = 80-120 pips (1:1.2 RR), TP2 = 150-200 pips (1:2 RR), TP3 = 200-400 pips (1:3 to 1:4 RR)
+   - **Long-term (1day)**: SL = 100-200 pips, TP1 = 150-250 pips (1:1.2 RR), TP2 = 300-400 pips (1:2 RR), TP3 = 400-800 pips (1:3 to 1:4 RR)
+   
+   **PIP CALCULATION FORMULA**:
+   - For most pairs (EUR/USD, GBP/USD, etc.): 1 pip = 0.0001
+   - For JPY pairs (USD/JPY, EUR/JPY): 1 pip = 0.01
+   - Current price: ${isScalping ? priceData.livePrice : priceData.candleClosePrice}
+   - **EXAMPLE FOR ${duration.toUpperCase()}**: If entry = 1.3300, SL might be 1.3250 (50 pips), TP3 should be 1.3500 (200 pips) for 1:4 RR
+   - **CALCULATE IN FULL DECIMAL PRECISION**: Use 4-5 decimal places (e.g., 1.3250, not 1.33) to ensure pip distances are visible
+   
+   **CRITICAL**: Do NOT round to 2 decimal places for forex! Use 4 decimals (or 2 for JPY pairs) so that pip movements are clearly visible. Entry/TP/SL MUST be different values showing clear pip distances.
+` : `
+   IF this were a forex pair, you would need to use pip-based calculations with wider targets (50-400 pips for TP3 depending on timeframe) to achieve 1:3+ RR ratios, using 4-5 decimal precision.
+`}
+
 6. Provide your ENTIRE analysis in ${languageName}
 7. Calculate MULTIPLE take profit targets with STRICT risk-reward requirements:
    - TP1: Conservative target (1:1 to 1:1.5 risk-reward) - book 50% profit here
@@ -234,8 +259,8 @@ Respond with JSON in this exact format:
   "assetName": "Full official name matching the EXACT symbol direction provided (e.g., if symbol is 'USD/GBP', name is 'US Dollar / British Pound', NOT 'British Pound / US Dollar')",
   "marketType": "${market}",
   "currentPrice": "DEPRECATED - Use candleClosePrice instead",
-  "livePrice": "${priceData.livePrice?.toFixed(2) ?? '0.00'}",
-  "candleClosePrice": "${priceData.candleClosePrice?.toFixed(2) ?? '0.00'}",
+  "livePrice": "${priceData.livePrice?.toFixed(decimalPlaces) ?? '0.00'}",
+  "candleClosePrice": "${priceData.candleClosePrice?.toFixed(decimalPlaces) ?? '0.00'}",
   "priceSource": "${priceData.dataSource}",
   "candleCloseTime": "${priceData.candleCloseTime}",
   "timeframe": "${priceData.timeframe}",
@@ -250,36 +275,36 @@ Respond with JSON in this exact format:
   "macd": NUMERIC_VALUE_ONLY (e.g., 0.45, -0.23, 1.85 - NEVER 0 or text),
   "stochastic": NUMERIC_VALUE_ONLY (e.g., 58.3, 72.5, 28.9 - NEVER 0 or text),
   "bollingerBands": NUMERIC_VALUE_ONLY (e.g., 8.5, 15.2, 22.8 - NEVER 0 or text),
-  "entry": "${isScalping ? (priceData.livePrice?.toFixed(2) ?? '0.00') : (priceData.candleClosePrice?.toFixed(2) ?? '0.00')}",
+  "entry": "${isScalping ? (priceData.livePrice?.toFixed(decimalPlaces) ?? '0.00') : (priceData.candleClosePrice?.toFixed(decimalPlaces) ?? '0.00')}",
   "takeProfit": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
     // Duration-appropriate examples showing 1:4 RR - CALCULATE YOUR OWN based on real S/R levels!
     const multiplier = duration === 'scalping' ? 1.008 : duration === 'long_term' ? 1.04 : 1.016;
-    return (basePrice * multiplier).toFixed(2);
+    return (basePrice * multiplier).toFixed(decimalPlaces);
   })()}",
   "stopLoss": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
     // Duration-appropriate examples showing 1:4 RR - CALCULATE YOUR OWN based on real S/R levels!
     const multiplier = duration === 'scalping' ? 0.998 : duration === 'long_term' ? 0.99 : 0.996;
-    return (basePrice * multiplier).toFixed(2);
+    return (basePrice * multiplier).toFixed(decimalPlaces);
   })()}",
   "tp1": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
     // TP1 examples (1:1 to 1:1.5 RR) - CALCULATE YOUR OWN based on real support/resistance!
     const multiplier = duration === 'scalping' ? 1.002 : duration === 'long_term' ? 1.01 : 1.004;
-    return (basePrice * multiplier).toFixed(2);
+    return (basePrice * multiplier).toFixed(decimalPlaces);
   })()}",
   "tp2": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
     // TP2 examples (1:2 to 1:2.5 RR) - CALCULATE YOUR OWN based on real support/resistance!
     const multiplier = duration === 'scalping' ? 1.004 : duration === 'long_term' ? 1.02 : 1.008;
-    return (basePrice * multiplier).toFixed(2);
+    return (basePrice * multiplier).toFixed(decimalPlaces);
   })()}",
   "tp3": "${(() => {
     const basePrice = isScalping ? (priceData.livePrice ?? 0) : (priceData.candleClosePrice ?? 0);
     // TP3 examples (1:4 RR - aim higher when possible!) - CALCULATE YOUR OWN based on real resistance!
     const multiplier = duration === 'scalping' ? 1.008 : duration === 'long_term' ? 1.04 : 1.016;
-    return (basePrice * multiplier).toFixed(2);
+    return (basePrice * multiplier).toFixed(decimalPlaces);
   })()}",
   "s1": "Support Level 1 - Nearest support below current price",
   "s2": "Support Level 2 - Medium support below current price",
