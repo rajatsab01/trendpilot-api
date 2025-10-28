@@ -451,6 +451,7 @@ async function fetchCryptoSuggestions(partialSymbol: string): Promise<Array<{ sy
 
 /**
  * Fetch stock/forex/commodity suggestions from Yahoo Finance
+ * For commodity futures, displays exchange prefix (e.g., CMX:SI=F instead of just SI=F)
  */
 async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ symbol: string; name: string; price?: number }>> {
   try {
@@ -473,15 +474,38 @@ async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ sym
     }
     
     // Return top 5 matches with symbol, name, and price
-    // Accept results with either longname or shortname for broader coverage
+    // For commodity futures, add exchange prefix (CMX:SI=F) to help users understand correct format
     const suggestions = data.quotes
       .filter((quote: any) => quote.symbol && (quote.longname || quote.shortname))
       .slice(0, 5)
-      .map((quote: any) => ({
-        symbol: quote.symbol,
-        name: quote.longname || quote.shortname || quote.symbol,
-        price: quote.regularMarketPrice || undefined,
-      }));
+      .map((quote: any) => {
+        let displaySymbol = quote.symbol;
+        let displayName = quote.longname || quote.shortname || quote.symbol;
+        
+        // Check if this is a commodity futures symbol (contains =F)
+        if (quote.symbol && quote.symbol.toUpperCase().includes('=F')) {
+          const baseSymbol = quote.symbol.replace(/=F$/i, '').toUpperCase();
+          const exchange = COMMODITY_FUTURES_EXCHANGE_MAP[baseSymbol];
+          const metadata = COMMODITY_FUTURES_METADATA[baseSymbol];
+          
+          if (exchange) {
+            // Add exchange prefix to symbol: CMX:SI=F
+            displaySymbol = `${exchange}:${quote.symbol.toUpperCase()}`;
+            console.log(`📋 [SUGGESTION] Commodity futures - showing with exchange: "${displaySymbol}"`);
+          }
+          
+          // Use full descriptive name from metadata if available
+          if (metadata) {
+            displayName = `${metadata.name} (${exchange || 'Futures'})`;
+          }
+        }
+        
+        return {
+          symbol: displaySymbol,
+          name: displayName,
+          price: quote.regularMarketPrice || undefined,
+        };
+      });
     
     return suggestions;
   } catch (error) {
@@ -491,36 +515,37 @@ async function fetchYahooSuggestions(partialSymbol: string): Promise<Array<{ sym
 }
 
 /**
- * Commodity futures exchange mapping
+ * Commodity futures exchange mapping - USING SHORTFORMS
  * Maps commodity futures symbols to their trading exchanges for proper Yahoo Finance resolution
+ * NOTE: Using exchange shortforms (CMX, NYM) not full names - this is critical for Yahoo API
  */
 const COMMODITY_FUTURES_EXCHANGE_MAP: Record<string, string> = {
-  // COMEX (Commodities Exchange) - Metals
-  'GC': 'COMEX',  // Gold
-  'SI': 'COMEX',  // Silver
-  'HG': 'COMEX',  // Copper
-  'PL': 'NYMEX',  // Platinum (sometimes listed under NYMEX)
-  'PA': 'NYMEX',  // Palladium
+  // CMX (COMEX shortform) - Commodities Exchange - Metals
+  'GC': 'CMX',  // Gold Futures
+  'SI': 'CMX',  // Silver Futures
+  'HG': 'CMX',  // Copper Futures
+  'PL': 'NYM',  // Platinum Futures
+  'PA': 'NYM',  // Palladium Futures
   
-  // NYMEX (New York Mercantile Exchange) - Energy
-  'CL': 'NYMEX',  // Crude Oil
-  'NG': 'NYMEX',  // Natural Gas
-  'RB': 'NYMEX',  // RBOB Gasoline
-  'HO': 'NYMEX',  // Heating Oil
-  'BZ': 'NYMEX',  // Brent Crude
+  // NYM (NYMEX shortform) - New York Mercantile Exchange - Energy
+  'CL': 'NYM',  // Crude Oil Futures (WTI)
+  'NG': 'NYM',  // Natural Gas Futures
+  'RB': 'NYM',  // RBOB Gasoline Futures
+  'HO': 'NYM',  // Heating Oil Futures
+  'BZ': 'NYM',  // Brent Crude Oil Futures
   
-  // CBOT (Chicago Board of Trade) - Agricultural
-  'ZC': 'CBOT',   // Corn
-  'ZS': 'CBOT',   // Soybeans
-  'ZW': 'CBOT',   // Wheat
-  'ZL': 'CBOT',   // Soybean Oil
-  'ZM': 'CBOT',   // Soybean Meal
-  'KE': 'CBOT',   // Kansas Wheat
+  // CBT (CBOT shortform) - Chicago Board of Trade - Agricultural
+  'ZC': 'CBT',   // Corn Futures
+  'ZS': 'CBT',   // Soybean Futures
+  'ZW': 'CBT',   // Wheat Futures
+  'ZL': 'CBT',   // Soybean Oil Futures
+  'ZM': 'CBT',   // Soybean Meal Futures
+  'KE': 'CBT',   // Kansas Wheat Futures
   
   // CME (Chicago Mercantile Exchange) - Livestock & Others
-  'LE': 'CME',    // Live Cattle
-  'HE': 'CME',    // Lean Hogs
-  'GF': 'CME',    // Feeder Cattle
+  'LE': 'CME',    // Live Cattle Futures
+  'HE': 'CME',    // Lean Hogs Futures
+  'GF': 'CME',    // Feeder Cattle Futures
 };
 
 /**
@@ -709,6 +734,7 @@ function validateCommodityPrice(symbol: string, price: number): string | null {
  * Add exchange prefix to commodity futures symbols for Yahoo Finance
  * This helps resolve ambiguous 2-letter symbols like SI=F (Silver) which might
  * otherwise be confused with stock symbols or other exchanges
+ * NOTE: Now using shortforms (CMX not COMEX) which Yahoo Finance may accept
  */
 function addCommodityExchangePrefix(symbol: string): string {
   // Extract the base symbol (remove =F suffix)
@@ -718,7 +744,7 @@ function addCommodityExchangePrefix(symbol: string): string {
   const exchange = COMMODITY_FUTURES_EXCHANGE_MAP[baseSymbol];
   
   if (exchange) {
-    // Return with exchange prefix: COMEX:SI=F
+    // Return with exchange shortform prefix: CMX:SI=F (not COMEX:SI=F)
     const prefixedSymbol = `${exchange}:${symbol.toUpperCase()}`;
     console.log(`🏛️ [EXCHANGE PREFIX] Mapped "${symbol}" → "${prefixedSymbol}" (${exchange} exchange)`);
     return prefixedSymbol;
@@ -730,28 +756,235 @@ function addCommodityExchangePrefix(symbol: string): string {
 }
 
 /**
+ * Test Yahoo Finance Chart API endpoint
+ * Returns price and metadata if successful, null if failed
+ */
+async function testYahooChartAPI(testSymbol: string): Promise<{ price: number; currency: string; name: string } | null> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${testSymbol}?interval=1d&range=1d`;
+    console.log(`   📡 [CHART API] Testing: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+    
+    if (!response.ok) {
+      console.log(`   ❌ [CHART API] HTTP ${response.status} - Symbol not found`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
+      console.log(`   ❌ [CHART API] No data in response`);
+      return null;
+    }
+    
+    const result = data.chart.result[0];
+    const meta = result.meta;
+    const price = meta.regularMarketPrice || meta.previousClose;
+    
+    if (!price) {
+      console.log(`   ❌ [CHART API] No price data available`);
+      return null;
+    }
+    
+    console.log(`   ✅ [CHART API] Success! Price: $${price} ${meta.currency}, Name: ${meta.longName || testSymbol}`);
+    return {
+      price: price,
+      currency: meta.currency || 'USD',
+      name: meta.longName || testSymbol
+    };
+  } catch (error: any) {
+    console.log(`   ❌ [CHART API] Error: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Test Yahoo Finance Quote API endpoint
+ * Returns price and metadata if successful, null if failed
+ */
+async function testYahooQuoteAPI(testSymbol: string): Promise<{ price: number; currency: string; name: string } | null> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${testSymbol}`;
+    console.log(`   📡 [QUOTE API] Testing: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+    
+    if (!response.ok) {
+      console.log(`   ❌ [QUOTE API] HTTP ${response.status} - Symbol not found`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.quoteResponse || !data.quoteResponse.result || data.quoteResponse.result.length === 0) {
+      console.log(`   ❌ [QUOTE API] No data in response`);
+      return null;
+    }
+    
+    const quote = data.quoteResponse.result[0];
+    const price = quote.regularMarketPrice || quote.previousClose;
+    
+    if (!price) {
+      console.log(`   ❌ [QUOTE API] No price data available`);
+      return null;
+    }
+    
+    console.log(`   ✅ [QUOTE API] Success! Price: $${price} ${quote.currency}, Name: ${quote.longName || testSymbol}`);
+    return {
+      price: price,
+      currency: quote.currency || 'USD',
+      name: quote.longName || quote.shortName || testSymbol
+    };
+  } catch (error: any) {
+    console.log(`   ❌ [QUOTE API] Error: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Smart fallback chain for commodity futures validation
+ * Tries multiple Yahoo Finance endpoints and symbol formats to find correct data
+ * 
+ * Test order (for SI=F example):
+ * 1. CMX:SI=F (Chart API) - Try exchange prefix with shortform
+ * 2. CMX:SI=F (Quote API) - Try exchange prefix with different endpoint
+ * 3. SI=F (Chart API) - Try without prefix
+ * 4. SI=F (Quote API) - Try without prefix, different endpoint
+ * 
+ * Returns the first successful result with price data
+ */
+async function testCommodityFuturesMultiEndpoint(symbol: string): Promise<{
+  success: boolean;
+  testedSymbol?: string;
+  price?: number;
+  currency?: string;
+  name?: string;
+  method?: string;
+  priceWarning?: string;
+}> {
+  const baseSymbol = symbol.replace(/=F$/i, '').toUpperCase();
+  const upperSymbol = symbol.toUpperCase();
+  const prefixedSymbol = addCommodityExchangePrefix(symbol);
+  
+  console.log(`\n🧪 [MULTI-ENDPOINT TEST] Starting comprehensive test for "${symbol}"`);
+  console.log(`   Base symbol: ${baseSymbol}`);
+  console.log(`   Will test: ${prefixedSymbol}, ${upperSymbol}`);
+  
+  const testsToRun = [
+    { symbol: prefixedSymbol, api: 'chart', label: 'Exchange prefix + Chart API' },
+    { symbol: prefixedSymbol, api: 'quote', label: 'Exchange prefix + Quote API' },
+    { symbol: upperSymbol, api: 'chart', label: 'No prefix + Chart API' },
+    { symbol: upperSymbol, api: 'quote', label: 'No prefix + Quote API' },
+  ];
+  
+  for (const test of testsToRun) {
+    console.log(`\n🔬 [TEST ${testsToRun.indexOf(test) + 1}/4] ${test.label}: "${test.symbol}"`);
+    
+    const result = test.api === 'chart' 
+      ? await testYahooChartAPI(test.symbol)
+      : await testYahooQuoteAPI(test.symbol);
+    
+    if (result) {
+      // Got a result! Now validate the price if we have metadata
+      const metadata = COMMODITY_FUTURES_METADATA[baseSymbol];
+      let priceWarning: string | undefined;
+      
+      if (metadata) {
+        if (result.price < metadata.minPrice || result.price > metadata.maxPrice) {
+          priceWarning = `⚠️ WARNING: Price $${result.price} is outside typical range for ${metadata.name} ($${metadata.minPrice}-${metadata.maxPrice} ${metadata.unit}). This may indicate incorrect data, but analysis will continue.`;
+          console.log(priceWarning);
+        } else {
+          console.log(`   ✅ [PRICE VALIDATION] Price $${result.price} is within expected range ($${metadata.minPrice}-${metadata.maxPrice})`);
+        }
+      }
+      
+      return {
+        success: true,
+        testedSymbol: test.symbol,
+        price: result.price,
+        currency: result.currency,
+        name: result.name,
+        method: `${test.label} (${test.symbol})`,
+        priceWarning: priceWarning
+      };
+    }
+  }
+  
+  console.log(`\n❌ [ALL TESTS FAILED] None of the ${testsToRun.length} Yahoo Finance methods returned valid data for "${symbol}"`);
+  return { success: false };
+}
+
+/**
  * Validate stock/forex/commodity symbol using Yahoo Finance
  */
 async function validateYahooSymbol(symbol: string, market: string): Promise<SymbolValidationResult> {
   try {
     console.log(`\n🔍 [validateYahooSymbol] Input: "${symbol}" (market: ${market})`);
     
-    // CRITICAL SHORT-CIRCUIT: Commodity futures symbols BYPASS normalization entirely
-    // This prevents any aliasing that could convert SI=F to SI.SI
+    // CRITICAL: Commodity futures use smart multi-endpoint fallback testing
+    // This tests multiple Yahoo Finance endpoints and symbol formats
     const isCommodityFutures = symbol.toUpperCase().includes('=F');
-    let yahooSymbol: string;
     
     if (isCommodityFutures) {
-      // Use original symbol directly (Yahoo Finance doesn't accept exchange prefixes like "COMEX:SI=F")
-      yahooSymbol = symbol.toUpperCase();
-      console.log(`🛡️ [FUTURES SHORT-CIRCUIT] Commodity futures detected - bypassing normalization`);
-      console.log(`📤 [validateYahooSymbol] Using original futures symbol: "${yahooSymbol}" (NO exchange prefix)`);
-    } else {
-      // Use unified symbol normalization from symbolRegistry for non-futures
-      // Classification is auto-detected based on symbol pattern and market type
-      yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
-      console.log(`📤 [validateYahooSymbol] Normalized symbol: "${symbol}" → "${yahooSymbol}"`);
+      console.log(`🛡️ [COMMODITY FUTURES] Detected - using smart multi-endpoint testing`);
+      
+      // Use comprehensive testing approach
+      const testResult = await testCommodityFuturesMultiEndpoint(symbol);
+      
+      if (!testResult.success) {
+        // All endpoints failed - fetch suggestions
+        const suggestions = await fetchYahooSuggestions(symbol);
+        
+        if (suggestions.length > 0) {
+          return {
+            isValid: false,
+            suggestions,
+            error: `Commodity futures symbol "${symbol}" not found. Did you mean one of these?`,
+          };
+        }
+        
+        return {
+          isValid: false,
+          error: `Commodity futures symbol "${symbol}" not found. Please verify the symbol is correct (e.g., GC=F for Gold, SI=F for Silver, CL=F for Crude Oil).`,
+        };
+      }
+      
+      // Success! Got valid data from one of the endpoints
+      console.log(`✅ [COMMODITY SUCCESS] Got data via: ${testResult.method}`);
+      console.log(`   Symbol tested: ${testResult.testedSymbol}`);
+      console.log(`   Price: $${testResult.price} ${testResult.currency}`);
+      console.log(`   Name: ${testResult.name}`);
+      
+      // Determine asset name - prefer metadata name
+      const baseSymbol = symbol.replace(/=F$/i, '').toUpperCase();
+      const metadata = COMMODITY_FUTURES_METADATA[baseSymbol];
+      const assetName = metadata?.name || testResult.name;
+      
+      return {
+        isValid: true,
+        correctedSymbol: symbol.toUpperCase(), // Always show user's original symbol format
+        assetName: assetName,
+        currentPrice: testResult.price,
+        sourceCurrency: 'USD', // All commodity futures are in USD
+      };
     }
+    
+    // NON-FUTURES: Use standard normalization and single endpoint
+    let yahooSymbol: string;
+    
+    // Use unified symbol normalization from symbolRegistry for non-futures
+    // Classification is auto-detected based on symbol pattern and market type
+    yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
+    console.log(`📤 [validateYahooSymbol] Normalized symbol: "${symbol}" → "${yahooSymbol}"`);
     
     // Try fetching from Yahoo Finance
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
@@ -806,63 +1039,17 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
     console.log(`📥 [validateYahooSymbol] Yahoo meta.currency: "${meta.currency}"`);
     console.log(`📥 [validateYahooSymbol] Asset name: "${meta.longName || yahooSymbol}"`);
     
-    // CRITICAL RESPONSE VALIDATION: If we requested a futures symbol, verify Yahoo didn't alias it
-    if (isCommodityFutures) {
-      const yahooReturnedSymbol = (meta.symbol || yahooSymbol).toUpperCase();
-      if (!yahooReturnedSymbol.includes('=F')) {
-        console.error(`❌ [YAHOO ALIAS CORRUPTION] Requested "${yahooSymbol}" but Yahoo returned "${meta.symbol}"`);
-        console.error(`⚠️ Yahoo Finance aliased the futures contract. This will cause incorrect pricing.`);
-        return {
-          isValid: false,
-          error: `Yahoo Finance returned incorrect data for commodity futures ${yahooSymbol}. Please verify the symbol is correct.`,
-        };
-      }
-      console.log(`✅ [FUTURES VALIDATION] Yahoo preserved =F suffix in response`);
-    }
-    
     // Determine the currency this exchange provides prices in
     let sourceCurrency = getExchangeCurrency(yahooSymbol, market);
-    
-    // CRITICAL DEFENSIVE CHECK: Commodity futures (=F suffix) MUST ALWAYS be in USD
-    // This prevents Yahoo Finance from returning wrong exchange data (e.g., SI=F → SGD instead of USD)
-    if (isCommodityFutures) {
-      console.log(`🛡️ [COMMODITY FUTURES GUARD] Symbol "${yahooSymbol}" has =F suffix - FORCING USD currency`);
-      if (sourceCurrency !== 'USD') {
-        console.error(`⚠️ [CURRENCY MISMATCH] getExchangeCurrency returned "${sourceCurrency}" for "${yahooSymbol}" but =F suffix requires USD. Overriding to USD.`);
-      }
-      if (meta.currency && meta.currency !== 'USD') {
-        console.error(`⚠️ [YAHOO CURRENCY MISMATCH] Yahoo meta.currency is "${meta.currency}" but futures must be USD. Overriding.`);
-      }
-      sourceCurrency = 'USD'; // Force USD for all commodity futures
-    }
-    
     console.log(`💱 [validateYahooSymbol] Source currency: ${sourceCurrency}`);
     
     // Get current price from Yahoo
     const currentPrice = meta.regularMarketPrice || meta.previousClose;
     
-    // COMMODITY FUTURES PRICE VALIDATION
-    // Validate the price is within expected range for the commodity
-    if (isCommodityFutures) {
-      const priceError = validateCommodityPrice(yahooSymbol, currentPrice);
-      if (priceError) {
-        // Price is out of range - Yahoo returned wrong asset!
-        return {
-          isValid: false,
-          error: priceError,
-        };
-      }
-    }
-    
     // Determine final symbol for display
     let finalSymbol: string;
     
-    if (isCommodityFutures) {
-      // For commodity futures, always use the user's original input (without exchange prefix)
-      // User entered "SI=F", we queried "COMEX:SI=F", but we want to show "SI=F"
-      finalSymbol = symbol.toUpperCase();
-      console.log(`✅ [validateYahooSymbol] Commodity futures - using user's original symbol: "${finalSymbol}"`);
-    } else if (market === 'forex' && meta.symbol && meta.symbol !== yahooSymbol) {
+    if (market === 'forex' && meta.symbol && meta.symbol !== yahooSymbol) {
       // For forex pairs, preserve user's original direction
       // Yahoo may return a different symbol (e.g., GBPUSD=X when we asked for USDGBP=X)
       finalSymbol = symbol;
@@ -873,16 +1060,8 @@ async function validateYahooSymbol(symbol: string, market: string): Promise<Symb
       console.log(`✅ [validateYahooSymbol] Using Yahoo's normalized symbol: "${finalSymbol}"`);
     }
     
-    // Enhanced asset name for commodities - use full descriptive name from metadata
+    // Asset name
     let assetName = meta.longName || yahooSymbol;
-    if (isCommodityFutures) {
-      const baseSymbol = yahooSymbol.replace(/=F$/i, '').toUpperCase();
-      const metadata = COMMODITY_FUTURES_METADATA[baseSymbol];
-      if (metadata) {
-        assetName = metadata.name;
-        console.log(`📝 [COMMODITY NAME] Using metadata name: "${assetName}"`);
-      }
-    }
     
     return {
       isValid: true,
