@@ -640,64 +640,8 @@ export default function Analyzer() {
                     </div>
                   </div>
                 </div>
-
-                <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                  <p className="text-[#9eb7a8] text-sm font-normal mb-2">{t.riskRewardRatio}</p>
-                  <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
-                    {(() => {
-                      const entry = parseFloat(analysis.entry || "0");
-                      const tp3 = parseFloat(analysis.tp3 || "0");
-                      const stopLoss = parseFloat(analysis.stopLoss || "0");
-                      
-                      let risk, reward;
-                      if (analysis.recommendation === "BUY") {
-                        risk = entry - stopLoss;
-                        reward = tp3 - entry;
-                      } else {
-                        risk = stopLoss - entry;
-                        reward = entry - tp3;
-                      }
-                      
-                      if (risk <= 0 || reward <= 0 || isNaN(risk) || isNaN(reward)) return "N/A";
-                      
-                      const ratio = reward / risk;
-                      return `1:${ratio.toFixed(2)}`;
-                    })()}
-                  </p>
-                </div>
               </div>
             </div>
-
-            {/* Probability Score Meter */}
-            {analysis.probabilityScore !== null && analysis.probabilityScore !== undefined && (
-              <div className="rounded-2xl bg-[#1c2620] p-6">
-                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#38e07b]">percent</span>
-                  {t.tradeProbability}
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[#9eb7a8] text-base">{t.successProbability}</span>
-                    <span className="text-white text-2xl font-bold" data-testid="text-probability-score">
-                      {analysis.probabilityScore}%
-                    </span>
-                  </div>
-                  {/* Probability bar */}
-                  <div className="w-full bg-[#29382f] rounded-full h-4 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#38e07b] to-[#2ab865] rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(Math.max(analysis.probabilityScore, 0), 100)}%` }}
-                      data-testid="bar-probability"
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#9eb7a8] mt-1">
-                    <span>{t.low}</span>
-                    <span>{t.moderate}</span>
-                    <span>{t.high}</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Multiple Take Profit Targets */}
             {(analysis.tp1 || analysis.tp2 || analysis.tp3) && (
@@ -734,6 +678,63 @@ export default function Analyzer() {
                       <p className="text-[#6a7f72] text-xs mt-1">{t.maxTarget}</p>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Risk-Reward Ratio */}
+            <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
+              <p className="text-[#9eb7a8] text-sm font-normal mb-2">{t.riskRewardRatio}</p>
+              <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
+                {(() => {
+                  const entry = parseFloat(analysis.entry || "0");
+                  const tp3 = parseFloat(analysis.tp3 || "0");
+                  const stopLoss = parseFloat(analysis.stopLoss || "0");
+                  
+                  let risk, reward;
+                  if (analysis.recommendation === "BUY") {
+                    risk = entry - stopLoss;
+                    reward = tp3 - entry;
+                  } else {
+                    risk = stopLoss - entry;
+                    reward = entry - tp3;
+                  }
+                  
+                  if (risk <= 0 || reward <= 0 || isNaN(risk) || isNaN(reward)) return "N/A";
+                  
+                  const ratio = reward / risk;
+                  return `1:${ratio.toFixed(2)}`;
+                })()}
+              </p>
+            </div>
+
+            {/* Probability Score Meter */}
+            {analysis.probabilityScore !== null && analysis.probabilityScore !== undefined && (
+              <div className="rounded-2xl bg-[#1c2620] p-6">
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">percent</span>
+                  {t.tradeProbability}
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[#9eb7a8] text-base">{t.successProbability}</span>
+                    <span className="text-white text-2xl font-bold" data-testid="text-probability-score">
+                      {analysis.probabilityScore}%
+                    </span>
+                  </div>
+                  {/* Probability bar */}
+                  <div className="w-full bg-[#29382f] rounded-full h-4 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#38e07b] to-[#2ab865] rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(Math.max(analysis.probabilityScore, 0), 100)}%` }}
+                      data-testid="bar-probability"
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-[#9eb7a8] mt-1">
+                    <span>{t.low}</span>
+                    <span>{t.moderate}</span>
+                    <span>{t.high}</span>
+                  </div>
                 </div>
               </div>
             )}
