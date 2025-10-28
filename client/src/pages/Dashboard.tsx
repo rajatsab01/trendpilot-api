@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import { Button } from "@/components/ui/button";
 import type { User } from "@shared/schema";
 import {
   Dialog,
@@ -53,6 +54,46 @@ export default function Dashboard() {
   const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
 
   const userId = localStorage.getItem("userId");
+
+  // Handle app sharing
+  const handleShareApp = async () => {
+    const shareData = {
+      title: 'TrendPilot',
+      text: 'Check out TrendPilot - AI-Powered Trading Analyzer for Stocks, Forex, Crypto & Commodities!',
+      url: window.location.origin,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast({
+          title: "Thank you for sharing!",
+          description: "Share successful",
+        });
+      } else if (navigator.clipboard?.writeText) {
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText(window.location.origin);
+        toast({
+          title: "Link Copied!",
+          description: "App link copied to clipboard",
+        });
+      } else {
+        // Neither Web Share nor Clipboard API available
+        toast({
+          title: "Sharing Not Available",
+          description: "Your browser doesn't support sharing. Try copying the URL manually.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast({
+        title: "Share Failed",
+        description: "Unable to share. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Helper function to get currency symbol
   const getCurrencySymbol = (currencyCode: string): string => {
@@ -526,14 +567,41 @@ export default function Dashboard() {
       `}</style>
       <div className="flex flex-col flex-1" id="dashboard-root">
         <header className="flex flex-col p-4 pb-2">
-          <div className="flex items-center justify-end mb-2">
-            <button 
+          <div className="flex items-center justify-end gap-2 mb-2">
+            {/* Install App Button - Only show if installable */}
+            {isInstallable && (
+              <Button 
+                size="icon"
+                variant="ghost"
+                onClick={() => handleInstallApp(false)}
+                data-testid="button-install-app"
+                title="Install App"
+              >
+                <span className="material-symbols-outlined">download</span>
+              </Button>
+            )}
+            
+            {/* Share App Button */}
+            <Button 
+              size="icon"
+              variant="ghost"
+              onClick={handleShareApp}
+              data-testid="button-share-app"
+              title="Share App"
+            >
+              <span className="material-symbols-outlined">share</span>
+            </Button>
+            
+            {/* Settings Button */}
+            <Button 
+              size="icon"
+              variant="ghost"
               onClick={() => setShowSettings(true)}
-              className="text-white hover-elevate active-elevate-2 p-2 rounded-full" 
               data-testid="button-settings"
+              title="Settings"
             >
               <span className="material-symbols-outlined">settings</span>
-            </button>
+            </Button>
           </div>
           {/* Logo + TrendPilot branding */}
           <div className="flex flex-col items-center mb-2">
