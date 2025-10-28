@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import PWAInstallModal from "@/components/PWAInstallModal";
+import trendPilotLogo from "@assets/trendpilot-logo.png";
 
 declare global {
   interface Window {
@@ -127,6 +128,20 @@ export default function Login() {
 
       <main className="flex-grow flex flex-col justify-center px-6">
         <div className="w-full max-w-md mx-auto">
+          {/* Logo + TrendPilot branding */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img 
+                src={trendPilotLogo}
+                alt="TrendPilot Logo"
+                className="h-12 w-12 object-contain rounded-lg"
+                data-testid="img-logo"
+              />
+              <h1 className="text-[#38e07b] text-2xl font-bold tracking-tight">TrendPilot</h1>
+            </div>
+            <p className="text-[#9eb7a8] text-sm">AI-Powered Trading Advisory</p>
+          </div>
+          
           <h2 className="text-white text-2xl font-bold tracking-tight text-center mb-8">
             {t.welcomeBack}
           </h2>

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import PWAInstallModal from "@/components/PWAInstallModal";
+import trendPilotLogo from "@assets/trendpilot-logo.png";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -526,10 +527,19 @@ export default function Dashboard() {
               <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
-          <h1 className="text-center text-[#38e07b] text-2xl font-bold leading-tight tracking-tight mb-1">
-            Trend Pilot
-          </h1>
-          <p className="text-center text-xs text-[#9eb7a8]">{t.home}</p>
+          {/* Logo + TrendPilot branding */}
+          <div className="flex flex-col items-center mb-2">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <img 
+                src={trendPilotLogo}
+                alt="TrendPilot Logo"
+                className="h-10 w-10 object-contain rounded-lg"
+                data-testid="img-logo"
+              />
+              <h1 className="text-[#38e07b] text-xl font-bold tracking-tight">TrendPilot</h1>
+            </div>
+            <p className="text-[#9eb7a8] text-xs">AI-Powered Trading Advisory</p>
+          </div>
         </header>
 
         <main className="flex-1 px-4 py-6 space-y-6">
