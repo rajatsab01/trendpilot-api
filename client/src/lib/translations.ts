@@ -381,7 +381,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'Price Chart (TradingView)',
-    aiPoweredAnalyzer: 'AI-Powered Trading Analyzer',
     technicalIndicators: 'Technical Indicators',
     confidence: 'Confidence',
     
@@ -443,7 +442,7 @@ export const translations = {
     childrenPrivacy: "10. Children's Privacy",
     childrenPolicy: 'Our service is not intended for users under 18 years of age. We do not knowingly collect information from children under 18.',
     policyChanges: '11. Changes to This Policy',
-    changesPolicy: "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the 'Last Updated' date.",
+    changesPolicy: `We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the 'Last Updated' date.`,
     contactUs: 'Contact Us',
     privacyQuestions: 'If you have any questions about this Privacy Policy, please contact us:',
     email: 'Email',
@@ -465,7 +464,7 @@ export const translations = {
     generalInquiries: 'General Inquiries',
     generalInquiriesDesc: 'Questions, feedback, suggestions',
     responseTime: 'Response Time',
-    responseTimeDesc: "We typically respond within 24-48 hours during business days. For urgent issues, please mark your email as 'Urgent' in the subject line.",
+    responseTimeDesc: `We typically respond within 24-48 hours during business days. For urgent issues, please mark your email as 'Urgent' in the subject line.`,
     businessHours: 'Business Hours',
     businessHoursDesc: 'Monday - Friday: 9:00 AM - 6:00 PM (IST)',
     weekendSupport: 'Weekend: Limited support',
@@ -856,7 +855,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'मूल्य चार्ट (TradingView)',
-    aiPoweredAnalyzer: 'AI-संचालित ट्रेडिंग विश्लेषक',
     technicalIndicators: 'तकनीकी संकेतक',
     confidence: 'आत्मविश्वास',
     
@@ -918,7 +916,7 @@ export const translations = {
     childrenPrivacy: '10. बच्चों की गोपनीयता',
     childrenPolicy: 'हमारी सेवा 18 वर्ष से कम आयु के उपयोगकर्ताओं के लिए नहीं है। हम जानबूझकर 18 वर्ष से कम आयु के बच्चों से जानकारी एकत्र नहीं करते।',
     policyChanges: '11. इस नीति में परिवर्तन',
-    changesPolicy: "हम समय-समय पर इस गोपनीयता नीति को अपडेट कर सकते हैं। हम इस पृष्ठ पर नई गोपनीयता नीति पोस्ट करके और 'अंतिम अपडेट' तिथि को अपडेट करके किसी भी परिवर्तन के बारे में आपको सूचित करेंगे।",
+    changesPolicy: `हम समय-समय पर इस गोपनीयता नीति को अपडेट कर सकते हैं। हम इस पृष्ठ पर नई गोपनीयता नीति पोस्ट करके और 'अंतिम अपडेट' तिथि को अपडेट करके किसी भी परिवर्तन के बारे में आपको सूचित करेंगे।`,
     contactUs: 'हमसे संपर्क करें',
     privacyQuestions: 'यदि आपके पास इस गोपनीयता नीति के बारे में कोई प्रश्न हैं, तो कृपया हमसे संपर्क करें:',
     email: 'ईमेल',
@@ -940,7 +938,7 @@ export const translations = {
     generalInquiries: 'सामान्य पूछताछ',
     generalInquiriesDesc: 'प्रश्न, फीडबैक, सुझाव',
     responseTime: 'प्रतिक्रिया समय',
-    responseTimeDesc: "हम आम तौर पर व्यावसायिक दिनों के दौरान 24-48 घंटों के भीतर जवाब देते हैं। तत्काल मुद्दों के लिए, कृपया अपने ईमेल को विषय पंक्ति में 'तत्काल' के रूप में चिह्नित करें।",
+    responseTimeDesc: `हम आम तौर पर व्यावसायिक दिनों के दौरान 24-48 घंटों के भीतर जवाब देते हैं। तत्काल मुद्दों के लिए, कृपया अपने ईमेल को विषय पंक्ति में 'तत्काल' के रूप में चिह्नित करें।`,
     businessHours: 'व्यवसाय समय',
     businessHoursDesc: 'सोमवार - शुक्रवार: सुबह 9:00 - शाम 6:00 (IST)',
     weekendSupport: 'सप्ताहांत: सीमित समर्थन',
@@ -1290,7 +1288,6 @@ export const translations = {
     reject: 'Rechazar',
     banUser: 'Prohibir Usuario',
     priceChart: 'Gráfico de Precios (TradingView)',
-    aiPoweredAnalyzer: 'Analizador de Trading con IA',
     technicalIndicators: 'Indicadores Técnicos',
     confidence: 'Confianza',
     cancel: 'Cancelar',
@@ -1350,7 +1347,7 @@ export const translations = {
     childrenPrivacy: '10. Privacidad de Niños',
     childrenPolicy: 'Nuestro servicio no está destinado a usuarios menores de 18 años. No recopilamos información de niños menores de 18 años a sabiendas.',
     policyChanges: '11. Cambios a Esta Política',
-    changesPolicy: "Podemos actualizar esta Política de Privacidad de vez en cuando. Le notificaremos cualquier cambio publicando la nueva Política de Privacidad en esta página y actualizando la fecha de 'Última Actualización'.",
+    changesPolicy: `Podemos actualizar esta Política de Privacidad de vez en cuando. Le notificaremos cualquier cambio publicando la nueva Política de Privacidad en esta página y actualizando la fecha de 'Última Actualización'.`,
     contactUs: 'Contáctenos',
     privacyQuestions: 'Si tiene alguna pregunta sobre esta Política de Privacidad, contáctenos:',
     email: 'Correo Electrónico',
@@ -1372,7 +1369,7 @@ export const translations = {
     generalInquiries: 'Consultas Generales',
     generalInquiriesDesc: 'Preguntas, comentarios, sugerencias',
     responseTime: 'Tiempo de Respuesta',
-    responseTimeDesc: "Típicamente respondemos en 24-48 horas durante días laborables. Para problemas urgentes, marque su correo como 'Urgente' en la línea de asunto.",
+    responseTimeDesc: `Típicamente respondemos en 24-48 horas durante días laborables. Para problemas urgentes, marque su correo como 'Urgente' en la línea de asunto.`,
     businessHours: 'Horario de Atención',
     businessHoursDesc: 'Lunes - Viernes: 9:00 AM - 6:00 PM (IST)',
     weekendSupport: 'Fin de semana: Soporte limitado',
@@ -1748,7 +1745,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: '价格图表 (TradingView)',
-    aiPoweredAnalyzer: 'AI驱动的交易分析器',
     technicalIndicators: '技术指标',
     confidence: '信心',
     
@@ -1810,7 +1806,7 @@ export const translations = {
     childrenPrivacy: '10. 儿童隐私',
     childrenPolicy: '我们的服务不适用于18岁以下的用户。我们不会故意收集18岁以下儿童的信息。',
     policyChanges: '11. 本政策的变更',
-    changesPolicy: "我们可能会不时更新本隐私政策。我们将通过在此页面上发布新的隐私政策并更新'最后更新'日期来通知您任何更改。",
+    changesPolicy: `我们可能会不时更新本隐私政策。我们将通过在此页面上发布新的隐私政策并更新'最后更新'日期来通知您任何更改。`,
     contactUs: '联系我们',
     privacyQuestions: '如果您对本隐私政策有任何疑问，请联系我们：',
     email: '电子邮件',
@@ -1832,7 +1828,7 @@ export const translations = {
     generalInquiries: '一般咨询',
     generalInquiriesDesc: '问题、反馈、建议',
     responseTime: '响应时间',
-    responseTimeDesc: "我们通常在工作日的24-48小时内回复。对于紧急问题，请在主题行中将您的电子邮件标记为'紧急'。",
+    responseTimeDesc: `我们通常在工作日的24-48小时内回复。对于紧急问题，请在主题行中将您的电子邮件标记为'紧急'。`,
     businessHours: '营业时间',
     businessHoursDesc: '周一至周五：上午9:00 - 下午6:00（IST）',
     weekendSupport: '周末：有限支持',
@@ -2209,7 +2205,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'Preisdiagramm (TradingView)',
-    aiPoweredAnalyzer: 'KI-gestützte Trading-Analyse',
     technicalIndicators: 'Technische Indikatoren',
     confidence: 'Vertrauen',
     
@@ -2271,7 +2266,7 @@ export const translations = {
     childrenPrivacy: '10. Datenschutz für Kinder',
     childrenPolicy: 'Unser Dienst ist nicht für Benutzer unter 18 Jahren bestimmt. Wir sammeln wissentlich keine Informationen von Kindern unter 18 Jahren.',
     policyChanges: '11. Änderungen an Dieser Richtlinie',
-    changesPolicy: "Wir können diese Datenschutzrichtlinie von Zeit zu Zeit aktualisieren. Wir werden Sie über Änderungen informieren, indem wir die neue Datenschutzrichtlinie auf dieser Seite veröffentlichen und das Datum 'Zuletzt Aktualisiert' aktualisieren.",
+    changesPolicy: `Wir können diese Datenschutzrichtlinie von Zeit zu Zeit aktualisieren. Wir werden Sie über Änderungen informieren, indem wir die neue Datenschutzrichtlinie auf dieser Seite veröffentlichen und das Datum 'Zuletzt Aktualisiert' aktualisieren.`,
     contactUs: 'Kontaktieren Sie Uns',
     privacyQuestions: 'Wenn Sie Fragen zu dieser Datenschutzrichtlinie haben, kontaktieren Sie uns:',
     email: 'E-Mail',
@@ -2293,7 +2288,7 @@ export const translations = {
     generalInquiries: 'Allgemeine Anfragen',
     generalInquiriesDesc: 'Fragen, Feedback, Vorschläge',
     responseTime: 'Antwortzeit',
-    responseTimeDesc: "Wir antworten in der Regel innerhalb von 24-48 Stunden an Werktagen. Für dringende Probleme markieren Sie Ihre E-Mail in der Betreffzeile als 'Dringend'.",
+    responseTimeDesc: `Wir antworten in der Regel innerhalb von 24-48 Stunden an Werktagen. Für dringende Probleme markieren Sie Ihre E-Mail in der Betreffzeile als 'Dringend'.`,
     businessHours: 'Geschäftszeiten',
     businessHoursDesc: 'Montag - Freitag: 9:00 - 18:00 Uhr (IST)',
     weekendSupport: 'Wochenende: Eingeschränkter Support',
@@ -2327,7 +2322,7 @@ export const translations = {
     loading: 'Chargement...',
     appName: 'Trend Pilot',
     aiGuidedTrading: 'Trading guidé par IA',
-    aiDescription: 'Découvrez l'avenir du trading avec une intelligence alimentée par l'IA qui surpasse l'analyse humaine traditionnelle. Nos algorithmes avancés étudient en permanence les données de marché, les modèles de prix et le sentiment en temps réel pour découvrir des opportunités que les traders humains pourraient manquer. En éliminant les biais émotionnels et la fatigue, l'IA garantit des décisions plus rapides et basées sur les données avec une précision constante. Que ce soit dans les marchés crypto volatils ou les mouvements boursiers dynamiques, le trading guidé par l'IA vous permet d'agir avec confiance, de vous adapter instantanément et de rester en avance.',
+    aiDescription: `Découvrez l'avenir du trading avec une intelligence alimentée par l'IA qui surpasse l'analyse humaine traditionnelle. Nos algorithmes avancés étudient en permanence les données de marché, les modèles de prix et le sentiment en temps réel pour découvrir des opportunités que les traders humains pourraient manquer. En éliminant les biais émotionnels et la fatigue, l'IA garantit des décisions plus rapides et basées sur les données avec une précision constante. Que ce soit dans les marchés crypto volatils ou les mouvements boursiers dynamiques, le trading guidé par l'IA vous permet d'agir avec confiance, de vous adapter instantanément et de rester en avance.`,
     disclaimer: 'Clause de non-responsabilité',
     disclaimerText: "Le trading comporte des risques de perte et ne convient pas à tous les investisseurs. Les performances passées ne préjugent pas des résultats futurs. Trend Pilot fournit une analyse guidée par l'IA à des fins informatives uniquement et ne doit pas être considérée comme un conseil financier. Consultez toujours un conseiller financier qualifié avant de prendre toute décision d'investissement.",
     iAgree: "J'accepte",
@@ -2492,14 +2487,14 @@ export const translations = {
     moneyEnergyDescription: 'Quand il circule avec bienveillance, il se multiplie avec grâce. 🌿',
     everyTimeYouShare: "Chaque fois que vous partagez une partie de votre profit avec ceux qui en ont besoin, vous invitez l'abondance, la paix et la bonne fortune dans votre propre vie.",
     tradingFlowParagraph: "Dans le trading, nous apprenons que le flux crée la croissance — et la même loi gouverne l'univers. Plus vous donnez, plus la vie vous rend librement.",
-    donationIsMore: 'Votre petit don d'aujourd'hui est plus que de la charité — c'est un acte de gratitude financière. Une promesse silencieuse à l'univers qui dit : \'Je suis reconnaissant pour ce que j'ai et je souhaite la prospérité pour tous.\'',
+    donationIsMore: `Votre petit don d'aujourd'hui est plus que de la charité — c'est un acte de gratitude financière. Une promesse silencieuse à l'univers qui dit : 'Je suis reconnaissant pour ce que j'ai et je souhaite la prospérité pour tous.'`,
     letYourProfits: 'Donnez un but à vos profits. Que votre générosité devienne votre bon karma. 💫',
     realWealthQuote: "🌼 Parce que la vraie richesse n'est pas ce que vous gardez — c'est ce que vous faites circuler.",
     storiesHeading: 'Histoires',
     story1Title: '💹 1. La Pause du Trader',
     story1Content: `Arjun a réalisé son plus gros gain un vendredi — une transaction qui a doublé du jour au lendemain. En parcourant les graphiques, il s'est soudainement arrêté sur une pensée : \'Et si une partie de cette victoire aidait quelqu'un à redémarrer sa vie aussi ?\' Il a fait don d'une petite part à une organisation caritative qui aidait les agriculteurs à rembourser leurs dettes. Le mois suivant, chaque transaction semblait plus fluide, chaque perte se récupérait plus rapidement. Parfois, le bon karma devient votre meilleur outil de gestion des risques.`,
     story2Title: "💰 2. La Transaction Manquée",
-    story2Content: 'Riya a raté une entrée parfaite. Elle s'est sentie frustrée — mais au lieu de forcer une autre transaction, elle a choisi de faire don du même montant qu'elle aurait investi à un orphelinat. Deux jours plus tard, elle a saisi un mouvement qui lui a rapporté dix fois plus. Elle a souri et murmuré : \'Peut-être que l'univers paie vraiment des intérêts sur la gentillesse.\' Quand vous donnez sans raison, la vie trouve une raison de vous récompenser.',
+    story2Content: `Riya a raté une entrée parfaite. Elle s'est sentie frustrée — mais au lieu de forcer une autre transaction, elle a choisi de faire don du même montant qu'elle aurait investi à un orphelinat. Deux jours plus tard, elle a saisi un mouvement qui lui a rapporté dix fois plus. Elle a souri et murmuré : 'Peut-être que l'univers paie vraiment des intérêts sur la gentillesse.' Quand vous donnez sans raison, la vie trouve une raison de vous récompenser.`,
     story3Title: "🌾 3. La Pièce Qui Est Revenue",
     story3Content: "Un banquier retraité donnait toujours ₹11 de chaque transaction rentable — un rituel. Lorsque les marchés se sont effondrés, il pensait s'arrêter. Mais l'habitude a gagné — il continuait à donner, même les jours rouges. Des mois plus tard, ses fonds perdus ont été remboursés de manière inattendue par un ancien client. Le montant ? Exactement la somme qu'il avait donnée tous ces mois. L'argent part avec une bénédiction et revient avec des intérêts.",
     story4Title: "🕊 4. Le Cadeau de l'Analyste",
@@ -2670,7 +2665,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'Graphique de Prix (TradingView)',
-    aiPoweredAnalyzer: "Analyseur de Trading Alimenté par l'IA",
     technicalIndicators: 'Indicateurs Techniques',
     confidence: 'Confiance',
     
@@ -2732,7 +2726,7 @@ export const translations = {
     childrenPrivacy: '10. Vie Privée des Enfants',
     childrenPolicy: `Notre service n'est pas destiné aux utilisateurs de moins de 18 ans. Nous ne collectons pas sciemment d'informations auprès d'enfants de moins de 18 ans.`,
     policyChanges: '11. Modifications de Cette Politique',
-    changesPolicy: "Nous pouvons mettre à jour cette Politique de Confidentialité de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle Politique de Confidentialité sur cette page et en mettant à jour la date de 'Dernière Mise à Jour'.",
+    changesPolicy: `Nous pouvons mettre à jour cette Politique de Confidentialité de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle Politique de Confidentialité sur cette page et en mettant à jour la date de 'Dernière Mise à Jour'.`,
     contactUs: 'Nous Contacter',
     privacyQuestions: 'Si vous avez des questions concernant cette Politique de Confidentialité, contactez-nous:',
     email: 'E-mail',
@@ -3131,7 +3125,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'الرسم البياني للسعر (TradingView)',
-    aiPoweredAnalyzer: 'محلل التداول المدعوم بالذكاء الاصطناعي',
     technicalIndicators: 'المؤشرات الفنية',
     confidence: 'الثقة',
     
@@ -3193,7 +3186,7 @@ export const translations = {
     childrenPrivacy: '10. خصوصية الأطفال',
     childrenPolicy: 'خدمتنا غير مخصصة للمستخدمين الذين تقل أعمارهم عن 18 عاماً. نحن لا نجمع عن قصد معلومات من الأطفال الذين تقل أعمارهم عن 18 عاماً.',
     policyChanges: '11. التغييرات على هذه السياسة',
-    changesPolicy: "قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر. سنخطرك بأي تغييرات عن طريق نشر سياسة الخصوصية الجديدة على هذه الصفحة وتحديث تاريخ 'آخر تحديث'.",
+    changesPolicy: `قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر. سنخطرك بأي تغييرات عن طريق نشر سياسة الخصوصية الجديدة على هذه الصفحة وتحديث تاريخ 'آخر تحديث'.`,
     contactUs: 'اتصل بنا',
     privacyQuestions: 'إذا كان لديك أي أسئلة حول سياسة الخصوصية هذه، اتصل بنا:',
     email: 'البريد الإلكتروني',
@@ -3215,7 +3208,7 @@ export const translations = {
     generalInquiries: 'استفسارات عامة',
     generalInquiriesDesc: 'أسئلة، ملاحظات، اقتراحات',
     responseTime: 'وقت الاستجابة',
-    responseTimeDesc: 'نحن عادة ما نرد خلال 24-48 ساعة في أيام العمل. للمشاكل العاجلة، قم بوضع علامة 'عاجل' في سطر الموضوع.',
+    responseTimeDesc: `نحن عادة ما نرد خلال 24-48 ساعة في أيام العمل. للمشاكل العاجلة، قم بوضع علامة 'عاجل' في سطر الموضوع.`,
     businessHours: 'ساعات العمل',
     businessHoursDesc: 'الاثنين - الجمعة: 9:00 صباحاً - 6:00 مساءً (IST)',
     weekendSupport: 'عطلة نهاية الأسبوع: دعم محدود',
@@ -3592,7 +3585,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'Gráfico de Preços (TradingView)',
-    aiPoweredAnalyzer: 'Analisador de Trading com IA',
     technicalIndicators: 'Indicadores Técnicos',
     confidence: 'Confiança',
     
@@ -3654,7 +3646,7 @@ export const translations = {
     childrenPrivacy: '10. Privacidade de Crianças',
     childrenPolicy: 'Nosso serviço não se destina a usuários menores de 18 anos. Não coletamos intencionalmente informações de crianças menores de 18 anos.',
     policyChanges: '11. Alterações a Esta Política',
-    changesPolicy: 'Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre quaisquer alterações publicando a nova Política de Privacidade nesta página e atualizando a data de 'Última Atualização'.',
+    changesPolicy: `Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre quaisquer alterações publicando a nova Política de Privacidade nesta página e atualizando a data de 'Última Atualização'.`,
     contactUs: 'Entre em Contato Conosco',
     privacyQuestions: 'Se você tiver alguma dúvida sobre esta Política de Privacidade, entre em contato conosco:',
     email: 'E-mail',
@@ -3676,7 +3668,7 @@ export const translations = {
     generalInquiries: 'Consultas Gerais',
     generalInquiriesDesc: 'Perguntas, feedback, sugestões',
     responseTime: 'Tempo de Resposta',
-    responseTimeDesc: 'Normalmente respondemos em 24-48 horas durante os dias úteis. Para problemas urgentes, marque seu e-mail como 'Urgente' na linha de assunto.',
+    responseTimeDesc: `Normalmente respondemos em 24-48 horas durante os dias úteis. Para problemas urgentes, marque seu e-mail como 'Urgente' na linha de assunto.`,
     businessHours: 'Horário Comercial',
     businessHoursDesc: 'Segunda - Sexta: 9:00 - 18:00 (IST)',
     weekendSupport: 'Fim de semana: Suporte limitado',
@@ -4053,7 +4045,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'График Цены (TradingView)',
-    aiPoweredAnalyzer: 'Торговый Анализатор на ИИ',
     technicalIndicators: 'Технические Индикаторы',
     confidence: 'Уверенность',
     
@@ -4115,7 +4106,7 @@ export const translations = {
     childrenPrivacy: '10. Конфиденциальность Детей',
     childrenPolicy: 'Наш сервис не предназначен для пользователей младше 18 лет. Мы намеренно не собираем информацию от детей младше 18 лет.',
     policyChanges: '11. Изменения в Этой Политике',
-    changesPolicy: 'Мы можем обновлять эту Политику Конфиденциальности время от времени. Мы уведомим вас о любых изменениях, разместив новую Политику Конфиденциальности на этой странице и обновив дату 'Последнее Обновление'.',
+    changesPolicy: `Мы можем обновлять эту Политику Конфиденциальности время от времени. Мы уведомим вас о любых изменениях, разместив новую Политику Конфиденциальности на этой странице и обновив дату 'Последнее Обновление'.`,
     contactUs: 'Свяжитесь с Нами',
     privacyQuestions: 'Если у вас есть вопросы об этой Политике Конфиденциальности, свяжитесь с нами:',
     email: 'Электронная Почта',
@@ -4137,7 +4128,7 @@ export const translations = {
     generalInquiries: 'Общие Вопросы',
     generalInquiriesDesc: 'Вопросы, отзывы, предложения',
     responseTime: 'Время Ответа',
-    responseTimeDesc: 'Мы обычно отвечаем в течение 24-48 часов в рабочие дни. Для срочных вопросов пометьте ваше письмо как 'Срочное' в теме письма.',
+    responseTimeDesc: `Мы обычно отвечаем в течение 24-48 часов в рабочие дни. Для срочных вопросов пометьте ваше письмо как 'Срочное' в теме письма.`,
     businessHours: 'Рабочие Часы',
     businessHoursDesc: 'Понедельник - Пятница: 9:00 - 18:00 (IST)',
     weekendSupport: 'Выходные: Ограниченная поддержка',
@@ -4514,7 +4505,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: '価格チャート (TradingView)',
-    aiPoweredAnalyzer: 'AI駆動のトレーディングアナライザー',
     technicalIndicators: 'テクニカルインジケーター',
     confidence: '信頼度',
     
@@ -4576,7 +4566,7 @@ export const translations = {
     childrenPrivacy: '10. 子供のプライバシー',
     childrenPolicy: '当社のサービスは18歳未満のユーザーを対象としていません。18歳未満の子供から意図的に情報を収集することはありません。',
     policyChanges: '11. このポリシーの変更',
-    changesPolicy: 'このプライバシーポリシーを随時更新することがあります。このページに新しいプライバシーポリシーを投稿し、「最終更新」日付を更新することで変更を通知します。',
+    changesPolicy: `このプライバシーポリシーを随時更新することがあります。このページに新しいプライバシーポリシーを投稿し、「最終更新」日付を更新することで変更を通知します。`,
     contactUs: 'お問い合わせ',
     privacyQuestions: 'このプライバシーポリシーについてご質問がある場合は、お問い合わせください：',
     email: 'メール',
@@ -4598,7 +4588,7 @@ export const translations = {
     generalInquiries: '一般的なお問い合わせ',
     generalInquiriesDesc: '質問、フィードバック、提案',
     responseTime: '応答時間',
-    responseTimeDesc: '通常、営業日に24～48時間以内に返信します。緊急の問題については、件名に「緊急」とマークしてください。',
+    responseTimeDesc: `通常、営業日に24～48時間以内に返信します。緊急の問題については、件名に「緊急」とマークしてください。`,
     businessHours: '営業時間',
     businessHoursDesc: '月曜日～金曜日：9:00 AM～6:00 PM（IST）',
     weekendSupport: '週末：限定サポート',
@@ -4975,7 +4965,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: '가격 차트 (TradingView)',
-    aiPoweredAnalyzer: 'AI 기반 트레이딩 분석기',
     technicalIndicators: '기술적 지표',
     confidence: '신뢰도',
     
@@ -5037,7 +5026,7 @@ export const translations = {
     childrenPrivacy: '10. 어린이 개인정보 보호',
     childrenPolicy: '저희 서비스는 18세 미만의 사용자를 대상으로 하지 않습니다. 의도적으로 18세 미만 어린이의 정보를 수집하지 않습니다.',
     policyChanges: '11. 본 정책의 변경',
-    changesPolicy: '본 개인정보 보호정책을 수시로 업데이트할 수 있습니다. 이 페이지에 새로운 개인정보 보호정책을 게시하고 '마지막 업데이트' 날짜를 업데이트하여 변경 사항을 알려드립니다.',
+    changesPolicy: `본 개인정보 보호정책을 수시로 업데이트할 수 있습니다. 이 페이지에 새로운 개인정보 보호정책을 게시하고 '마지막 업데이트' 날짜를 업데이트하여 변경 사항을 알려드립니다.`,
     contactUs: '문의하기',
     privacyQuestions: '본 개인정보 보호정책에 대한 질문이 있으시면 문의해 주세요:',
     email: '이메일',
@@ -5059,7 +5048,7 @@ export const translations = {
     generalInquiries: '일반 문의',
     generalInquiriesDesc: '질문, 피드백, 제안',
     responseTime: '응답 시간',
-    responseTimeDesc: '평일에 일반적으로 24~48시간 이내에 응답합니다. 긴급한 문제의 경우 제목에 '긴급'으로 표시해 주세요.',
+    responseTimeDesc: `평일에 일반적으로 24~48시간 이내에 응답합니다. 긴급한 문제의 경우 제목에 '긴급'으로 표시해 주세요.`,
     businessHours: '영업 시간',
     businessHoursDesc: '월요일 - 금요일: 오전 9:00 - 오후 6:00 (IST)',
     weekendSupport: '주말: 제한된 지원',
@@ -5258,14 +5247,14 @@ export const translations = {
     moneyEnergyDescription: 'Quando si muove con gentilezza, si moltiplica con grazia. 🌿',
     everyTimeYouShare: 'Ogni volta che condividi una parte del tuo profitto con chi ne ha bisogno, inviti abbondanza, pace e buona fortuna nella tua vita.',
     tradingFlowParagraph: "Nel trading, impariamo che il flusso crea crescita — e la stessa legge governa l'universo. Più dai, più liberamente la vita restituisce.",
-    donationIsMore: 'La tua piccola donazione oggi è più di una carità — è un atto di gratitudine finanziaria. Una promessa silenziosa all'universo che dice: \'Sono grato per ciò che ho e desidero prosperità per tutti.\'',
+    donationIsMore: `La tua piccola donazione oggi è più di una carità — è un atto di gratitudine finanziaria. Una promessa silenziosa all'universo che dice: 'Sono grato per ciò che ho e desidero prosperità per tutti.'`,
     letYourProfits: 'Lascia che i tuoi profitti abbiano uno scopo. Lascia che la tua generosità diventi il tuo buon karma. 💫',
     realWealthQuote: '🌼 Perché la vera ricchezza non è ciò che conservi — è ciò che fai circolare.',
     storiesHeading: 'Storie',
     story1Title: '💹 1. La Pausa del Trader',
     story1Content: `Arjun ha ottenuto il suo più grande guadagno un venerdì — un'operazione che è raddoppiata durante la notte. Scorrendo i grafici, si è improvvisamente fermato su un pensiero: 'E se una parte di questa vittoria aiutasse qualcuno a riavviare anche la sua vita?' Ha donato una piccola parte a un'organizzazione benefica che aiutava gli agricoltori a pagare i debiti. Il mese successivo, ogni operazione sembrava scorrere più agevolmente, ogni perdita si recuperava più velocemente. A volte, il buon karma diventa il tuo miglior strumento di gestione del rischio.`,
     story2Title: "💰 2. L'Operazione Mancata",
-    story2Content: 'Riya ha perso un'entrata perfetta. Si è sentita frustrata — ma invece di forzare un'altra operazione, ha scelto di donare la stessa somma che avrebbe investito a un orfanotrofio. Due giorni dopo, ha colto un movimento che le ha fatto guadagnare dieci volte di più. Ha sorriso e sussurrato: \'Forse l'universo paga davvero gli interessi sulla gentilezza.\' Quando dai senza motivo, la vita trova un motivo per ricompensarti.',
+    story2Content: `Riya ha perso un'entrata perfetta. Si è sentita frustrata — ma invece di forzare un'altra operazione, ha scelto di donare la stessa somma che avrebbe investito a un orfanotrofio. Due giorni dopo, ha colto un movimento che le ha fatto guadagnare dieci volte di più. Ha sorriso e sussurrato: 'Forse l'universo paga davvero gli interessi sulla gentilezza.' Quando dai senza motivo, la vita trova un motivo per ricompensarti.`,
     story3Title: "🌾 3. La Moneta Che È Tornata",
     story3Content: "Un banchiere in pensione donava sempre ₹11 da ogni operazione redditizia — un rituale. Quando i mercati sono crollati, pensava di smettere. Ma l'abitudine ha vinto — continuava a donare, anche nei giorni rossi. Mesi dopo, i suoi fondi persi sono stati inaspettatamente rimborsati da un vecchio cliente. L'importo? Esattamente la somma che aveva dato in tutti quei mesi. Il denaro parte con una benedizione e torna con gli interessi.",
     story4Title: "🕊 4. Il Regalo dell'Analista",
@@ -5436,7 +5425,6 @@ export const translations = {
     
     // Analyzer Additional
     priceChart: 'Grafico dei Prezzi (TradingView)',
-    aiPoweredAnalyzer: "Analizzatore di Trading Alimentato dall'IA",
     technicalIndicators: 'Indicatori Tecnici',
     confidence: 'Fiducia',
     
@@ -5473,7 +5461,7 @@ export const translations = {
     improveService: 'Migliorare il nostro servizio e sviluppare nuove funzionalità',
     dataSharing: '4. Condivisione e Divulgazione dei Dati',
     sharingPolicy: 'Non vendiamo le tue informazioni personali. Possiamo condividere le tue informazioni con:',
-    serviceProviders: 'Fornitori di Servizi: Perplexity AI per l'analisi, Razorpay per i pagamenti, Phone.Email per l'autenticazione',
+    serviceProviders: `Fornitori di Servizi: Perplexity AI per l'analisi, Razorpay per i pagamenti, Phone.Email per l'autenticazione`,
     legalReq: 'Requisiti Legali: Quando richiesto dalla legge o per proteggere i nostri diritti',
     communityData: 'Comunità: Il tuo alias, le analisi pubblicate e le reazioni sono visibili ad altri utenti (il tuo numero di telefono e il nome reale NON vengono MAI condivisi)',
     dataSecurity: '5. Sicurezza dei Dati',
@@ -5498,7 +5486,7 @@ export const translations = {
     childrenPrivacy: '10. Privacy dei Bambini',
     childrenPolicy: 'Il nostro servizio non è destinato agli utenti di età inferiore ai 18 anni. Non raccogliamo consapevolmente informazioni da bambini di età inferiore ai 18 anni.',
     policyChanges: '11. Modifiche a Questa Politica',
-    changesPolicy: 'Potremmo aggiornare questa Informativa sulla Privacy di tanto in tanto. Ti informeremo di eventuali modifiche pubblicando la nuova Informativa sulla Privacy su questa pagina e aggiornando la data 'Ultimo Aggiornamento'.',
+    changesPolicy: `Potremmo aggiornare questa Informativa sulla Privacy di tanto in tanto. Ti informeremo di eventuali modifiche pubblicando la nuova Informativa sulla Privacy su questa pagina e aggiornando la data 'Ultimo Aggiornamento'.`,
     contactUs: 'Contattaci',
     privacyQuestions: 'Se hai domande su questa Informativa sulla Privacy, contattaci:',
     email: 'Email',
