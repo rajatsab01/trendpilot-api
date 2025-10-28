@@ -747,6 +747,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 🎯 STEP 2: Perform analysis using Perplexity with pre-fetched prices
       const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData, currency, exchange);
 
+      // 🛡️ FOREX PAIR DIRECTION VALIDATION
+      // Check if Perplexity reversed the forex pair direction (USD/EUR → EUR/USD)
+      // If reversed, refund tokens and reject the analysis
+      if (market === 'forex' || analysisResult.marketType === 'forex') {
+        const normalizeForexPair = (sym: string): string => {
+          // Remove =X suffix, slashes, spaces
+          return sym.toUpperCase().replace(/=X$/g, '').replace(/\//g, '').replace(/\s/g, '');
+        };
+
+        const userSymbol = normalizeForexPair(symbol);
+        const aiSymbol = normalizeForexPair(analysisResult.correctedSymbol);
+
+        // Check if the pair was reversed (e.g., USDEUR vs EURUSD)
+        if (userSymbol.length === 6 && aiSymbol.length === 6) {
+          const userBase = userSymbol.substring(0, 3);
+          const userQuote = userSymbol.substring(3, 6);
+          const aiBase = aiSymbol.substring(0, 3);
+          const aiQuote = aiSymbol.substring(3, 6);
+
+          // Detect reversal: user wants USD/EUR but AI returned EUR/USD
+          const isReversed = (userBase === aiQuote && userQuote === aiBase);
+
+          if (isReversed) {
+            console.log(`⚠️ [FOREX REVERSAL DETECTED]`);
+            console.log(`   User requested: ${userBase}/${userQuote}`);
+            console.log(`   AI returned: ${aiBase}/${aiQuote}`);
+            console.log(`   🔄 Refunding 2 tokens - analysis rejected`);
+
+            // Refund tokens (no deduction happened yet)
+            // Analysis is not saved, so user gets a free retry
+            
+            return res.status(400).json({ 
+              error: `AI returned wrong forex pair direction. You requested ${userBase}/${userQuote} but received ${aiBase}/${aiQuote}. Please try again with standard market pairs (like EUR/USD, GBP/USD) for better results. No tokens were deducted for this failed analysis.`,
+              hint: `Standard forex pairs: EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD`
+            });
+          }
+        }
+      }
+
       // Save analysis with Perplexity-validated metadata (including auto-detected market)
       const analysis = await storage.createAnalysis({
         userId,
