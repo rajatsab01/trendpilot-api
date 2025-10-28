@@ -185,13 +185,19 @@ CRITICAL REQUIREMENTS:
    - Stochastic (14,3,3): Calculate %K oscillator. Return NUMERIC value (e.g., 58.3, 72.5, 28.9) - NEVER return 0, 0.0, 0.00, "neutral", or text
    - Bollinger Bands Width: Calculate (Upper Band - Lower Band) / Middle Band * 100. Return NUMERIC percentage (e.g., 8.5, 15.2, 22.8) - NEVER return 0, 0.0, 0.00, "narrow", "wide", or text
    **MANDATORY**: If you cannot calculate accurate indicator values, use typical ranges: RSI (30-70), MACD (-1 to +1), Stochastic (20-80), BB Width (5-25). DO NOT use zero or text.
-5. **MINIMUM 1:3 RISK-REWARD RATIO REQUIRED & EXPRESS IN ${currency}** - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE (${currencySymbol}${priceData.livePrice?.toFixed(2) ?? 'N/A'}) for entry/TP/SL calculations in ${currency}. Even for scalping, maintain minimum 1:3 RR or higher (TP3 must be at least 3x the distance from entry to SL).` : `Generate PROFESSIONAL bracket order prices using CANDLE CLOSE PRICE (${currencySymbol}${priceData.candleClosePrice?.toFixed(2) ?? 'N/A'}) in ${currency} with MINIMUM 1:3 risk-reward ratio (TP3 must be at least 3x the distance from entry to stop loss).`}
+5. **🎯 PROFIT OPTIMIZATION OBJECTIVE - MAXIMIZE REWARD, MINIMIZE RISK** 
+   **CRITICAL**: Your primary goal is to MAXIMIZE profit potential while MINIMIZING risk exposure. 
+   - Aim for risk-reward ratios ABOVE 1:3 whenever market conditions support it (target 1:4, 1:5, or higher for high-probability setups)
+   - Only use 1:3 as the ABSOLUTE MINIMUM for weaker setups or high-volatility conditions
+   - Analyze support/resistance levels, volatility, and technical setup strength to determine optimal targets
+   - Strong setups with clear trends and multiple confirmations should have 1:4+ ratios
+   - ${isScalping ? `For SCALPING: Use LIVE CURRENT PRICE (${currencySymbol}${priceData.livePrice?.toFixed(2) ?? 'N/A'}) for entry/TP/SL calculations in ${currency}. Tight stops with minimum 1:3 RR, aim for 1:4+ when possible.` : `For ${duration.toUpperCase()}: Use CANDLE CLOSE PRICE (${currencySymbol}${priceData.candleClosePrice?.toFixed(2) ?? 'N/A'}) for entry/TP/SL in ${currency}. Wider targets justified by timeframe, aim for 1:4+ RR.`}
 6. Provide your ENTIRE analysis in ${languageName}
 7. Calculate MULTIPLE take profit targets with STRICT risk-reward requirements:
-   - TP1: Conservative target (1:1 risk-reward MINIMUM) - book 50% profit here
-   - TP2: Medium target (1:2 risk-reward MINIMUM) - trail stop to breakeven
-   - TP3: Aggressive target (1:3 risk-reward MINIMUM - MANDATORY) - maximize remaining position
-   **CRITICAL**: If TP3 doesn't achieve 1:3 RR, recalculate all targets to ensure minimum 1:3 ratio.
+   - TP1: Conservative target (1:1 to 1:1.5 risk-reward) - book 50% profit here
+   - TP2: Medium target (1:2 to 1:2.5 risk-reward) - trail stop to breakeven
+   - TP3: Aggressive target (1:3 ABSOLUTE MINIMUM, aim for 1:4+ when market supports) - maximize remaining position
+   **CRITICAL**: If TP3 doesn't achieve AT LEAST 1:3 RR, recalculate all targets. For strong setups, push TP3 to 1:4, 1:5 or higher based on resistance levels and trend strength.
 8. Calculate 3 support levels (S1, S2, S3) and 3 resistance levels (R1, R2, R3) based on current price action
 9. **Probability Score Calculation**: Base on:
    - Indicator confluence (RSI, MACD, Stochastic alignment)
