@@ -166,13 +166,13 @@ export default function VersionChecker() {
             <button
               onClick={handleRefresh}
               className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-[#111714] font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#38e07b]/20"
-              data-testid="button-update-now"
+              data-testid="button-download-version"
             >
-              <span className="material-symbols-outlined text-lg">refresh</span>
-              Update Now
+              <span className="material-symbols-outlined text-lg">download</span>
+              Download New Version
             </button>
             <p className="text-center text-[#6a7f72] text-xs mt-3">
-              Thank you for your patience and continued support!
+              The new version will automatically replace the old one
             </p>
           </div>
         </div>
