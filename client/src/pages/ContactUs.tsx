@@ -45,11 +45,11 @@ export default function ContactUs() {
                     {t.emailDesc || "Send us an email and we'll respond within 24-48 hours"}
                   </p>
                   <a 
-                    href="mailto:support@trendpilot.com"
+                    href="mailto:info@trendpilot.in"
                     className="text-[#38e07b] hover:underline text-sm font-medium"
                     data-testid="link-email-support"
                   >
-                    support@trendpilot.com
+                    info@trendpilot.in
                   </a>
                 </div>
               </div>

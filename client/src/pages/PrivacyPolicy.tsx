@@ -149,8 +149,8 @@ export default function PrivacyPolicy() {
               </p>
               <div className="bg-[#111714] rounded-lg p-3 border border-[#2a3c33]">
                 <p className="text-white font-semibold mb-1">{t.email || "Email"}:</p>
-                <a href="mailto:support@trendpilot.com" className="text-[#38e07b] hover:underline">
-                  support@trendpilot.com
+                <a href="mailto:info@trendpilot.in" className="text-[#38e07b] hover:underline">
+                  info@trendpilot.in
                 </a>
               </div>
             </section>
