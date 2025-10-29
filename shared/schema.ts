@@ -294,7 +294,7 @@ export type InsertReaction = z.infer<typeof insertReactionSchema>;
 export type InsertPinnedTrader = z.infer<typeof insertPinnedTraderSchema>;
 
 // Trade duration options
-export const tradeDurations = ["long_term", "short_term", "scalping"] as const;
+export const tradeDurations = ["long_term", "short_term", "swing_trade", "scalping"] as const;
 export type TradeDuration = typeof tradeDurations[number];
 
 // Language options - 12 languages supported
@@ -304,4 +304,5 @@ export type Language = typeof languages[number];
 // App version - increment this when releasing new versions
 // Format: MAJOR.MINOR.PATCH (e.g., "1.0.0")
 // v1.1.0 - Added profanity filter for community content + fixed currency conversion in analysis text
-export const APP_VERSION = "1.2.0";
+// v1.2.1 - Added swing_trade duration (15min/48 candles) + multi-candle historical data analysis
+export const APP_VERSION = "1.2.1";
