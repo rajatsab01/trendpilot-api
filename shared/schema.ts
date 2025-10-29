@@ -305,4 +305,5 @@ export type Language = typeof languages[number];
 // Format: MAJOR.MINOR.PATCH (e.g., "1.0.0")
 // v1.1.0 - Added profanity filter for community content + fixed currency conversion in analysis text
 // v1.2.1 - Added swing_trade duration (15min/48 candles) + multi-candle historical data analysis
-export const APP_VERSION = "1.2.1";
+// v1.2.2 - Fixed PWA update mechanism (proper service worker cache clearing) + improved update modal UX
+export const APP_VERSION = "1.2.2";

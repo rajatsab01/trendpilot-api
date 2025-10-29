@@ -58,8 +58,29 @@ export function useVersionGuard() {
     }
   }, []);
 
-  const handleRefresh = () => {
-    window.location.reload();
+  const handleRefresh = async () => {
+    try {
+      // Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      
+      // Force hard reload
+      window.location.href = window.location.href;
+    } catch (error) {
+      console.error("Error during refresh:", error);
+      // Fallback to simple reload
+      window.location.reload();
+    }
   };
 
   const handleRetry = async () => {
@@ -96,11 +117,11 @@ export function useVersionGuard() {
   const UpdateModal = () => (
     <Dialog open={showUpdateModal}>
       <DialogContent 
-        className="bg-[#1a1f1c] border-[#2a3530] text-white max-w-md"
+        className="bg-[#1a1f1c] border-[#2a3530] text-white max-w-md max-h-[90vh] flex flex-col"
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="material-symbols-outlined text-[#38e07b] text-3xl">
               {errorMessage ? "wifi_off" : "block"}
@@ -114,7 +135,7 @@ export function useVersionGuard() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 md:space-y-4 py-3 md:py-4 overflow-y-auto flex-1">
           {/* Error Alert - Show when connection fails */}
           {errorMessage && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
@@ -229,7 +250,7 @@ export function useVersionGuard() {
           )}
 
           {/* Action Buttons */}
-          <div className="pt-2 space-y-2">
+          <div className="pt-1 md:pt-2 space-y-2 flex-shrink-0">
             {errorMessage ? (
               // Show Retry button when there's an error
               <button
