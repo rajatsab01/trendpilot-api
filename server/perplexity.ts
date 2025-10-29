@@ -2,6 +2,15 @@
 import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
 import { getExchangeCurrency, isForexPair } from "./symbolValidator";
 
+interface CandleData {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 interface OHLCVData {
   symbol: string;
   livePrice: number;
@@ -14,6 +23,7 @@ interface OHLCVData {
   close: number;
   volume: number;
   dataSource: string;
+  historicalCandles: CandleData[];
 }
 
 interface MarketAnalysisResult {
@@ -101,20 +111,26 @@ export async function analyzeMarketWithPerplexity(
     // Map duration to appropriate analysis timeframe
     const timeframeMapping = {
       scalping: { 
+        timeframe: "5min",
+        context: "scalping (ultra short-term, 5min candles, 6 hours of data)",
+        description: "5-minute",
+        variants: ["5m", "5min", "5-min", "5 min"]
+      },
+      swing_trade: { 
         timeframe: "15min",
-        context: "scalping (trades executed on 5min, analysis on 15min timeframe)",
+        context: "swing trading (short-term, 15min candles, 12 hours of data)",
         description: "15-minute",
         variants: ["15m", "15min", "15-min", "15 min"]
       },
       short_term: { 
         timeframe: "1hr",
-        context: "short-term trading (days to weeks)",
+        context: "short-term trading (1hr candles, 2 days of data)",
         description: "1-hour or 4-hour",
         variants: ["1h", "1hr", "4h", "4hr", "1hour", "4hour"]
       },
       long_term: { 
         timeframe: "1day",
-        context: "long-term investment (months to years)",
+        context: "long-term investment (daily candles, 1 month of data)",
         description: "1-day or 1-week",
         variants: ["1d", "1day", "1w", "1week", "daily", "weekly"]
       },
@@ -135,7 +151,9 @@ export async function analyzeMarketWithPerplexity(
     const candleCloseDate = new Date(priceData.candleCloseTime);
     let nextCandleCloseDate = new Date(candleCloseDate);
     
-    if (requiredTimeframe === "15min") {
+    if (requiredTimeframe === "5min") {
+      nextCandleCloseDate.setMinutes(nextCandleCloseDate.getMinutes() + 5);
+    } else if (requiredTimeframe === "15min") {
       nextCandleCloseDate.setMinutes(nextCandleCloseDate.getMinutes() + 15);
     } else if (requiredTimeframe === "1hr") {
       nextCandleCloseDate.setHours(nextCandleCloseDate.getHours() + 1);
@@ -174,7 +192,30 @@ export async function analyzeMarketWithPerplexity(
 - Candle Close Price (${priceData.timeframe}): ${currencySymbol}${priceData.candleClosePrice?.toFixed(decimalPlaces) ?? 'N/A'}
 - Candle Close Time: ${priceData.candleCloseTime ?? 'N/A'}
 - Next Candle Close: ${nextCandleCloseTime}
-- OHLCV Data: Open ${currencySymbol}${priceData.open?.toFixed(decimalPlaces) ?? 'N/A'}, High ${currencySymbol}${priceData.high?.toFixed(decimalPlaces) ?? 'N/A'}, Low ${currencySymbol}${priceData.low?.toFixed(decimalPlaces) ?? 'N/A'}, Close ${currencySymbol}${priceData.close?.toFixed(decimalPlaces) ?? 'N/A'}, Volume ${priceData.volume?.toLocaleString() ?? 'N/A'}
+- Latest Candle OHLCV: Open ${currencySymbol}${priceData.open?.toFixed(decimalPlaces) ?? 'N/A'}, High ${currencySymbol}${priceData.high?.toFixed(decimalPlaces) ?? 'N/A'}, Low ${currencySymbol}${priceData.low?.toFixed(decimalPlaces) ?? 'N/A'}, Close ${currencySymbol}${priceData.close?.toFixed(decimalPlaces) ?? 'N/A'}, Volume ${priceData.volume?.toLocaleString() ?? 'N/A'}
+
+**📊 HISTORICAL PRICE DATA** (${priceData.historicalCandles?.length || 0} ${priceData.timeframe} candles):
+${priceData.historicalCandles && priceData.historicalCandles.length > 0 ? `
+Use this historical data to identify trends, support/resistance levels, and calculate realistic technical indicators:
+
+Recent ${Math.min(10, priceData.historicalCandles.length)} Candles (most recent last):
+${priceData.historicalCandles.slice(-10).map((candle, idx) => 
+  `${idx + 1}. ${candle.timestamp.split(' ')[1]}: O:${currencySymbol}${candle.open.toFixed(decimalPlaces)} H:${currencySymbol}${candle.high.toFixed(decimalPlaces)} L:${currencySymbol}${candle.low.toFixed(decimalPlaces)} C:${currencySymbol}${candle.close.toFixed(decimalPlaces)} Vol:${candle.volume.toLocaleString()}`
+).join('\n')}
+
+Full Historical Data Summary:
+- Total Candles: ${priceData.historicalCandles.length}
+- Period High: ${currencySymbol}${Math.max(...priceData.historicalCandles.map(c => c.high)).toFixed(decimalPlaces)}
+- Period Low: ${currencySymbol}${Math.min(...priceData.historicalCandles.map(c => c.low)).toFixed(decimalPlaces)}
+- Avg Volume: ${(priceData.historicalCandles.reduce((sum, c) => sum + c.volume, 0) / priceData.historicalCandles.length).toLocaleString()}
+
+**CRITICAL: Use this historical data to:**
+1. Identify real support/resistance levels from recent highs/lows
+2. Calculate accurate RSI, MACD, Stochastic from actual price action
+3. Determine trend direction (uptrend/downtrend/consolidation)
+4. Assess volatility for realistic stop-loss and take-profit placement
+5. Set entry/exit targets based on actual price behavior, not arbitrary percentages
+` : 'No historical candles available - using single candle data only'}
 
 CRITICAL REQUIREMENTS:
 1. **USE EXACT PRICES PROVIDED ABOVE & EXPRESS IN ${currency}** - Do NOT fetch new prices. Use the exact live price (${currencySymbol}${priceData.livePrice?.toFixed(decimalPlaces) ?? 'N/A'}) and candle close price (${currencySymbol}${priceData.candleClosePrice?.toFixed(decimalPlaces) ?? 'N/A'}) provided. ALL monetary values in your response MUST be in ${currency}.
