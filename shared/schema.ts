@@ -307,4 +307,5 @@ export type Language = typeof languages[number];
 // v1.2.1 - Added swing_trade duration (15min/48 candles) + multi-candle historical data analysis
 // v1.2.2 - Fixed PWA update mechanism (proper service worker cache clearing) + improved update modal UX
 // v1.2.3 - SERVER-SIDE VERSION GUARD: Blocks API calls from outdated clients (fail-closed security)
-export const APP_VERSION = "1.2.3";
+// v1.2.4 - PRE-BOOT VERSION CHECK: Forces cache clear BEFORE React loads (fixes PWA update issues)
+export const APP_VERSION = "1.2.4";
