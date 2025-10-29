@@ -10,6 +10,15 @@
 
 import { normalizeSymbolForAPI, type MarketType, type SymbolClassification } from "./symbolRegistry";
 
+interface CandleData {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 interface OHLCVData {
   symbol: string;
   livePrice: number;
@@ -22,21 +31,24 @@ interface OHLCVData {
   close: number;
   volume: number;
   dataSource: string;
+  historicalCandles: CandleData[];
 }
 
 /**
  * Get appropriate timeframe based on duration
  */
-function getTimeframeForDuration(duration: string): { interval: string; label: string } {
+function getTimeframeForDuration(duration: string): { interval: string; label: string; candleCount: number } {
   switch (duration) {
     case "scalping":
-      return { interval: "15m", label: "15min" };
+      return { interval: "5m", label: "5min", candleCount: 72 }; // 6 hours
+    case "swing_trade":
+      return { interval: "15m", label: "15min", candleCount: 48 }; // 12 hours
     case "short_term":
-      return { interval: "1h", label: "1hr" };
+      return { interval: "1h", label: "1hr", candleCount: 50 }; // ~2 days
     case "long_term":
-      return { interval: "1d", label: "1day" };
+      return { interval: "1d", label: "1day", candleCount: 30 }; // 1 month
     default:
-      return { interval: "1h", label: "1hr" };
+      return { interval: "1h", label: "1hr", candleCount: 50 };
   }
 }
 
@@ -48,7 +60,7 @@ async function fetchCryptoPrice(
   symbol: string,
   duration: string
 ): Promise<OHLCVData> {
-  const { interval, label } = getTimeframeForDuration(duration);
+  const { interval, label, candleCount } = getTimeframeForDuration(duration);
   
   // Convert symbol to Binance format (e.g., "BTC" -> "BTCUSDT", "ETH" -> "ETHUSDT")
   let cleanSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -106,8 +118,9 @@ async function fetchCryptoPrice(
     const tickerData = await tickerResponse.json();
     const livePrice = parseFloat(tickerData.price);
     
-    // Fetch OHLCV candle data
-    const klinesUrl = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=${interval}&limit=2`;
+    // Fetch OHLCV candle data - get enough candles for historical analysis
+    // Add 1 extra to ensure we have enough closed candles
+    const klinesUrl = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=${interval}&limit=${candleCount + 1}`;
     const klinesResponse = await fetch(klinesUrl);
     
     if (!klinesResponse.ok) {
@@ -115,13 +128,28 @@ async function fetchCryptoPrice(
     }
     
     const klinesData = await klinesResponse.json();
-    const closedCandle = klinesData[klinesData.length - 2];
+    
+    // Get all closed candles (excluding the last incomplete one)
+    const closedCandles = klinesData.slice(0, -1);
+    const closedCandle = closedCandles[closedCandles.length - 1];
     
     if (!closedCandle) {
       throw new Error("No closed candle data available");
     }
     
     const candleCloseTime = new Date(closedCandle[6]).toISOString().replace('T', ' ').replace('Z', ' UTC');
+    
+    // Build historical candles array
+    const historicalCandles: CandleData[] = closedCandles.map((candle: any) => ({
+      timestamp: new Date(candle[0]).toISOString().replace('T', ' ').replace('Z', ' UTC'),
+      open: parseFloat(candle[1]),
+      high: parseFloat(candle[2]),
+      low: parseFloat(candle[3]),
+      close: parseFloat(candle[4]),
+      volume: parseFloat(candle[5]),
+    }));
+    
+    console.log(`[Binance] ✅ Fetched ${historicalCandles.length} historical ${label} candles for ${binanceSymbol}`);
     
     return {
       symbol: binanceSymbol,
@@ -135,6 +163,7 @@ async function fetchCryptoPrice(
       close: parseFloat(closedCandle[4]),
       volume: parseFloat(closedCandle[5]),
       dataSource: "Binance",
+      historicalCandles,
     };
   } catch (error: any) {
     console.error(`❌ Binance API error for symbol "${symbol}":`, error.message);
@@ -212,6 +241,7 @@ async function fetchCryptoPriceFromCoinGecko(
       close: currentPrice,
       volume: 0, // No volume data from CoinGecko simple API
       dataSource: "CoinGecko",
+      historicalCandles: [], // CoinGecko simple API doesn't provide historical data
     };
   } catch (error: any) {
     console.error(`❌ CoinGecko API error for symbol "${baseSymbol}":`, error.message);
@@ -229,10 +259,11 @@ async function fetchYahooFinancePrice(
   market: string
 ): Promise<OHLCVData> {
   try {
-    const { interval, label } = getTimeframeForDuration(duration);
+    const { interval, label, candleCount } = getTimeframeForDuration(duration);
     
     // Yahoo Finance interval mapping
     const yahooIntervalMap: Record<string, string> = {
+      "5m": "5m",
       "15m": "15m",
       "1h": "1h",
       "1d": "1d",
@@ -245,8 +276,14 @@ async function fetchYahooFinancePrice(
     // Classification is auto-detected based on symbol pattern and market type
     const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
     
-    // Fetch chart data from Yahoo Finance
-    const range = duration === "long_term" ? "1mo" : duration === "short_term" ? "5d" : "1d";
+    // Fetch chart data from Yahoo Finance - adjust range to get enough historical data
+    const rangeMap: Record<string, string> = {
+      "scalping": "1d",      // 5m x 72 = 6 hours
+      "swing_trade": "3d",   // 15m x 48 = 12 hours
+      "short_term": "7d",    // 1h x 50 = ~2 days
+      "long_term": "3mo",    // 1d x 30 = 1 month
+    };
+    const range = rangeMap[duration] || "5d";
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=${yahooInterval}&range=${range}`;
     
     const response = await fetch(url, {
@@ -277,10 +314,33 @@ async function fetchYahooFinancePrice(
     // Live price from meta
     const livePrice = meta.regularMarketPrice || meta.previousClose;
     
-    // Get the last CLOSED candle (second-to-last timestamp)
-    const closedCandleIndex = timestamps.length >= 2 ? timestamps.length - 2 : timestamps.length - 1;
+    // Get all closed candles (exclude the last incomplete one)
+    const totalCandles = timestamps.length;
+    const numClosedCandles = Math.min(candleCount, totalCandles - 1);
+    const startIndex = Math.max(0, totalCandles - 1 - numClosedCandles);
+    const endIndex = totalCandles - 1;
     
+    // Get the last CLOSED candle
+    const closedCandleIndex = endIndex;
     const candleCloseTime = new Date(timestamps[closedCandleIndex] * 1000).toISOString().replace('T', ' ').replace('Z', ' UTC');
+    
+    // Build historical candles array from closed candles
+    const historicalCandles: CandleData[] = [];
+    for (let i = startIndex; i < endIndex; i++) {
+      // Skip null/invalid candles
+      if (quote.close[i] !== null && quote.close[i] !== undefined) {
+        historicalCandles.push({
+          timestamp: new Date(timestamps[i] * 1000).toISOString().replace('T', ' ').replace('Z', ' UTC'),
+          open: quote.open[i] || 0,
+          high: quote.high[i] || 0,
+          low: quote.low[i] || 0,
+          close: quote.close[i],
+          volume: quote.volume[i] || 0,
+        });
+      }
+    }
+    
+    console.log(`[Yahoo Finance] ✅ Fetched ${historicalCandles.length} historical ${label} candles for ${yahooSymbol}`);
     
     return {
       symbol: yahooSymbol,
@@ -294,6 +354,7 @@ async function fetchYahooFinancePrice(
       close: quote.close[closedCandleIndex],
       volume: quote.volume[closedCandleIndex],
       dataSource: "Yahoo Finance",
+      historicalCandles,
     };
   } catch (error: any) {
     console.error(`❌ Yahoo Finance API error for symbol "${symbol}" (${market} market):`, error.message);
