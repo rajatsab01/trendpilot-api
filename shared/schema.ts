@@ -308,4 +308,5 @@ export type Language = typeof languages[number];
 // v1.2.2 - Fixed PWA update mechanism (proper service worker cache clearing) + improved update modal UX
 // v1.2.3 - SERVER-SIDE VERSION GUARD: Blocks API calls from outdated clients (fail-closed security)
 // v1.2.4 - PRE-BOOT VERSION CHECK: Forces cache clear BEFORE React loads (fixes PWA update issues)
-export const APP_VERSION = "1.2.4";
+// v1.2.5 - FIXED DASHBOARD: Added missing swing_trade option + blocking update modal for cached users
+export const APP_VERSION = "1.2.5";

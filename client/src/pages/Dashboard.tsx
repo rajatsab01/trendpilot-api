@@ -848,6 +848,7 @@ export default function Dashboard() {
               >
                 <option value="scalping">{t.scalping}</option>
                 <option value="short_term">{t.shortTerm}</option>
+                <option value="swing_trade">{t.swingTrade || "Swing Trade (15min)"}</option>
                 <option value="long_term">{t.longTerm}</option>
               </select>
             </label>
