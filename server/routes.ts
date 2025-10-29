@@ -40,6 +40,41 @@ function checkTokenCap(currentTokens: number, tokensToAdd: number) {
   return { allowed: true };
 }
 
+/**
+ * 🔒 VERSION GUARD MIDDLEWARE - FAIL-CLOSED
+ * Blocks API requests from outdated clients to prevent using stale features
+ * Returns 426 Upgrade Required if client version doesn't match server version
+ */
+function versionGuardMiddleware(req: any, res: any, next: any) {
+  const clientVersion = req.headers['x-app-version'];
+  
+  // FAIL-CLOSED: If no version header sent, block the request
+  if (!clientVersion) {
+    console.log(`⚠️ [VERSION GUARD] Blocked request - no version header sent`);
+    return res.status(426).json({
+      error: "App update required",
+      message: "You're using an outdated version. Please refresh the app to continue.",
+      currentVersion: APP_VERSION,
+      updateRequired: true
+    });
+  }
+
+  // Check version mismatch
+  if (clientVersion !== APP_VERSION) {
+    console.log(`⚠️ [VERSION GUARD] Blocked request - version mismatch (client: ${clientVersion}, server: ${APP_VERSION})`);
+    return res.status(426).json({
+      error: "App update required",
+      message: "You're using an outdated version. Please refresh the app to continue.",
+      clientVersion,
+      currentVersion: APP_VERSION,
+      updateRequired: true
+    });
+  }
+
+  // Version matches - allow request
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Verify phone number from Phone.Email service
   app.post("/api/auth/verify-phone", async (req, res) => {
@@ -695,8 +730,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Analyze market symbol
-  app.post("/api/analyze", async (req, res) => {
+  // Analyze market symbol - PROTECTED BY VERSION GUARD
+  app.post("/api/analyze", versionGuardMiddleware, async (req, res) => {
     try {
       // Validate request body with market type
       const analyzeSchema = z.object({
