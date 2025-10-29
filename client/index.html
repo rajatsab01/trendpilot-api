@@ -45,6 +45,115 @@
     
     <!-- Razorpay Checkout -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- VERSION GUARD: Check before ANY cached code loads -->
+    <script>
+      (function() {
+        const CURRENT_VERSION = '1.2.4'; // Will be server-injected in production
+        const STORED_VERSION_KEY = 'app_version';
+        
+        async function checkVersion() {
+          try {
+            // Get stored version (from last successful load)
+            const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
+            
+            // Fetch current server version
+            const response = await fetch('/api/version', {
+              cache: 'no-store',
+              headers: { 'Cache-Control': 'no-cache' }
+            });
+            
+            if (!response.ok) {
+              console.warn('[VERSION] Could not check version, allowing load');
+              return;
+            }
+            
+            const data = await response.json();
+            const serverVersion = data.version;
+            
+            console.log('[VERSION] Stored:', storedVersion, 'Server:', serverVersion);
+            
+            // If versions don't match, force update
+            if (storedVersion && storedVersion !== serverVersion) {
+              console.warn('[VERSION] Mismatch detected! Forcing update...');
+              
+              // Show updating message
+              document.body.innerHTML = `
+                <div style="
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  background: #111714;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  font-family: 'Spline Sans', sans-serif;
+                  color: white;
+                  z-index: 999999;
+                ">
+                  <div style="
+                    width: 64px;
+                    height: 64px;
+                    border: 4px solid #38e07b;
+                    border-top-color: transparent;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 24px;
+                  "></div>
+                  <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 12px 0; color: #38e07b;">
+                    Updating Trend Pilot
+                  </h1>
+                  <p style="font-size: 16px; color: #9eb7a8; margin: 0; text-align: center; max-width: 300px;">
+                    Installing latest version (${serverVersion})...
+                  </p>
+                  <p style="font-size: 14px; color: #6a7f72; margin: 16px 0 0 0;">
+                    This will only take a moment
+                  </p>
+                </div>
+                <style>
+                  @keyframes spin {
+                    to { transform: rotate(360deg); }
+                  }
+                </style>
+              `;
+              
+              // Force clear everything
+              if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(r => r.unregister()));
+              }
+              
+              if ('caches' in window) {
+                const names = await caches.keys();
+                await Promise.all(names.map(name => caches.delete(name)));
+              }
+              
+              // Store new version and hard reload
+              localStorage.setItem(STORED_VERSION_KEY, serverVersion);
+              window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+              
+              // Prevent any further loading
+              throw new Error('Version update in progress');
+            }
+            
+            // Versions match or first load - store current version
+            localStorage.setItem(STORED_VERSION_KEY, serverVersion);
+            console.log('[VERSION] OK - allowing app to load');
+            
+          } catch (error) {
+            if (error.message !== 'Version update in progress') {
+              console.error('[VERSION] Check failed:', error);
+            }
+          }
+        }
+        
+        // Run version check immediately before React loads
+        checkVersion();
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
