@@ -25,7 +25,7 @@ export default function Analyzer() {
   const fromSaved = searchParams.get("fromSaved") === "true";
 
   const [symbol, setSymbol] = useState("");
-  const [duration, setDuration] = useState<"long_term" | "short_term" | "scalping">("short_term");
+  const [duration, setDuration] = useState<"long_term" | "short_term" | "swing_trade" | "scalping">("short_term");
   const [market, setMarket] = useState<"stock" | "commodity" | "forex" | "cryptocurrency">("stock");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
@@ -986,6 +986,7 @@ export default function Analyzer() {
               >
                 <option value="long_term">{t.longTerm}</option>
                 <option value="short_term">{t.shortTerm}</option>
+                <option value="swing_trade">{t.swingTrade || "Swing Trade (15min)"}</option>
                 <option value="scalping">{t.scalping}</option>
               </select>
             </div>
