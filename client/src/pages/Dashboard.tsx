@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import type { User } from "@shared/schema";
+import { APP_VERSION } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -614,7 +615,7 @@ export default function Dashboard() {
               />
               <h1 className="text-[#38e07b] text-xl font-bold tracking-tight">TrendPilot</h1>
             </div>
-            <p className="text-[#9eb7a8] text-xs">{t.aiPoweredAnalyzer} • v1.2.0</p>
+            <p className="text-[#9eb7a8] text-xs">{t.aiPoweredAnalyzer} • v{APP_VERSION}</p>
           </div>
         </header>
 
