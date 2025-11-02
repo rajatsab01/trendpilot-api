@@ -91,8 +91,12 @@ export default function Login() {
 
     // Define callback function
     window.phoneEmailListener = (userObj: { user_json_url: string }) => {
-      verifyPhoneMutation.mutate(userObj.user_json_url);
-    };
+  // show the received object in the browser console so you can inspect it
+  // (open DevTools → Console to see this)
+     console.log("phoneEmailListener fired:", userObj);
+    // still call the verify API as before
+     verifyPhoneMutation.mutate(userObj.user_json_url);
+   };
 
     return () => {
       if (document.body.contains(script)) {

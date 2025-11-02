@@ -12,6 +12,22 @@ import { z } from "zod";
 import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "@shared/schema";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { searchInstruments, getPopularInstruments } from "./instrumentSearch";
+
+// Create a default dev user if missing (for local testing)
+(async () => {
+  const existing = await storage.getUser("dev-user");
+  if (!existing) {
+    await storage.createUser({
+      id: "dev-user",
+      tokens: 20,
+      currency: "INR",
+      language: "en",
+      exchange: "binance"
+    });
+    console.log("✅ Created dev-user for testing");
+  }
+})();
 
 // 🔒 SECURITY: Token cap during testing period to prevent abuse
 // While Razorpay is in test mode, limit max tokens to prevent users from accumulating
@@ -236,6 +252,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- DEV HELPERS: create & inspect a test user ---
+
+app.post("/api/dev/ensure-user", async (req, res) => {
+  try {
+    const id = (req.body?.id || "dev-user").toString();
+    let user = await storage.getUser(id);
+    if (!user) {
+      await storage.createUser({
+        id,
+        tokens: 20,
+        currency: "INR",
+        language: "en",
+        exchange: "nse", // or anything
+      });
+      console.log(`✅ Created test user "${id}"`);
+      user = await storage.getUser(id);
+    }
+    res.json({ ok: true, id: user.id, tokens: user.tokens });
+  } catch (e:any) {
+    console.error("ensure-user error:", e);
+    res.status(500).json({ error: e.message || "ensure-user failed" });
+  }
+});
+
+app.get("/api/dev/user/:id", async (req, res) => {
+  const user = await storage.getUser(req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json(user);
+});
+
+  // --- Razorpay plural route aliases (top-level) ---
+app.post("/api/payments/create-order", (req, res, next) => {
+  req.url = "/api/payment/create-order";
+  next();
+});
+app.post("/api/payments/verify", (req, res, next) => {
+  req.url = "/api/payment/verify";
+  next();
+});
+
   // Razorpay: Create order for token purchase
   app.post("/api/payment/create-order", async (req, res) => {
     try {
@@ -245,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "User ID and token package required" });
       }
 
-      // Token packages with INR pricing
+       // Token packages with INR pricing
       const packages: Record<string, { tokens: number; amount: number }> = {
         small: { tokens: 10, amount: 9900 },      // ₹99
         medium: { tokens: 100, amount: 89900 },   // ₹899
@@ -653,48 +709,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Intelligent instrument search by name
-  app.get("/api/search-instruments", async (req, res) => {
-    try {
-      const { query, market } = req.query;
-      
-      if (!query || typeof query !== 'string') {
-        return res.status(400).json({ suggestions: [] });
-      }
+app.get("/api/search-instruments", async (req, res) => {
+  try {
+    const { query, market } = req.query;
 
-      const { searchInstruments, getPopularInstruments } = await import("./instrumentSearch.js");
-      
-      // Helper function to augment suggestions with classification from registry
-      const augmentWithClassification = (suggestions: any[]) => {
-        return suggestions.map(suggestion => {
-          const registryEntry = symbolRegistry.get(suggestion.symbol);
-          return {
-            ...suggestion,
-            classification: registryEntry?.classification || undefined
-          };
-        });
-      };
-      
-      // If query is too short, return popular instruments
-      if (query.trim().length < 2) {
-        const popular = getPopularInstruments(market as string);
-        return res.json({ suggestions: augmentWithClassification(popular) });
-      }
+    const q = typeof query === "string" ? query.trim() : "";
+    const mkt = typeof market === "string" ? market.toLowerCase().trim() : undefined;
 
-      // Search by name
-      const results = searchInstruments(query);
-      
-      // Filter by market if specified
-      const filtered = market 
-        ? results.filter(r => r.market === market)
-        : results;
+    // helper: add registry info + UI-friendly fields
+    const augment = (list: any[]) =>
+      list.map((s) => {
+        const reg = symbolRegistry.get(s.symbol);
+        return {
+          ...s,
+          classification: reg?.classification ?? undefined,
+          // helpful for your autocomplete UI
+          label: `${s.symbol} — ${s.name}`,
+          value: s.symbol,
+        };
+      });
 
-      // Augment results with classification from registry
-      res.json({ suggestions: augmentWithClassification(filtered) });
-    } catch (error: any) {
-      console.error("Instrument search error:", error);
-      res.status(500).json({ error: "Failed to search instruments", suggestions: [] });
+    // If no query or too short → return popular list (optionally filter by market)
+    if (!q || q.length < 2) {
+      const popular = getPopularInstruments(mkt);
+      return res.json({ suggestions: augment(popular) });
     }
-  });
+
+    // Search in the local instrument DB
+    const all = searchInstruments(q);
+
+    // Optional market filter
+    const filtered = mkt ? all.filter((x) => x.market === mkt) : all;
+
+    return res.json({ suggestions: augment(filtered) });
+  } catch (error) {
+    console.error("Instrument search error:", error);
+    return res.status(500).json({ error: "Failed to search instruments", suggestions: [] });
+  }
+});
+
 
   // Validate symbol and provide suggestions
   app.post("/api/symbols/validate", async (req, res) => {
