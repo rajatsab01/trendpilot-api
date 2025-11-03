@@ -53,12 +53,13 @@ app.use((req, res, next) => {
   const p = req.path;
   let capturedJson: Record<string, any> | undefined;
 
-  const originalJson = res.json.bind(res);
-  // @ts-ignore – preserve signature
-  res.json = (body: any, ...rest: any[]) => {
-    capturedJson = body;
-    return originalJson(body, ...rest);
-  };
+// keep the bound function but type it loosely so TS accepts spread args
+const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
+
+(res as any).json = (body: any, ...rest: any[]) => {
+  capturedJson = body;
+  return originalJson(body, ...rest);
+};
 
   res.on("finish", () => {
     if (p.startsWith("/api")) {
