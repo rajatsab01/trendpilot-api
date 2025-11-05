@@ -13,6 +13,7 @@ import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "@shared/schem
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { searchInstruments, getPopularInstruments } from "./instrumentSearch";
+import { askPerplexity } from "./pplx";
 
 // Create a default dev user if missing (for local testing)
 (async () => {
@@ -2085,6 +2086,106 @@ app.get("/api/search-instruments", async (req, res) => {
   });
 
   const httpServer = createServer(app);
+
+  // ===== ANALYZER GLUE: Minimal Perplexity-backed endpoints =====
+
+// In-memory store for quick testing (auto-expires)
+type AnalysisBlob = {
+  id: string;
+  userId: string;
+  symbol: string;
+  market: string;   // e.g., "crypto:coingecko" | "equity:yahoo"
+  duration: string; // "short" | "swing"
+  createdAt: string;
+  model: string;
+  content: string;  // text from Perplexity
+};
+
+const MEMORY = new Map<string, { data: AnalysisBlob; expiresAt: number }>();
+const TTL_MS = 60 * 60 * 1000; // 60 minutes
+
+function saveTemp(row: AnalysisBlob) {
+  MEMORY.set(row.id, { data: row, expiresAt: Date.now() + TTL_MS });
+}
+function getTemp(id: string) {
+  const r = MEMORY.get(id);
+  if (!r) return null;
+  if (Date.now() > r.expiresAt) {
+    MEMORY.delete(id);
+    return null;
+  }
+  return r.data;
+}
+// lazy cleanup every 10 min
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of MEMORY.entries()) if (now > v.expiresAt) MEMORY.delete(k);
+}, 10 * 60 * 1000);
+
+// 1) Start an analysis
+// Body: { userId, symbol, duration?, market? }
+// Returns: { analysisId }
+app.post("/api/analyze", async (req, res) => {
+  try {
+    const { userId, symbol, duration, market } = req.body || {};
+    if (!userId) return res.status(400).json({ message: "userId required" });
+    if (!symbol) return res.status(400).json({ message: "symbol required" });
+
+    const mk = market || "crypto:coingecko";
+    const horizon = duration || "short";
+
+    // Simple prompt for now (we can enrich later)
+    const prompt = [
+      `Analyze ${symbol} for ${mk}.`,
+      `Horizon: ${horizon}.`,
+      `Return:`,
+      `- 5 key signals (with quick why)`,
+      `- Likely near-term bias`,
+      `- 3 levels to watch (support/resistance)`,
+      `- 2 risk notes`,
+      `Be concise and actionable.`,
+    ].join("\n");
+
+    const content = await askPerplexity(prompt, { web: true });
+
+    const analysisId = crypto.randomBytes(8).toString("hex");
+    saveTemp({
+      id: analysisId,
+      userId,
+      symbol,
+      market: mk,
+      duration: horizon,
+      createdAt: new Date().toISOString(),
+      model: process.env.PERPLEXITY_MODEL || "pplx-70b-online",
+      content,
+    });
+
+    return res.json({ analysisId });
+  } catch (err: any) {
+    console.error("analyze error:", err);
+    return res.status(500).json({ message: err?.message || "analysis failed" });
+  }
+});
+
+// 2) Fetch an analysis result
+// Query: ?analysisId=xxxx
+app.get("/api/analysis", (req, res) => {
+  const id = String(req.query.analysisId || "");
+  if (!id) return res.status(400).json({ message: "analysisId required" });
+  const blob = getTemp(id);
+  if (!blob) return res.status(404).json({ message: "analysis not found or expired" });
+
+  return res.json({
+    id: blob.id,
+    userId: blob.userId,
+    symbol: blob.symbol,
+    market: blob.market,
+    duration: blob.duration,
+    createdAt: blob.createdAt,
+    model: blob.model,
+    text: blob.content, // your UI can render this immediately
+  });
+});
 
   return httpServer;
 }
