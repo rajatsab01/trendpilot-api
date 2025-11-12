@@ -1,3 +1,8 @@
+// server/currencyConverter.ts
+
+type Rates = { [code: string]: number };
+type ExchangeResponse = { base: string; rates: Rates; timestamp: number };
+
 /**
  * Currency Conversion Utility
  * Uses Frankfurter API (European Central Bank data) for real-time exchange rates

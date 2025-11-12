@@ -15,21 +15,6 @@ import crypto from "crypto";
 import { searchInstruments, getPopularInstruments } from "./instrumentSearch";
 import { askPerplexity } from "./pplx";
 
-// Create a default dev user if missing (for local testing)
-(async () => {
-  const existing = await storage.getUser("dev-user");
-  if (!existing) {
-    await storage.createUser({
-      id: "dev-user",
-      tokens: 20,
-      currency: "INR",
-      language: "en",
-      exchange: "binance"
-    });
-    console.log("✅ Created dev-user for testing");
-  }
-})();
-
 // 🔒 SECURITY: Token cap during testing period to prevent abuse
 // While Razorpay is in test mode, limit max tokens to prevent users from accumulating
 // thousands of free "test" tokens that would become real when switching to live mode
@@ -261,14 +246,18 @@ app.post("/api/dev/ensure-user", async (req, res) => {
     let user = await storage.getUser(id);
     if (!user) {
       await storage.createUser({
-        id,
+        name: `Dev User (${id})`,
+        mobile: "9999999999",
+        language: "en",
         tokens: 20,
         currency: "INR",
-        language: "en",
-        exchange: "nse", // or anything
+        exchange: "nse",
       });
       console.log(`✅ Created test user "${id}"`);
       user = await storage.getUser(id);
+    }
+    if (!user) {
+      return res.status(500).json({ error: "Failed to create or retrieve user" });
     }
     res.json({ ok: true, id: user.id, tokens: user.tokens });
   } catch (e:any) {
@@ -791,7 +780,7 @@ app.get("/api/search-instruments", async (req, res) => {
       const analyzeSchema = z.object({
         userId: z.string().min(1),
         symbol: z.string().min(1),
-        duration: z.enum(["long_term", "short_term", "scalping"]),
+        duration: z.enum(["scalping", "short_term", "long_term"]),
         market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
         currency: z.string().optional().default("USD"),
         exchange: z.string().optional(),
@@ -2119,7 +2108,9 @@ function getTemp(id: string) {
 // lazy cleanup every 10 min
 setInterval(() => {
   const now = Date.now();
-  for (const [k, v] of MEMORY.entries()) if (now > v.expiresAt) MEMORY.delete(k);
+  MEMORY.forEach((v, k) => {
+    if (now > v.expiresAt) MEMORY.delete(k);
+  });
 }, 10 * 60 * 1000);
 
 // 1) Start an analysis
