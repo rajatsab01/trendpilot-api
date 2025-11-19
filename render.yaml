@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: trendpilot
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: |
+      npm install
+      npx esbuild server/index.ts --platform=node --format=esm --bundle --outfile=dist/index.js --external:@babel/preset-typescript --external:lightningcss --external:dotenv --external:fs --external:path --external:url --external:express --external:util --external:razorpay --external:vite --external:server/vite.ts --alias:@shared=./shared
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production

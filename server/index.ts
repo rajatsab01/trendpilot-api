@@ -3,8 +3,7 @@ import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import express, { type Request, Response, NextFunction } from "express";
 
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { registerRoutes } from "./routes.js";
 import { initializeSymbolRegistry } from "./symbolRegistry";
 
 /* ---------------- ESM __dirname shim ---------------- */
@@ -17,12 +16,9 @@ config({ path: path.resolve(__dirname, "..", ".env") });
 const app = express();
 
 /* ---------------------- Health ---------------------- */
-// Render health check (keep this exact path)
 app.get("/healthz", (_req, res) => {
   res.status(200).send("ok");
 });
-
-// Optional human-readable health
 app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
@@ -37,7 +33,6 @@ declare module "http" {
     rawBody: unknown;
   }
 }
-
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -48,18 +43,20 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 
 /* -------------------- API logging ------------------- */
+function log(line: string) {
+  console.log(`[api] ${line}`);
+}
 app.use((req, res, next) => {
   const start = Date.now();
   const p = req.path;
   let capturedJson: Record<string, any> | undefined;
 
-// keep the bound function but type it loosely so TS accepts spread args
-const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
-
-(res as any).json = (body: any, ...rest: any[]) => {
-  capturedJson = body;
-  return originalJson(body, ...rest);
-};
+  // keep the bound function but type it loosely so TS accepts spread args
+  const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
+  (res as any).json = (body: any, ...rest: any[]) => {
+    capturedJson = body;
+    return originalJson(body, ...rest);
+  };
 
   res.on("finish", () => {
     if (p.startsWith("/api")) {
@@ -82,8 +79,13 @@ const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
       process.env.REPLIT_DEPLOYMENT === "1" ||
       process.env.RENDER === "true";
 
+    console.log(
+      isProduction
+        ? "🚀 Starting server in production mode..."
+        : "🔧 Starting server in development mode..."
+    );
+
     if (isProduction) {
-      console.log("🚀 Starting server in production mode...");
       const requiredSecrets = ["DATABASE_URL", "SESSION_SECRET"];
       const missing = requiredSecrets.filter((k) => !process.env[k]);
       if (missing.length) {
@@ -92,8 +94,6 @@ const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
       } else {
         console.log("✅ All required production secrets are configured");
       }
-    } else {
-      console.log("🔧 Starting server in development mode...");
     }
 
     console.log("🔧 Initializing symbol registry...");
@@ -111,27 +111,44 @@ const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
       res.status(status).json({ message });
     });
 
-    // Dev uses Vite; Prod serves built static bundle
-    if (app.get("env") === "development") {
+    /* --------- Dev uses Vite; Prod serves static files ---------- */
+    if (!isProduction) {
+      // DYNAMIC import to avoid bundling vite & heavy deps
+      const { setupVite } = await import("./vite.js").catch(async () => {
+        // when running from TS (tsx) fallback to .ts path
+        return await import("./vite.ts");
+      });
       console.log("🎨 Setting up Vite development server...");
       await setupVite(app, server);
       console.log("✅ Vite development server ready");
-    } else {
-      console.log("📁 Serving static files...");
-      serveStatic(app);
-      console.log("✅ Static file server ready");
-    }
 
-    /* -------------------- LISTEN (Render!) --------------------
-       Render must be able to reach your process from outside.
-       => Bind to 0.0.0.0 in production, NOT 127.0.0.1.
-    ----------------------------------------------------------- */
+    } else {
+  const { serveStatic } = await import("./vite.js").catch(async () => {
+    return await import("./vite.ts");
+  });
+  console.log("📁 Serving static files...");
+
+  // Serve the production client build (React/Vite output)
+  app.use(express.static(path.join(__dirname, "../client/dist")));
+
+  // Fallback for SPA routes like /dashboard or /analyzer
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+  });
+
+  serveStatic(app);
+  console.log("✅ Static file server ready");
+}
+
+    /* -------------------- LISTEN -------------------- */
     const port = Number(process.env.PORT) || 5000;
-    const host = isProduction ? "0.0.0.0" : "127.0.0.1";
+    // Force 127.0.0.1 on Windows dev to avoid ENOTSUP;
+    // use 0.0.0.0 only in prod hosting (Render/Replit/etc.)
+    const host = !isProduction ? "127.0.0.1" : "0.0.0.0";
 
     server.listen(port, host, () => {
       console.log(`✅ Server is running on http://${host}:${port}`);
-      console.log(`🌐 Health check available at http://${host}:${port}/healthz`);
+      console.log(`🌐 Health check: http://${host}:${port}/healthz`);
       log(`serving on ${host}:${port}`);
     });
   } catch (err) {

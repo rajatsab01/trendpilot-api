@@ -30,11 +30,15 @@ import {
   reactions,
   pinnedTraders,
 } from "@shared/schema";
+
 import { randomUUID } from "crypto";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, sql, gte, and } from "drizzle-orm";
 
+// ---------------------------------------------------------
+// Interface Definition
+// ---------------------------------------------------------
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
@@ -69,50 +73,43 @@ export interface IStorage {
   updateBroker(id: string, updates: Partial<Broker>): Promise<Broker | undefined>;
   deleteBroker(id: string): Promise<boolean>;
 
-  // Community - Follows
+  // Community
   followUser(followerId: string, followingId: string): Promise<Follow>;
   unfollowUser(followerId: string, followingId: string): Promise<boolean>;
-  getFollowers(userId: string): Promise<User[]>; // Get users who follow this user
-  getFollowing(userId: string): Promise<User[]>; // Get users this user follows
+  getFollowers(userId: string): Promise<User[]>;
+  getFollowing(userId: string): Promise<User[]>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
 
-  // Community - Blocks
   blockUser(blockerId: string, blockedId: string): Promise<Block>;
   unblockUser(blockerId: string, blockedId: string): Promise<boolean>;
   getBlockedUsers(userId: string): Promise<User[]>;
   isBlocked(blockerId: string, blockedId: string): Promise<boolean>;
 
-  // Community - Notifications
   createNotification(notification: InsertNotification): Promise<Notification>;
   getNotifications(userId: string): Promise<Notification[]>;
   markNotificationAsRead(id: string): Promise<Notification | undefined>;
   getUnreadNotificationCount(userId: string): Promise<number>;
 
-  // Community - Messages
   sendMessage(message: InsertMessage): Promise<Message>;
   getConversation(userId1: string, userId2: string): Promise<Message[]>;
   getRecentConversations(userId: string): Promise<Array<Message & { otherUser: User }>>;
   markMessageAsRead(id: string): Promise<Message | undefined>;
   getUnreadMessageCount(userId: string): Promise<number>;
 
-  // Community - Published Analyses
   publishAnalysis(id: string): Promise<Analysis | undefined>;
   unpublishAnalysis(id: string): Promise<Analysis | undefined>;
   getPublishedAnalysesFeed(userId: string): Promise<Array<Analysis & { author: User }>>;
 
-  // Admin Reports
   createReport(report: InsertReport): Promise<Report>;
-  getReports(userId?: string): Promise<Report[]>; // Admin gets all, users get their own
+  getReports(userId?: string): Promise<Report[]>;
   updateReportStatus(id: string, status: string): Promise<Report | undefined>;
 
-  // Community - Reactions
   addReaction(reaction: InsertReaction): Promise<Reaction>;
   removeReaction(userId: string, analysisId: string, reactionType: string): Promise<boolean>;
   getUserReaction(userId: string, analysisId: string): Promise<Reaction | undefined>;
   getReactionCounts(analysisId: string): Promise<{ like: number; heart: number; dislike: number }>;
   getAnalysisReactions(analysisId: string): Promise<Reaction[]>;
 
-  // Community - Pinned Traders
   pinTrader(userId: string, pinnedUserId: string): Promise<PinnedTrader>;
   unpinTrader(userId: string, pinnedUserId: string): Promise<boolean>;
   reorderPinnedTrader(userId: string, pinnedUserId: string, newOrder: number): Promise<PinnedTrader | undefined>;
@@ -120,6 +117,34 @@ export interface IStorage {
   isPinned(userId: string, pinnedUserId: string): Promise<boolean>;
   getPinnedTradersWithNotifications(userId: string): Promise<Array<{ user: User; unreadCount: number }>>;
   markTraderNotificationsRead(userId: string, traderId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------
+// Utility: Find Recent Analysis (Static Helper)
+// ---------------------------------------------------------
+export async function findRecentAnalysis(
+  db: NeonHttpDatabase,
+  userId: string,
+  symbol: string,
+  duration: string,
+  market: string,
+  language?: string
+) {
+  const result = await db
+    .select()
+    .from(analyses)
+    .where(
+      and(
+        eq(analyses.userId, userId),
+        eq(analyses.symbol, symbol),
+        eq(analyses.duration, duration),
+        eq(analyses.market, market),
+        language ? eq(analyses.language, language) : sql`TRUE`
+      )
+    )
+    .orderBy(sql`${analyses.createdAt} DESC`)
+    .limit(1);
+  return result[0];
 }
 
 export class MemStorage implements IStorage {
@@ -237,6 +262,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const analysis: Analysis = {
       ...insertAnalysis,
+      language: insertAnalysis.language ?? "en",
       correctedSymbol: insertAnalysis.correctedSymbol ?? null,
       assetName: insertAnalysis.assetName ?? null,
       instrumentName: insertAnalysis.instrumentName ?? null,
@@ -525,16 +551,15 @@ export class MemStorage implements IStorage {
   }
 }
 
-// PostgreSQL storage implementation
 export class PgStorage implements IStorage {
-  private db;
+  private db: NeonHttpDatabase;
 
   constructor() {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    const sql = neon(process.env.DATABASE_URL!);
-    this.db = drizzle(sql);
+    const sqlClient = neon(process.env.DATABASE_URL);
+    this.db = drizzle(sqlClient);
   }
 
   // Users

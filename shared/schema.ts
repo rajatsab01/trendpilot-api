@@ -70,6 +70,10 @@ export const analyses = pgTable("analyses", {
   trailingStopStrategy: text("trailing_stop_strategy"), // e.g., "Book 50% at TP1, trail remainder to TP2"
   probabilityScore: integer("probability_score"), // 0-100 confidence probability
   explanatoryNotes: text("explanatory_notes"), // Detailed notes and disclaimers from Perplexity
+
+  // ✅ Added line here
+  language: text("language").notNull().default("en"),
+
   // Saved analyses tracking
   isSaved: integer("is_saved").notNull().default(0), // 0 = not saved, 1 = saved by user
   isPublished: integer("is_published").notNull().default(0), // 0 = private, 1 = published to community
@@ -177,7 +181,7 @@ export const insertAnalysisSchema = createInsertSchema(analyses).omit({
 }).extend({
   userId: z.string().min(1, "User ID is required"),
   symbol: z.string().min(1, "Symbol is required"),
-  duration: z.enum(["long_term", "short_term", "scalping"]),
+  duration: z.enum(["long_term", "swing", "short_term", "scalping"]),
   market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
   recommendation: z.enum(["BUY", "SELL"]),
   confidence: z.number().int().min(0).max(100),
@@ -294,7 +298,7 @@ export type InsertReaction = z.infer<typeof insertReactionSchema>;
 export type InsertPinnedTrader = z.infer<typeof insertPinnedTraderSchema>;
 
 // Trade duration options
-export const tradeDurations = ["long_term", "short_term", "swing_trade", "scalping"] as const;
+export const tradeDurations = ["long_term", "short_term", "swing", "scalping"] as const;
 export type TradeDuration = typeof tradeDurations[number];
 
 // Language options - 12 languages supported
@@ -308,5 +312,5 @@ export type Language = typeof languages[number];
 // v1.2.2 - Fixed PWA update mechanism (proper service worker cache clearing) + improved update modal UX
 // v1.2.3 - SERVER-SIDE VERSION GUARD: Blocks API calls from outdated clients (fail-closed security)
 // v1.2.4 - PRE-BOOT VERSION CHECK: Forces cache clear BEFORE React loads (fixes PWA update issues)
-// v1.2.5 - FIXED DASHBOARD: Added missing swing_trade option + blocking update modal for cached users
+// v1.2.5 - FIXED DASHBOARD: Added missing swing option + blocking update modal for cached users
 export const APP_VERSION = "1.2.5";

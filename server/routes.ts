@@ -77,6 +77,21 @@ function versionGuardMiddleware(req: any, res: any, next: any) {
   next();
 }
 
+/**
+ * Helper: determine request language for translations.
+ * Looks at x-app-lang, x-lang or Accept-Language and returns a safe two-letter code.
+ */
+function getReqLang(req: any): string {
+  const raw = (req.headers['x-app-lang'] || req.headers['x-lang'] || req.headers['accept-language'] || '').toString();
+  if (!raw) return 'en';
+  // Accept-Language may be "en-US,en;q=0.9" -> take first part, strip region
+  const primary = raw.split(',')[0].trim();
+  const code = primary.split('-')[0].toLowerCase();
+  // Basic validation: return 'en' if not two letters
+  if (!code || code.length < 2) return 'en';
+  return code;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Verify phone number from Phone.Email service
   app.post("/api/auth/verify-phone", async (req, res) => {
@@ -774,174 +789,150 @@ app.get("/api/search-instruments", async (req, res) => {
   });
 
   // Analyze market symbol - PROTECTED BY VERSION GUARD
-  app.post("/api/analyze", versionGuardMiddleware, async (req, res) => {
-    try {
-      // Validate request body with market type
-      const analyzeSchema = z.object({
-        userId: z.string().min(1),
-        symbol: z.string().min(1),
-        duration: z.enum(["scalping", "short_term", "long_term"]),
-        market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
-        currency: z.string().optional().default("USD"),
-        exchange: z.string().optional(),
-      });
-
-      const validationResult = analyzeSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({ error: validationResult.error.errors[0].message });
-      }
-
-      const { userId, symbol, duration, market, currency, exchange } = validationResult.data;
-
-      // Check user has enough tokens
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      if (user.tokens < 2) {
-        return res.status(400).json({ error: "Insufficient tokens" });
-      }
-
-      // 🎯 STEP 1: PRE-FLIGHT VALIDATION - Fetch accurate prices from Yahoo Finance / Binance
-      // This prevents wasting tokens on invalid symbols before running expensive Perplexity analysis
-      console.log(`🔍 [PRE-FLIGHT] Validating symbol "${symbol}" for ${market} market...`);
-      
-      let priceData;
-      try {
-        priceData = await fetchMarketPrice(symbol, duration, market);
-        console.log(`✅ [PRE-FLIGHT] Symbol validated successfully - price data retrieved`);
-        console.log(`   Live price: ${priceData.livePrice}, Candle close: ${priceData.candleClosePrice}`);
-      } catch (error: any) {
-        console.error(`❌ [PRE-FLIGHT] Symbol validation failed for ${symbol}:`, error.message);
-        console.log(`   ⚠️  Analysis aborted - no tokens consumed`);
-        
-        return res.status(400).json({ 
-          error: `Unable to fetch price data for symbol "${symbol}". Please verify the symbol is correct for ${market} market. No tokens were consumed.`,
-          hint: "Try using the autocomplete suggestions to find the correct symbol format."
-        });
-      }
-
-      // 🎯 STEP 2: Perform analysis using Perplexity with pre-fetched prices
-      const analysisResult = await analyzeMarketWithPerplexity(symbol, duration, market, user.language, priceData, currency, exchange);
-
-      // 🛡️ FOREX PAIR DIRECTION VALIDATION
-      // Check if Perplexity reversed the forex pair direction (USD/EUR → EUR/USD)
-      // If reversed, refund tokens and reject the analysis
-      if (market === 'forex' || analysisResult.marketType === 'forex') {
-        const normalizeForexPair = (sym: string): string => {
-          // Remove =X suffix, slashes, spaces
-          return sym.toUpperCase().replace(/=X$/g, '').replace(/\//g, '').replace(/\s/g, '');
-        };
-
-        const userSymbol = normalizeForexPair(symbol);
-        const aiSymbol = normalizeForexPair(analysisResult.correctedSymbol);
-
-        // Check if the pair was reversed (e.g., USDEUR vs EURUSD)
-        if (userSymbol.length === 6 && aiSymbol.length === 6) {
-          const userBase = userSymbol.substring(0, 3);
-          const userQuote = userSymbol.substring(3, 6);
-          const aiBase = aiSymbol.substring(0, 3);
-          const aiQuote = aiSymbol.substring(3, 6);
-
-          // Detect reversal: user wants USD/EUR but AI returned EUR/USD
-          const isReversed = (userBase === aiQuote && userQuote === aiBase);
-
-          if (isReversed) {
-            console.log(`⚠️ [FOREX REVERSAL DETECTED]`);
-            console.log(`   User requested: ${userBase}/${userQuote}`);
-            console.log(`   AI returned: ${aiBase}/${aiQuote}`);
-            console.log(`   🔄 Refunding 2 tokens - analysis rejected`);
-
-            // Refund tokens (no deduction happened yet)
-            // Analysis is not saved, so user gets a free retry
-            
-            return res.status(400).json({ 
-              error: `AI returned wrong forex pair direction. You requested ${userBase}/${userQuote} but received ${aiBase}/${aiQuote}. Please try again with standard market pairs (like EUR/USD, GBP/USD) for better results. No tokens were deducted for this failed analysis.`,
-              hint: `Standard forex pairs: EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD`
-            });
-          }
-        }
-      }
-
-      // Save analysis with Perplexity-validated metadata (including auto-detected market)
-      const analysis = await storage.createAnalysis({
-        userId,
-        symbol, // Original user-entered symbol (may be misspelled)
-        correctedSymbol: analysisResult.correctedSymbol, // Perplexity-corrected symbol
-        assetName: analysisResult.assetName, // Perplexity-validated full name
-        instrumentName: analysisResult.instrumentName, // For backward compatibility
-        currency, // User's preferred currency for this analysis
-        sourceCurrency: analysisResult.sourceCurrency, // Original currency from exchange
-        exchangeRate: analysisResult.exchangeRate, // Exchange rate used for conversion (null for forex/same currency)
-        exchange, // User's preferred exchange for this analysis
-        currentPrice: analysisResult.currentPrice, // DEPRECATED: Use candleClosePrice instead
-        livePrice: analysisResult.livePrice, // Actual current live market price
-        candleClosePrice: analysisResult.candleClosePrice, // Price at closed candle for analysis
-        priceSource: analysisResult.priceSource, // Where Perplexity found the price
-        candleCloseTime: analysisResult.candleCloseTime, // Timestamp of candle close
-        timeframe: analysisResult.timeframe, // Candle timeframe (e.g., "15min", "1hr", "1day")
-        nextCandleCloseTime: analysisResult.nextCandleCloseTime, // When next candle closes
-        duration,
-        market: analysisResult.marketType as "stock" | "commodity" | "forex" | "cryptocurrency", // Auto-detected by Perplexity
-        recommendation: analysisResult.recommendation,
-        confidence: analysisResult.confidence,
-        sentiment: analysisResult.sentiment,
-        marketSentiment: analysisResult.marketSentiment,
-        deepAnalysis: analysisResult.deepAnalysis,
-        analysis: analysisResult.analysis,
-        rsi: analysisResult.indicators.rsi,
-        macd: analysisResult.indicators.macd,
-        stochastic: analysisResult.indicators.stochastic,
-        bollingerBands: analysisResult.indicators.bollingerBands,
-        entry: analysisResult.bracketOrder.entry,
-        takeProfit: analysisResult.bracketOrder.takeProfit,
-        stopLoss: analysisResult.bracketOrder.stopLoss,
-        // Enhanced risk-reward fields
-        tp1: analysisResult.takeProfitLevels.tp1,
-        tp2: analysisResult.takeProfitLevels.tp2,
-        tp3: analysisResult.takeProfitLevels.tp3,
-        s1: analysisResult.supportLevels.s1,
-        s2: analysisResult.supportLevels.s2,
-        s3: analysisResult.supportLevels.s3,
-        r1: analysisResult.resistanceLevels.r1,
-        r2: analysisResult.resistanceLevels.r2,
-        r3: analysisResult.resistanceLevels.r3,
-        trailingStopStrategy: analysisResult.trailingStopStrategy,
-        probabilityScore: analysisResult.probabilityScore,
-        explanatoryNotes: analysisResult.explanatoryNotes,
-      });
-
-      // Only deduct tokens after successful analysis (atomic operation to prevent race conditions)
-      const updatedUser = await storage.decrementUserTokens(userId, 2);
-      if (!updatedUser) {
-        // This can happen if tokens were consumed by concurrent request
-        return res.status(400).json({ error: "Insufficient tokens. Please try again." });
-      }
-
-      res.json({ analysisId: analysis.id });
-    } catch (error: any) {
-      console.error("Analysis error:", error);
-      res.status(500).json({ error: error.message || "Internal server error" });
+app.post("/api/analyze", versionGuardMiddleware, async (req, res) => {
+  try {
+    // ✅ STEP 1: Validate body
+    const analyzeSchema = z.object({
+      userId: z.string().min(1),
+      symbol: z.string().min(1),
+      duration: z.enum(["scalping", "swing", "short_term", "long_term"]),
+      market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
+      currency: z.string().optional().default("USD"),
+      exchange: z.string().optional(),
+      language: z.string().optional().default("en"),
+    });
+    const validation = analyzeSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.errors[0].message });
     }
-  });
 
-  // Get analysis by ID
+    const { userId, symbol, duration, market, currency, exchange, language } = validation.data;
+
+    // ✅ STEP 2: Fetch user
+    const user = await storage.getUser(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.tokens < 2) return res.status(400).json({ error: "Insufficient tokens" });
+
+    // ✅ STEP 3: Normalize and log language
+    const headerLang = getReqLang(req);
+    const lang = (language || headerLang || user.language || "en").trim().toLowerCase();
+    console.log(`🧭 Final resolved language for analysis: ${lang}`);
+
+    // ✅ STEP 4: If user’s saved language differs → update DB
+    if (user.language !== lang) {
+      console.log(`🌐 User changed language from ${user.language} → ${lang}`);
+      await storage.updateUserLanguage(user.id, lang);
+    }
+
+    // ✅ STEP 5: Fetch latest price data
+    console.log(`🔍 [PRE-FLIGHT] Validating symbol "${symbol}" for ${market} market...`);
+    let priceData;
+    try {
+      priceData = await fetchMarketPrice(symbol, duration, market);
+      console.log(`✅ [PRE-FLIGHT] Symbol validated successfully. Live: ${priceData.livePrice}`);
+    } catch (err: any) {
+      console.error(`❌ [PRE-FLIGHT] Symbol validation failed:`, err.message);
+      return res.status(400).json({
+        error: `Unable to fetch price data for symbol "${symbol}".`,
+        hint: "Please verify the symbol or try using autocomplete.",
+      });
+    }
+
+    // ✅ STEP 6: Check recent cached analysis
+    const existing = await storage.findRecentAnalysis?.(userId, symbol, duration, market);
+
+    // Reuse only if same language
+    if (existing && existing.language?.toLowerCase() === lang.toLowerCase()) {
+      console.log(`♻️ Using cached analysis for ${symbol} (${lang}) — no token deduction`);
+      return res.json(existing);
+    }
+
+    // ✅ STEP 7: Run fresh Perplexity analysis
+    console.log(`🌐 Running fresh analysis for ${symbol} in ${lang}...`);
+    const analysisResult = await analyzeMarketWithPerplexity(
+      symbol,
+      duration,
+      market,
+      lang,
+      priceData,
+      currency,
+      exchange
+    );
+
+    // ✅ STEP 8: Save new analysis
+    const newAnalysis = await storage.createAnalysis({
+      userId,
+      symbol,
+      correctedSymbol: analysisResult.correctedSymbol,
+      assetName: analysisResult.assetName,
+      instrumentName: analysisResult.instrumentName,
+      currency,
+      sourceCurrency: analysisResult.sourceCurrency,
+      exchangeRate: analysisResult.exchangeRate,
+      exchange,
+      currentPrice: analysisResult.currentPrice,
+      livePrice: analysisResult.livePrice,
+      candleClosePrice: analysisResult.candleClosePrice,
+      priceSource: analysisResult.priceSource,
+      candleCloseTime: analysisResult.candleCloseTime,
+      timeframe: analysisResult.timeframe,
+      nextCandleCloseTime: analysisResult.nextCandleCloseTime,
+      duration,
+      market: analysisResult.marketType,
+      recommendation: analysisResult.recommendation,
+      confidence: analysisResult.confidence,
+      sentiment: analysisResult.sentiment,
+      marketSentiment: analysisResult.marketSentiment,
+      deepAnalysis: analysisResult.deepAnalysis,
+      analysis: analysisResult.analysis,
+      rsi: analysisResult.indicators.rsi,
+      macd: analysisResult.indicators.macd,
+      stochastic: analysisResult.indicators.stochastic,
+      bollingerBands: analysisResult.indicators.bollingerBands,
+      entry: analysisResult.bracketOrder.entry,
+      takeProfit: analysisResult.bracketOrder.takeProfit,
+      stopLoss: analysisResult.bracketOrder.stopLoss,
+      tp1: analysisResult.takeProfitLevels.tp1,
+      tp2: analysisResult.takeProfitLevels.tp2,
+      tp3: analysisResult.takeProfitLevels.tp3,
+      s1: analysisResult.supportLevels.s1,
+      s2: analysisResult.supportLevels.s2,
+      s3: analysisResult.supportLevels.s3,
+      r1: analysisResult.resistanceLevels.r1,
+      r2: analysisResult.resistanceLevels.r2,
+      r3: analysisResult.resistanceLevels.r3,
+      trailingStopStrategy: analysisResult.trailingStopStrategy,
+      probabilityScore: analysisResult.probabilityScore,
+      explanatoryNotes: analysisResult.explanatoryNotes,
+      language: lang,
+    });
+
+    // ✅ STEP 9: Deduct tokens after success
+    await storage.decrementUserTokens(userId, 2);
+
+    res.json({ analysisId: newAnalysis.id });
+  } catch (err: any) {
+    console.error("Analysis error:", err);
+    res.status(500).json({ error: err.message || "Internal server error" });
+  }
+});
+
   app.get("/api/analysis/:analysisId", async (req, res) => {
-    try {
-      const { analysisId } = req.params;
-      const analysis = await storage.getAnalysis(analysisId);
+  try {
+    const { analysisId } = req.params;
+    const analysis = await storage.getAnalysis(analysisId);
 
-      if (!analysis) {
-        return res.status(404).json({ error: "Analysis not found" });
-      }
-
-      res.json(analysis);
-    } catch (error) {
-      console.error("Get analysis error:", error);
-      res.status(500).json({ error: "Internal server error" });
+    if (!analysis) {
+      return res.status(404).json({ error: "Analysis not found" });
     }
-  });
+
+    // no extra translation here
+    res.json(analysis);
+  } catch (error) {
+    console.error("Get analysis error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
   // Get user's analyses
   app.get("/api/analyses/:userId", async (req, res) => {
@@ -1534,15 +1525,18 @@ app.get("/api/search-instruments", async (req, res) => {
     }
   });
 
-  // Get unread message count
+    // Get unread message count (return 0 if no DATABASE_URL)
   app.get("/api/messages/unread-count/:userId", async (req, res) => {
     try {
+      if (!process.env.DATABASE_URL) {
+        return res.json({ count: 0 });
+      }
       const { userId } = req.params;
       const count = await storage.getUnreadMessageCount(userId);
       res.json({ count });
     } catch (error) {
       console.error("Get unread message count error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(200).json({ count: 0 }); // degrade gracefully
     }
   });
 
