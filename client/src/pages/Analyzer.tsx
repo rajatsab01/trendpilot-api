@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import ReactionButtons from "@/components/ReactionButtons";
-import { Bookmark, BookmarkCheck, Share2, Download } from "lucide-react";
+import { Bookmark, BookmarkCheck, Download } from "lucide-react";
 import type { Analysis } from "@shared/schema";
 import { APP_VERSION } from "@shared/schema";
 import html2canvas from "html2canvas";
@@ -17,7 +17,7 @@ import { resolveChartSymbol } from "@/lib/utils";
 
 export default function Analyzer() {
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
   const searchParams = new URLSearchParams(window.location.search);
@@ -25,7 +25,7 @@ export default function Analyzer() {
   const fromSaved = searchParams.get("fromSaved") === "true";
 
   const [symbol, setSymbol] = useState("");
-  const [duration, setDuration] = useState<"long_term" | "short_term" | "swing_trade" | "scalping">("short_term");
+  const [duration, setDuration] = useState<"long_term" | "short_term" | "swing" | "scalping">("short_term");
   const [market, setMarket] = useState<"stock" | "commodity" | "forex" | "cryptocurrency">("stock");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
@@ -45,14 +45,27 @@ export default function Analyzer() {
     enabled: !!analysisId,
   });
 
+  // ✅ Language-sync-safe mutation
   const analyzeMutation = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error(t.userNotFound);
+
+      // ✅ Force language resolution before sending request
+      const savedLang =
+        (language && language.trim()) ||
+        localStorage.getItem("language") ||
+        user?.language ||
+        navigator.language?.slice(0, 2) ||
+        "en";
+
+      console.log("🧭 Final language sent:", savedLang);
+
       const result = await apiRequest("POST", "/api/analyze", {
         userId,
         symbol,
         duration,
         market,
+        language: savedLang,
         appVersion: APP_VERSION,
       });
       return await result.json();
@@ -96,13 +109,11 @@ export default function Analyzer() {
 
   const handleExportPDF = async () => {
     if (!analysis) return;
-    
+
     setIsExportingPDF(true);
     try {
       const element = document.getElementById("pdf-export-content");
-      if (!element) {
-        throw new Error("PDF export content not found");
-      }
+      if (!element) throw new Error("PDF export content not found");
 
       toast({
         title: t.exportingPDF,
@@ -139,7 +150,7 @@ export default function Analyzer() {
         heightLeft -= pageHeight;
       }
 
-      const fileName = `TrendPilot_${analysis.symbol}_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
+      const fileName = `TrendPilot_${analysis.symbol}_${new Date().toISOString().split("T")[0]}_${Date.now()}.pdf`;
       pdf.save(fileName);
 
       toast({
@@ -159,14 +170,9 @@ export default function Analyzer() {
   };
 
   const handleSaveClick = async (analysis: Analysis) => {
-    // VERSION CHECKPOINT: Check version before allowing save
     const versionOk = await guardAction();
-    if (!versionOk) {
-      // Version mismatch - modal will show, block the action
-      return;
-    }
-    
-    // If opened from saved page and currently saved, show confirmation before unsaving
+    if (!versionOk) return;
+
     if (fromSaved && analysis.isSaved === 1) {
       const confirmed = window.confirm(t.unsaveConfirm);
       if (!confirmed) return;
@@ -176,14 +182,9 @@ export default function Analyzer() {
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // VERSION CHECKPOINT: Check version before allowing analysis
     const versionOk = await guardAction();
-    if (!versionOk) {
-      // Version mismatch - modal will show, block the action
-      return;
-    }
-    
+    if (!versionOk) return;
+
     if (!symbol.trim()) {
       toast({
         title: t.symbolRequired,
@@ -203,8 +204,7 @@ export default function Analyzer() {
     analyzeMutation.mutate();
   };
 
-
-  // Show loading state while fetching analysis
+  // 🔄 Loading State
   if (analysisId && isLoadingAnalysis) {
     return (
       <div className="min-h-screen bg-[#111714] flex items-center justify-center">
@@ -986,7 +986,7 @@ export default function Analyzer() {
               >
                 <option value="long_term">{t.longTerm}</option>
                 <option value="short_term">{t.shortTerm}</option>
-                <option value="swing_trade">{t.swingTrade || "Swing Trade (15min)"}</option>
+                <option value="swing">{t.swingTrade || "Swing Trade (15min)"}</option>
                 <option value="scalping">{t.scalping}</option>
               </select>
             </div>
