@@ -51,7 +51,6 @@ app.use((req, res, next) => {
   const p = req.path;
   let capturedJson: Record<string, any> | undefined;
 
-  // keep the bound function but type it loosely so TS accepts spread args
   const originalJson: (...args: any[]) => any = (res.json as any).bind(res);
   (res as any).json = (body: any, ...rest: any[]) => {
     capturedJson = body;
@@ -113,37 +112,33 @@ app.use((req, res, next) => {
 
     /* --------- Dev uses Vite; Prod serves static files ---------- */
     if (!isProduction) {
-      // DYNAMIC import to avoid bundling vite & heavy deps
       const { setupVite } = await import("./vite.js").catch(async () => {
-        // when running from TS (tsx) fallback to .ts path
         return await import("./vite.ts");
       });
       console.log("🎨 Setting up Vite development server...");
       await setupVite(app, server);
       console.log("✅ Vite development server ready");
-
     } else {
-  const { serveStatic } = await import("./vite.js").catch(async () => {
-    return await import("./vite.ts");
-  });
-  console.log("📁 Serving static files...");
+      const { serveStatic } = await import("./vite.js").catch(async () => {
+        return await import("./vite.ts");
+      });
+      console.log("📁 Serving static files...");
 
-  // Serve the production client build (React/Vite output)
-  app.use(express.static(path.join(__dirname, "../client/dist")));
+      // ✅ Serve the built frontend from dist/public
+      const distPath = path.join(__dirname, "../dist/public");
+      app.use(express.static(distPath));
 
-  // Fallback for SPA routes like /dashboard or /analyzer
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(__dirname, "../client/dist/index.html"));
-  });
+      // ✅ Fallback for all client-side routes
+      app.get("*", (_req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
 
-  serveStatic(app);
-  console.log("✅ Static file server ready");
-}
+      serveStatic(app);
+      console.log("✅ Static file server ready");
+    }
 
     /* -------------------- LISTEN -------------------- */
     const port = Number(process.env.PORT) || 5000;
-    // Force 127.0.0.1 on Windows dev to avoid ENOTSUP;
-    // use 0.0.0.0 only in prod hosting (Render/Replit/etc.)
     const host = !isProduction ? "127.0.0.1" : "0.0.0.0";
 
     server.listen(port, host, () => {
