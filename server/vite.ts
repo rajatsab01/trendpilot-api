@@ -34,9 +34,9 @@ export async function setupVite(app: Express, server: Server) {
     customLogger: {
       ...viteLogger,
       error: (msg: string, options?: any) => {
-       viteLogger.error(msg, options);
-       process.exit(1);
-     },
+        viteLogger.error(msg, options);
+        process.exit(1);
+      },
     },
     server: serverOptions,
     appType: "custom",
@@ -70,12 +70,12 @@ export async function setupVite(app: Express, server: Server) {
 
 // ✅ Production mode (Render-ready)
 export function serveStatic(app: Express) {
-  // 🔥 Correct path for Render: /dist/public
+  // 🔥 Correct Render path: /dist/public
   const distPath = path.resolve(import.meta.dirname, "../dist/public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
-      `Could not find the build directory: ${distPath}. Please build the client first.`
+      `❌ Could not find the build directory: ${distPath}. Please build the client first.`
     );
   }
 
