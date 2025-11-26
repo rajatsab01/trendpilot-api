@@ -24,6 +24,7 @@ export interface OHLCVData {
   volume: number;
   dataSource: string;
   historicalCandles: CandleData[];
+  mtfCandles?: CandleData[]; // 4H data (optional)
 }
 
 export interface MarketAnalysisResult {
@@ -52,8 +53,9 @@ export interface MarketAnalysisResult {
   supportLevels: { s1: string; s2: string; s3: string };
   resistanceLevels: { r1: string; r2: string; r3: string };
   trailingStopStrategy: string;
-  probabilityScore: number;
+  riskMeter: number;              // 🔥 New risk meter
   explanatoryNotes: string;
+  marketSentimentReport: string;  // 🔥 Detailed sentiment
 }
 
 export async function analyzeMarketWithPerplexity(
@@ -63,61 +65,57 @@ export async function analyzeMarketWithPerplexity(
   language: string,
   priceData: OHLCVData,
   currency = "USD",
-  exchange?: string
 ): Promise<MarketAnalysisResult> {
+
   if (!process.env.PERPLEXITY_API_KEY)
     throw new Error("Perplexity API key not configured");
 
-  const { code: langCode, name: langName } = getPromptLang(language);
+  const { name: langName } = getPromptLang(language);
   const promptLanguageName = langName || "English";
-
-  const timeframeMap = {
-    scalping: { tf: "5min", desc: "5-minute" },
-    short_term: { tf: "1hr", desc: "1-hour" },
-    swing: { tf: "4hr", desc: "4-hour" },
-    long_term: { tf: "1day", desc: "daily" },
-  } as const;
-  const cfg = timeframeMap[duration];
   const dec = market === "forex" ? 4 : 2;
 
-  // next candle timing
   const base = new Date(priceData.candleCloseTime);
   const next = new Date(base);
-  if (cfg.tf === "5min") next.setMinutes(next.getMinutes() + 5);
-  else if (cfg.tf === "4hr") next.setHours(next.getHours() + 4);
-  else if (cfg.tf === "1hr") next.setHours(next.getHours() + 1);
+  if (duration === "scalping") next.setMinutes(next.getMinutes() + 5);
+  else if (duration === "short_term") next.setHours(next.getHours() + 1);
+  else if (duration === "swing") next.setHours(next.getHours() + 4);
   else next.setDate(next.getDate() + 1);
   const nextClose = next.toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
 
-  const curSymbol =
-    currency === "USD" ? "$" :
+  // --- ATR & volatility computation
+  const candles = priceData.historicalCandles.slice(-14);
+  const atr = candles.map(c => c.high - c.low).reduce((a, b) => a + b, 0) / candles.length;
+  const volatilityIndex = (atr / priceData.close) * 100;
+
+  // --- Market structure summary for MTF
+  const mtfSummary = priceData.mtfCandles
+    ? summarizeMTF(priceData.mtfCandles)
+    : "No 4H data provided.";
+
+  const curSymbol = currency === "USD" ? "$" :
     currency === "INR" ? "₹" :
     currency === "EUR" ? "€" :
     currency === "GBP" ? "£" :
     currency === "JPY" ? "¥" : currency;
 
-  // ✅ Debug trace
-  console.log(`🌍 [Perplexity] Received language for analysis: ${promptLanguageName}`);
-
-  // Prompt to Perplexity
+  // --- Build prompt
   const prompt = `
-You are TrendPilot Analyzer — an expert quantitative analyst.
-Analyze ${symbol} (${market}) for ${duration} horizon.
+You are TrendPilot Precision Engine v2.5 — a disciplined institutional analyst.
+Analyze ${symbol} (${market}) using ${duration} timeframe with 4H context below.
 
-All prices in ${currency}. Express every output field in ${promptLanguageName} language only — do not use English or mixed text.
+All outputs must be in ${promptLanguageName}. 
+Always produce Reward-to-Risk >= 1:3 and apply adaptive ATR-based stop losses.
 
-Aim for very high Reward-to-Risk trades.
-Base requirement RR ≥ 1:3. If volatility, momentum, or breakout probability justify,
-you may expand target RR up to 1:50+ and describe trailing strategy for scaling out profits.
-
-Use ONLY given candle data; do not fetch new prices.
+VOLATILITY SNAPSHOT:
+ATR(14): ${atr.toFixed(2)} | Volatility Index: ${volatilityIndex.toFixed(2)}%
+${mtfSummary}
 
 DATA SNAPSHOT:
 Live: ${curSymbol}${priceData.livePrice.toFixed(dec)} | Close: ${curSymbol}${priceData.candleClosePrice.toFixed(dec)}
 O:${priceData.open}  H:${priceData.high}  L:${priceData.low}  C:${priceData.close}  V:${priceData.volume}
 Close Time: ${priceData.candleCloseTime}  |  Next Close: ${nextClose}
 
-Return strictly JSON (no markdown, no explanation) with these fields translated in ${promptLanguageName}:
+Return JSON:
 {
  "correctedSymbol": "...",
  "assetName": "...",
@@ -135,11 +133,9 @@ Return strictly JSON (no markdown, no explanation) with these fields translated 
  "tp1": number, "tp2": number, "tp3": number,
  "s1": number, "s2": number, "s3": number,
  "r1": number, "r2": number, "r3": number,
- "trailingStopStrategy": "(${promptLanguageName}) detailed description",
- "probabilityScore": 1-100,
- "explanatoryNotes": "(${promptLanguageName}) brief reasoning"
-}
-`.trim();
+ "trailingStopStrategy": "(${promptLanguageName}) details",
+ "marketSentimentReport": "(${promptLanguageName}) extended global report"
+}`.trim();
 
   const res = await fetch("https://api.perplexity.ai/chat/completions", {
     method: "POST",
@@ -152,69 +148,46 @@ Return strictly JSON (no markdown, no explanation) with these fields translated 
       temperature: 0.25,
       top_p: 0.9,
       search_recency_filter: "day",
-      messages: [
-        {
-          role: "system",
-          content: `
-You are TrendPilot Analyzer.
-
-LANGUAGE RULES:
-- Write all analysis text (marketSentiment, deepAnalysis, analysis, trailingStopStrategy, explanatoryNotes)
-  fully in ${promptLanguageName}.
-- Do NOT include English translations or mixed text.
-- The JSON itself must still be valid and follow the schema exactly.
-
-RESPONSE RULES:
-- Return ONLY one valid JSON object.
-- Do not include markdown, explanations, or code fences.
-          `.trim(),
-        },
-        { role: "user", content: prompt },
-      ],
+      messages: [{ role: "system", content: "Return valid JSON only." }, { role: "user", content: prompt }],
     }),
   });
-  
-  if (!res.ok) throw new Error(`Perplexity API error ${res.status}: ${await res.text()}`);
+
   const raw = await res.json();
-  let txt = (raw?.choices?.[0]?.message?.content ?? "").trim();
+  const txt = (raw?.choices?.[0]?.message?.content ?? "").trim();
   const s = txt.indexOf("{"), e = txt.lastIndexOf("}");
   const data = JSON.parse(txt.slice(s, e + 1));
 
-  // RR computation + auto boost
+  // --- RR + ATR optimizer
   const rr = (entry: number, tp: number, sl: number, side: "BUY" | "SELL") => {
     const risk = side === "BUY" ? entry - sl : sl - entry;
     const reward = side === "BUY" ? tp - entry : entry - tp;
     return risk > 0 ? reward / risk : 0;
   };
-  let rrVal = rr(Number(data.entry), Number(data.takeProfit), Number(data.stopLoss), data.recommendation);
 
+  let rrVal = rr(Number(data.entry), Number(data.takeProfit), Number(data.stopLoss), data.recommendation);
   if (rrVal < 3) {
     const factor = 3 / rrVal;
-    if (data.recommendation === "BUY") data.takeProfit = Number(data.entry) + (Number(data.takeProfit) - Number(data.entry)) * factor;
-    else data.takeProfit = Number(data.entry) - (Number(data.entry) - Number(data.takeProfit)) * factor;
-    rrVal = rr(Number(data.entry), Number(data.takeProfit), Number(data.stopLoss), data.recommendation);
+    if (data.recommendation === "BUY")
+      data.takeProfit = Number(data.entry) + (Number(data.takeProfit) - Number(data.entry)) * factor;
+    else
+      data.takeProfit = Number(data.entry) - (Number(data.entry) - Number(data.takeProfit)) * factor;
   }
 
-  // currency conversion
-  const detected = data.marketType;
-  const srcCur = getExchangeCurrency(data.correctedSymbol, detected);
-  const isFx = detected === "forex" || isForexPair(data.correctedSymbol);
-  const sameCur = !isFx && srcCur === currency;
+  // --- Risk Meter (0-100)
+  const riskMeter = Math.min(
+    100,
+    ((volatilityIndex / (rrVal * 3)) * (100 - (data.confidence || 50))) / 2
+  );
 
-  const fx = (v: any) => Number(v).toFixed(4);
-  const fi = (v: any) => Number(v).toFixed(2);
-  let rateShow: string | null = null;
-  let conv = (v: any) => fi(v);
-
-  if (isFx) conv = fx;
-  else if (!sameCur) {
-    const rates = await fetchExchangeRates(srcCur);
-    const r = rates?.rates?.[currency] ?? 1;
-    rateShow = r.toFixed(2);
-    conv = (v: any) => fi(convertCurrencyWithRate(Number(v), r));
+  // --- Flip supports/resistances for SELL
+  let support = { s1: data.s1, s2: data.s2, s3: data.s3 };
+  let resistance = { r1: data.r1, r2: data.r2, r3: data.r3 };
+  if (data.recommendation === "SELL") {
+    support = { s1: data.r1, s2: data.r2, s3: data.r3 };
+    resistance = { r1: data.s1, r2: data.s2, r3: data.s3 };
   }
 
-  const fmt = (v: any) => (isFx ? fx(v) : conv(v));
+  const fmt = (v: any) => Number(v).toFixed(dec);
 
   return {
     recommendation: data.recommendation,
@@ -225,15 +198,15 @@ RESPONSE RULES:
     analysis: data.analysis || "",
     correctedSymbol: data.correctedSymbol,
     assetName: data.assetName,
-    marketType: detected,
+    marketType: data.marketType,
     currentPrice: fmt(data.candleClosePrice),
     livePrice: fmt(data.livePrice),
     candleClosePrice: fmt(data.candleClosePrice),
     priceSource: priceData.dataSource,
-    sourceCurrency: srcCur,
-    exchangeRate: isFx || sameCur ? null : rateShow,
-    candleCloseTime: data.candleCloseTime,
-    timeframe: data.timeframe,
+    sourceCurrency: currency,
+    exchangeRate: null,
+    candleCloseTime: priceData.candleCloseTime,
+    timeframe: priceData.timeframe,
     nextCandleCloseTime: nextClose,
     instrumentName: data.assetName,
     indicators: {
@@ -252,18 +225,39 @@ RESPONSE RULES:
       tp2: fmt(data.tp2),
       tp3: fmt(data.tp3),
     },
-    supportLevels: {
-      s1: fmt(data.s1),
-      s2: fmt(data.s2),
-      s3: fmt(data.s3),
-    },
-    resistanceLevels: {
-      r1: fmt(data.r1),
-      r2: fmt(data.r2),
-      r3: fmt(data.r3),
-    },
+    supportLevels: support,
+    resistanceLevels: resistance,
     trailingStopStrategy: String(data.trailingStopStrategy || ""),
-    probabilityScore: Number(data.probabilityScore) || 0,
-    explanatoryNotes: String(data.explanatoryNotes || ""),
+    riskMeter: Math.round(riskMeter),
+    explanatoryNotes: data.explanatoryNotes || "",
+    marketSentimentReport: data.marketSentimentReport || "",
   };
+}
+
+/* -----------------------------------------------------
+   Summarize 4H MTF data for context
+----------------------------------------------------- */
+function summarizeMTF(candles: CandleData[]): string {
+  const closes = candles.map(c => c.close);
+  const ema20 = ema(closes, 20);
+  const ema50 = ema(closes, 50);
+  const trend = ema20 > ema50 ? "Bullish" : "Bearish";
+  const rsi = calcRSI(closes);
+  return `4H Context → Trend: ${trend}, RSI: ${rsi.toFixed(1)}, EMA20:${ema20.toFixed(2)} EMA50:${ema50.toFixed(2)}`;
+}
+
+function ema(values: number[], period: number) {
+  const k = 2 / (period + 1);
+  return values.reduce((prev, cur, i) => i === 0 ? cur : cur * k + prev * (1 - k), 0);
+}
+
+function calcRSI(values: number[], period = 14): number {
+  if (values.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = values.length - period; i < values.length - 1; i++) {
+    const diff = values[i + 1] - values[i];
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  const rs = gains / Math.max(1, losses);
+  return 100 - 100 / (1 + rs);
 }
