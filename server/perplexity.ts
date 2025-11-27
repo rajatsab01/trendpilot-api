@@ -24,13 +24,13 @@ export interface OHLCVData {
   volume: number;
   dataSource: string;
   historicalCandles: CandleData[];
-  mtfCandles?: CandleData[]; // optional 4H data
+  mtfCandles?: CandleData[];
 }
 
 export interface MarketAnalysisResult {
   recommendation: "BUY" | "SELL";
   confidence: number;
-  probabilityScore: number;  // ✅ added to fix type error
+  probabilityScore: number;
   sentiment: "Bullish" | "Bearish";
   marketSentiment: string;
   deepAnalysis: string;
@@ -59,15 +59,22 @@ export interface MarketAnalysisResult {
   marketSentimentReport: string;
 }
 
+// ✅ Extended union to include "crypto" safely
+type MarketType = "stock" | "commodity" | "forex" | "cryptocurrency" | "crypto";
+
 export async function analyzeMarketWithPerplexity(
   symbol: string,
   duration: "scalping" | "swing" | "short_term" | "long_term",
-  market: "stock" | "commodity" | "forex" | "cryptocurrency",
+  market: MarketType,
   language: string,
   priceData: OHLCVData,
   currency = "USD",
 ): Promise<MarketAnalysisResult> {
 
+  // ✅ Normalize both directions safely and type-consistently
+  if (market === "crypto") market = "cryptocurrency";
+
+  
   if (!process.env.PERPLEXITY_API_KEY)
     throw new Error("Perplexity API key not configured");
 
@@ -255,7 +262,7 @@ function summarizeMTF(candles: CandleData[]): string {
 
 function ema(values: number[], period: number) {
   const k = 2 / (period + 1);
-  return values.reduce((prev, cur, i) => i === 0 ? cur : cur * k + prev * (1 - k), 0);
+  return values.reduce((prev, cur, i) => (i === 0 ? cur : cur * k + prev * (1 - k)), 0);
 }
 
 function calcRSI(values: number[], period = 14): number {

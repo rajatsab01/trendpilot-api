@@ -182,7 +182,7 @@ export const insertAnalysisSchema = createInsertSchema(analyses).omit({
   userId: z.string().min(1, "User ID is required"),
   symbol: z.string().min(1, "Symbol is required"),
   duration: z.enum(["long_term", "swing", "short_term", "scalping"]),
-  market: z.enum(["stock", "commodity", "forex", "cryptocurrency"]),
+  market: z.enum(["stock", "commodity", "forex", "cryptocurrency", "crypto"]),
   recommendation: z.enum(["BUY", "SELL"]),
   confidence: z.number().int().min(0).max(100),
   sentiment: z.enum(["Bullish", "Bearish"]),
