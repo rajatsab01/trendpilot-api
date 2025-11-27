@@ -171,22 +171,48 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
     console.log(`[validateCrypto] Base: "${base}" → Binance: "${binanceSymbol}"`);
 
     try {
-      const url = `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`;
-      console.log(`[validateCrypto] Fetching: ${url}`);
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const data = await resp.json();
-        return {
-          isValid: true,
-          correctedSymbol: binanceSymbol,
-          assetName: cleanSymbol,
-          currentPrice: parseFloat(data.price),
-          sourceCurrency: "USD",
-        };
-      } else if (resp.status === 451) {
-        console.log(`[validateCrypto] Binance blocked (451). Using CoinGecko fallback...`);
-        return await validateCryptoAlternative(cleanSymbol, binanceSymbol);
-      }
+      // ✅ Use Binance mirror fallback if primary 451 / throttled / empty
+const binanceURLs = [
+  `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+  `https://api1.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+  `https://api2.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+  `https://api3.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`
+];
+
+let success = false;
+for (const url of binanceURLs) {
+  try {
+    console.log(`[validateCrypto] Fetching: ${url}`);
+
+    // Manual timeout using AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!resp.ok) continue;
+
+    const data = await resp.json();
+    if (data?.price) {
+      console.log(`[validateCrypto] ✅ Binance confirmed ${binanceSymbol} = $${data.price}`);
+      return {
+        isValid: true,
+        correctedSymbol: binanceSymbol,
+        assetName: cleanSymbol.replace(/USDT$/g, ""),
+        currentPrice: parseFloat(data.price),
+        sourceCurrency: "USD",
+      };
+    }
+  } catch (err: any) {
+    console.log(`[validateCrypto] Mirror failed: ${url} → ${err.message}`);
+  }
+}
+
+// If none worked → CoinGecko fallback
+console.log(`[validateCrypto] All Binance mirrors failed, switching to CoinGecko...`);
+return await validateCryptoAlternative(cleanSymbol, binanceSymbol);
+
     } catch (e) {
       console.log(`[validateCrypto] Binance fetch error:`, e);
     }
