@@ -1,3 +1,4 @@
+// server/perplexity.ts
 import { getPromptLang } from "./translations";
 import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
 import { getExchangeCurrency, isForexPair } from "./symbolValidator";
@@ -59,7 +60,6 @@ export interface MarketAnalysisResult {
   marketSentimentReport: string;
 }
 
-// ✅ Extended union to include "crypto" safely
 type MarketType = "stock" | "commodity" | "forex" | "cryptocurrency" | "crypto";
 
 export async function analyzeMarketWithPerplexity(
@@ -71,10 +71,7 @@ export async function analyzeMarketWithPerplexity(
   currency = "USD",
 ): Promise<MarketAnalysisResult> {
 
-  // ✅ Normalize both directions safely and type-consistently
   if (market === "crypto") market = "cryptocurrency";
-
-  
   if (!process.env.PERPLEXITY_API_KEY)
     throw new Error("Perplexity API key not configured");
 
@@ -82,7 +79,6 @@ export async function analyzeMarketWithPerplexity(
   const promptLanguageName = langName || "English";
   const dec = market === "forex" ? 4 : 2;
 
-  // --- Candle time logic
   const base = new Date(priceData.candleCloseTime);
   const next = new Date(base);
   if (duration === "scalping") next.setMinutes(next.getMinutes() + 5);
@@ -91,12 +87,10 @@ export async function analyzeMarketWithPerplexity(
   else next.setDate(next.getDate() + 1);
   const nextClose = next.toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
 
-  // --- ATR & volatility
   const candles = priceData.historicalCandles.slice(-14);
   const atr = candles.map(c => c.high - c.low).reduce((a, b) => a + b, 0) / candles.length;
   const volatilityIndex = (atr / priceData.close) * 100;
 
-  // --- 4H summary
   const mtfSummary = priceData.mtfCandles
     ? summarizeMTF(priceData.mtfCandles)
     : "No 4H data provided.";
@@ -108,7 +102,6 @@ export async function analyzeMarketWithPerplexity(
     currency === "GBP" ? "£" :
     currency === "JPY" ? "¥" : currency;
 
-  // --- Prompt
   const prompt = `
 You are TrendPilot Precision Engine v2.5 — a disciplined institutional analyst.
 Analyze ${symbol} (${market}) using ${duration} timeframe with 4H context below.
@@ -170,7 +163,6 @@ Return JSON:
   const s = txt.indexOf("{"), e = txt.lastIndexOf("}");
   const data = JSON.parse(txt.slice(s, e + 1));
 
-  // --- RR ratio calc
   const rr = (entry: number, tp: number, sl: number, side: "BUY" | "SELL") => {
     const risk = side === "BUY" ? entry - sl : sl - entry;
     const reward = side === "BUY" ? tp - entry : entry - tp;
@@ -186,13 +178,11 @@ Return JSON:
       data.takeProfit = Number(data.entry) - (Number(data.entry) - Number(data.takeProfit)) * factor;
   }
 
-  // --- Risk Meter 0-100
   const riskMeter = Math.min(
     100,
     ((volatilityIndex / (rrVal * 3)) * (100 - (data.confidence || 50))) / 2
   );
 
-  // --- Swap S/R for SELL
   let support = { s1: data.s1, s2: data.s2, s3: data.s3 };
   let resistance = { r1: data.r1, r2: data.r2, r3: data.r3 };
   if (data.recommendation === "SELL") {
@@ -202,10 +192,13 @@ Return JSON:
 
   const fmt = (v: any) => Number(v).toFixed(dec);
 
+  // ✅ Confidence guard (fixes 0% bug)
+  const parsedConf = Math.max(10, Number(data.confidence) || 72);
+
   return {
     recommendation: data.recommendation,
-    confidence: Number(data.confidence) || 72,
-    probabilityScore: Number(data.confidence) || 72,
+    confidence: parsedConf,
+    probabilityScore: parsedConf,
     sentiment: data.sentiment,
     marketSentiment: data.marketSentiment || "",
     deepAnalysis: data.deepAnalysis || "",
@@ -248,9 +241,6 @@ Return JSON:
   };
 }
 
-/* -----------------------------------------------------
-   Summarize 4H MTF data for context
------------------------------------------------------ */
 function summarizeMTF(candles: CandleData[]): string {
   const closes = candles.map(c => c.close);
   const ema20 = ema(closes, 20);
