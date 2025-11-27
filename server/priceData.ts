@@ -41,7 +41,7 @@ function getTimeframeForDuration(duration: string): { interval: string; label: s
   switch (duration) {
     case "scalping":
       return { interval: "5m", label: "5min", candleCount: 72 }; // 6 hours
-    case "swing_trade":
+    case "swing":
       return { interval: "15m", label: "15min", candleCount: 48 }; // 12 hours
     case "short_term":
       return { interval: "1h", label: "1hr", candleCount: 50 }; // ~2 days
@@ -60,6 +60,29 @@ async function fetchCryptoPrice(
   symbol: string,
   duration: string
 ): Promise<OHLCVData> {
+  // ✅ Temporary Quick Fix — reuse validator price if available
+  try {
+    const lastValidatedPrice = (globalThis as any).lastValidatedPrice;
+    if (typeof lastValidatedPrice === "number" && lastValidatedPrice > 0) {
+      console.log(`[fetchCryptoPrice] Using cached validator price: $${lastValidatedPrice}`);
+      return {
+        symbol: symbol.toUpperCase(),
+        livePrice: lastValidatedPrice,
+        candleClosePrice: lastValidatedPrice,
+        candleCloseTime: new Date().toISOString().replace('T', ' ').replace('Z', ' UTC'),
+        timeframe: "Instant",
+        open: lastValidatedPrice,
+        high: lastValidatedPrice,
+        low: lastValidatedPrice,
+        close: lastValidatedPrice,
+        volume: 0,
+        dataSource: "Cache",
+        historicalCandles: [],
+      };
+    }
+  } catch (err) {
+    console.warn("[fetchCryptoPrice] No validator cache available:", err);
+  }
   const { interval, label, candleCount } = getTimeframeForDuration(duration);
   
   // Convert symbol to Binance format (e.g., "BTC" -> "BTCUSDT", "ETH" -> "ETHUSDT")
@@ -279,7 +302,7 @@ async function fetchYahooFinancePrice(
     // Fetch chart data from Yahoo Finance - adjust range to get enough historical data
     const rangeMap: Record<string, string> = {
       "scalping": "1d",      // 5m x 72 = 6 hours
-      "swing_trade": "3d",   // 15m x 48 = 12 hours
+      "swing": "3d",   // 15m x 48 = 12 hours
       "short_term": "7d",    // 1h x 50 = ~2 days
       "long_term": "3mo",    // 1d x 30 = 1 month
     };

@@ -194,16 +194,24 @@ for (const url of binanceURLs) {
     if (!resp.ok) continue;
 
     const data = await resp.json();
-    if (data?.price) {
-      console.log(`[validateCrypto] ✅ Binance confirmed ${binanceSymbol} = $${data.price}`);
-      return {
-        isValid: true,
-        correctedSymbol: binanceSymbol,
-        assetName: cleanSymbol.replace(/USDT$/g, ""),
-        currentPrice: parseFloat(data.price),
-        sourceCurrency: "USD",
-      };
-    }
+
+if (data && data.price) {
+  const parsedPrice = parseFloat(data.price);
+
+  console.log(`[validateCrypto] ✅ Binance confirmed ${binanceSymbol} = $${parsedPrice}`);
+
+  // ✅ Cache this price globally for reuse by analyzer
+  (globalThis as any).lastValidatedPrice = parsedPrice;
+
+  return {
+    isValid: true,
+    correctedSymbol: binanceSymbol,
+    assetName: cleanSymbol.replace(/USDT$/g, ""),
+    currentPrice: parsedPrice,
+    sourceCurrency: "USD",
+  };
+}
+
   } catch (err: any) {
     console.log(`[validateCrypto] Mirror failed: ${url} → ${err.message}`);
   }
