@@ -195,6 +195,28 @@ async function fetchCryptoPrice(
   }
 }
 
+// ------------------------------------------------------
+// 🔰 Preload Top CoinGecko Coins (for faster validation)
+// ------------------------------------------------------
+(async () => {
+  try {
+    console.log("[CoinGecko] Preloading top coin list...");
+    const preload = await fetch("https://api.coingecko.com/api/v3/coins/list");
+    if (!preload.ok) throw new Error(`Failed to preload list: ${preload.status}`);
+    const list = await preload.json();
+
+    // Cache top 500 coins by symbol → id
+    (globalThis as any).coinIdCache = Object.fromEntries(
+      list.slice(0, 500).map((c: any) => [c.symbol.toUpperCase(), c.id])
+    );
+
+    console.log(`[CoinGecko] ✅ Cached ${Object.keys((globalThis as any).coinIdCache).length} coin symbols`);
+  } catch (err: any) {
+    console.error("[CoinGecko] ⚠️ Preload failed:", err.message);
+    (globalThis as any).coinIdCache = {}; // fallback empty cache
+  }
+})();
+
 /**
  * Fetch crypto price from CoinGecko (fallback when Binance is blocked)
  */
@@ -204,71 +226,61 @@ async function fetchCryptoPriceFromCoinGecko(
   interval: string,
   label: string
 ): Promise<OHLCVData> {
-  const coinGeckoMap: Record<string, string> = {
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'BNB': 'binancecoin',
-    'XRP': 'ripple',
-    'SOL': 'solana',
-    'ADA': 'cardano',
-    'DOGE': 'dogecoin',
-    'MATIC': 'matic-network',
-    'DOT': 'polkadot',
-    'AVAX': 'avalanche-2',
-    'LINK': 'chainlink',
-    'UNI': 'uniswap',
-    'ATOM': 'cosmos',
-    'LTC': 'litecoin',
-    'BCH': 'bitcoin-cash',
-  };
-  
-  const coinGeckoId = coinGeckoMap[baseSymbol];
-  
-  if (!coinGeckoId) {
-    throw new Error(`Cryptocurrency "${baseSymbol}" not supported. Supported: ${Object.keys(coinGeckoMap).join(', ')}`);
-  }
-  
   try {
-    // Fetch current price from CoinGecko
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`CoinGecko API error: ${response.status}`);
+    // Step 1️⃣ — try local cache first
+    const cachedId = (globalThis as any).coinIdCache?.[baseSymbol];
+    let coinGeckoId = cachedId;
+
+    // Step 2️⃣ — if not cached, dynamically search CoinGecko
+    if (!coinGeckoId) {
+      const searchUrl = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(baseSymbol)}`;
+      const searchResp = await fetch(searchUrl);
+      const searchData = await searchResp.json();
+      coinGeckoId = searchData?.coins?.[0]?.id;
+
+      if (!coinGeckoId) throw new Error(`No CoinGecko ID found for ${baseSymbol}`);
+
+      // Cache result globally
+      (globalThis as any).coinIdCache = {
+        ...(globalThis as any).coinIdCache,
+        [baseSymbol]: coinGeckoId,
+      };
     }
-    
-    const data = await response.json();
-    const currentPrice = data[coinGeckoId]?.usd;
-    
-    if (!currentPrice) {
-      throw new Error(`No price data found for ${baseSymbol}`);
-    }
-    
-    console.log(`[CoinGecko] ✅ Fetched ${baseSymbol}: $${currentPrice}`);
-    
-    // For CoinGecko, we only get current price, not historical candles
-    // Use current price as both live and close price
+
+    // Step 3️⃣ — fetch live price dynamically
+    const priceUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`;
+    const priceResp = await fetch(priceUrl);
+    const data = await priceResp.json();
+
+    const currentPrice = data?.[coinGeckoId]?.usd;
+    if (!currentPrice) throw new Error(`No price data for ${baseSymbol}`);
+
+    console.log(`[CoinGecko] ✅ ${baseSymbol} (${coinGeckoId}) = $${currentPrice}`);
+
+    // Step 4️⃣ — build minimal OHLCVData
     const now = new Date();
     const candleCloseTime = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
-    
+
+    // Cache for analyzer
+    (globalThis as any).lastValidatedPrice = currentPrice;
+
     return {
       symbol: binanceSymbol,
       livePrice: currentPrice,
-      candleClosePrice: currentPrice, // Same as live for CoinGecko
+      candleClosePrice: currentPrice,
       candleCloseTime,
       timeframe: label,
       open: currentPrice,
       high: currentPrice,
       low: currentPrice,
       close: currentPrice,
-      volume: 0, // No volume data from CoinGecko simple API
+      volume: 0,
       dataSource: "CoinGecko",
-      historicalCandles: [], // CoinGecko simple API doesn't provide historical data
+      historicalCandles: [],
     };
-  } catch (error: any) {
-    console.error(`❌ CoinGecko API error for symbol "${baseSymbol}":`, error.message);
-    throw new Error(`Failed to fetch crypto price for "${baseSymbol}": ${error.message}`);
+  } catch (err: any) {
+    console.error(`❌ CoinGecko universal fallback failed for ${baseSymbol}: ${err.message}`);
+    throw new Error(`Failed to fetch crypto price for "${baseSymbol}": ${err.message}`);
   }
 }
 
