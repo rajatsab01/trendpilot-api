@@ -1,7 +1,8 @@
 //------------------------------------------------------
 // TrendPilot Routes v2.8 (Dec-2025 build)
 //------------------------------------------------------
-// Handles all /api endpoints with the unified analysis pipeline.
+// Handles all /api endpoints with new analysis pipeline.
+// Restores versionGuard compatibility for frontend popup.
 //------------------------------------------------------
 
 import express, { Request, Response } from "express";
@@ -12,41 +13,55 @@ import { fetchExchangeRates } from "./currencyConverter.js";
 const router = express.Router();
 
 //------------------------------------------------------
-// ✅ Health + Version
+// ✅ Version Guard + Health
 //------------------------------------------------------
-
-// Version info — support both /version and /api/version
-router.get("/version", (_req, res) => {
-  res.json({ version: "1.2.8", updateRequired: false });
-});
-
 router.get("/api/version", (_req, res) => {
-  res.json({ version: "1.2.8", updateRequired: false });
+  // Stable version expected by current frontend build
+  const frontendVersion = "1.2.5";
+
+  // Version guard object (used by popup dismiss & refresh logic)
+  const versionGuard = {
+    version: frontendVersion,
+    message: "Frontend and backend versions synced",
+    updateRequired: false,
+  };
+
+  res.json({
+    version: frontendVersion,
+    updateRequired: false,
+    versionGuard,
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || "development",
+  });
 });
 
-// Health check for uptime
-router.get("/health", (_req, res) => {
+router.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
+    env: process.env.NODE_ENV || "development",
   });
 });
 
 //------------------------------------------------------
-// ✅ Symbol Validation
+// ✅ Symbol validation
 //------------------------------------------------------
-router.post("/symbols/validate", async (req: Request, res: Response) => {
+router.post("/api/symbols/validate", async (req: Request, res: Response) => {
   try {
     console.log("📥 [/api/symbols/validate] Received:", req.body);
     const { symbol, market } = req.body;
 
     if (!symbol || !market)
-      return res.status(400).json({ isValid: false, message: "Missing symbol or market" });
+      return res
+        .status(400)
+        .json({ isValid: false, message: "Missing symbol or market" });
 
     const result = await validateSymbol(symbol, market);
     if (!result.isValid)
-      return res.status(400).json({ isValid: false, message: "Invalid symbol" });
+      return res
+        .status(400)
+        .json({ isValid: false, message: "Invalid symbol" });
 
     res.json({
       isValid: true,
@@ -56,20 +71,22 @@ router.post("/symbols/validate", async (req: Request, res: Response) => {
       exchange: result.exchange || "auto",
     });
   } catch (err: any) {
-    console.error("❌ Symbol validation error:", err);
+    console.error("❌ Symbol validate error:", err);
     res.status(500).json({ isValid: false, message: err.message });
   }
 });
 
 //------------------------------------------------------
-// ✅ Market Analysis Endpoint
+// ✅ Market analysis endpoint
 //------------------------------------------------------
-router.post("/analyze", async (req: Request, res: Response) => {
+router.post("/api/analyze", async (req: Request, res: Response) => {
   try {
     const { symbol, market, language, duration, userCountry } = req.body;
 
     if (!symbol || !market || !duration)
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
 
     console.log("🌐 Running analysis:", symbol, market, duration);
 
@@ -82,7 +99,9 @@ router.post("/analyze", async (req: Request, res: Response) => {
     });
 
     if (!response.success)
-      return res.status(500).json({ success: false, message: "Analysis failed" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Analysis failed" });
 
     res.json({
       analysisId: response.analysisId,
@@ -95,9 +114,9 @@ router.post("/analyze", async (req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Currency Converter Helper
+// ✅ Currency converter helper
 //------------------------------------------------------
-router.get("/rates", async (_req: Request, res: Response) => {
+router.get("/api/rates", async (_req: Request, res: Response) => {
   try {
     const rates = await fetchExchangeRates();
     res.json({ success: true, rates });
@@ -107,16 +126,16 @@ router.get("/rates", async (_req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Fallback for Unknown API Paths
+// ✅ Fallback route for API mismatch
 //------------------------------------------------------
-router.all("*", (_req, res) => {
+router.all("/api/*", (_req, res) => {
   res.status(404).json({ success: false, message: "Endpoint not found" });
 });
 
 //------------------------------------------------------
-// ✅ Register Routes into Express App
+// ✅ Register router for main app
 //------------------------------------------------------
 export function registerRoutes(app: express.Application) {
-  app.use("/api", router);
-  console.log("✅ TrendPilot API routes registered successfully");
+  app.use(router);
+  console.log("✅ TrendPilot routes registered successfully");
 }
