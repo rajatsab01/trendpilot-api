@@ -14,10 +14,17 @@ const router = express.Router();
 //------------------------------------------------------
 // ✅ Health + Version
 //------------------------------------------------------
+
+// Version info — support both /version and /api/version
 router.get("/version", (_req, res) => {
   res.json({ version: "1.2.8", updateRequired: false });
 });
 
+router.get("/api/version", (_req, res) => {
+  res.json({ version: "1.2.8", updateRequired: false });
+});
+
+// Health check for uptime
 router.get("/health", (_req, res) => {
   res.json({
     status: "ok",
@@ -107,7 +114,7 @@ router.all("*", (_req, res) => {
 });
 
 //------------------------------------------------------
-// ✅ Register Routes into App
+// ✅ Register Routes into Express App
 //------------------------------------------------------
 export function registerRoutes(app: express.Application) {
   app.use("/api", router);
