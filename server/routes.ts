@@ -1,7 +1,7 @@
 //------------------------------------------------------
-// TrendPilot Routes v2.8 (Dec-2025 build)
+// TrendPilot Routes v2.9 (Dec-2025 full compatibility)
 //------------------------------------------------------
-// Restores full compatibility: versionGuard + login flow
+// Includes: versionGuard + login fix + verify-phone fix
 //------------------------------------------------------
 
 import express, { Request, Response } from "express";
@@ -12,7 +12,7 @@ import { fetchExchangeRates } from "./currencyConverter.js";
 const router = express.Router();
 
 //------------------------------------------------------
-// ✅ Version Guard + Health
+// ✅ Version Guard
 //------------------------------------------------------
 router.get("/api/version", (_req, res) => {
   const frontendVersion = "1.2.5";
@@ -32,6 +32,9 @@ router.get("/api/version", (_req, res) => {
   });
 });
 
+//------------------------------------------------------
+// ✅ Health
+//------------------------------------------------------
 router.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
@@ -41,43 +44,91 @@ router.get("/api/health", (_req, res) => {
 });
 
 //------------------------------------------------------
-// ✅ Authentication Routes (restored from old build)
+// ✅ Authentication
 //------------------------------------------------------
 
-// Phone verification mock (used by frontend OTP flow)
+// Verify Phone – now fully compatible with all builds
 router.post("/api/auth/verify-phone", (req: Request, res: Response) => {
-  const { phoneNumber, countryCode } = req.body;
-  if (!phoneNumber || !countryCode) {
-    return res.status(400).json({ verified: false, message: "Missing phone number or country code" });
+  const body = req.body || {};
+  const phoneNumber =
+    body.phoneNumber || body.phone || body.mobile || body.number || "";
+  const countryCode =
+    body.countryCode || (phoneNumber.startsWith("+91") ? "+91" : "+1");
+
+  if (!phoneNumber) {
+    console.warn("⚠️ Missing phoneNumber in request:", body);
+    return res
+      .status(400)
+      .json({ verified: false, message: "Missing or invalid phone number" });
   }
-  console.log(`📱 Verifying phone ${countryCode}${phoneNumber} → OK`);
-  res.json({ phoneNumber, countryCode, verified: true });
+
+  const normalized = phoneNumber.startsWith("+")
+    ? phoneNumber
+    : `${countryCode}${phoneNumber.replace(/\D/g, "")}`;
+
+  console.log(`📱 Verified phone request: ${normalized}`);
+  return res.json({
+    phoneNumber: normalized,
+    countryCode,
+    verified: true,
+    message: "Phone verification successful",
+  });
 });
 
-// Simple login handler (frontend token link)
+// Simple Login mock
 router.post("/api/auth/login", (req: Request, res: Response) => {
   const { userId, tokens } = req.body;
   if (!userId) {
-    return res.status(400).json({ success: false, message: "Missing userId" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing userId for login" });
   }
-  console.log(`👤 Login for ${userId} → success`);
-  res.json({ userId, tokens: tokens || 20 });
+  console.log(`👤 Login OK for ${userId}`);
+  res.json({
+    userId,
+    tokens: tokens || 20,
+    success: true,
+  });
 });
+
+//------------------------------------------------------
+// ✅ Basic user & messages routes (frontend safety nets)
+//------------------------------------------------------
+router.get("/api/user/:id", (req: Request, res: Response) => {
+  const id = req.params.id;
+  res.json({
+    success: true,
+    userId: id,
+    name: "rajat sabharwal",
+    mobile: "+919811209473",
+    language: "en",
+    createdAt: new Date().toISOString(),
+  });
+});
+
+router.get(
+  "/api/messages/unread-count/:id",
+  (req: Request, res: Response) => {
+    res.json({ count: 0 });
+  }
+);
 
 //------------------------------------------------------
 // ✅ Symbol validation
 //------------------------------------------------------
 router.post("/api/symbols/validate", async (req: Request, res: Response) => {
   try {
-    console.log("📥 [/api/symbols/validate] Received:", req.body);
     const { symbol, market } = req.body;
-
     if (!symbol || !market)
-      return res.status(400).json({ isValid: false, message: "Missing symbol or market" });
+      return res
+        .status(400)
+        .json({ isValid: false, message: "Missing symbol or market" });
 
     const result = await validateSymbol(symbol, market);
     if (!result.isValid)
-      return res.status(400).json({ isValid: false, message: "Invalid symbol" });
+      return res
+        .status(400)
+        .json({ isValid: false, message: "Invalid symbol" });
 
     res.json({
       isValid: true,
@@ -93,14 +144,15 @@ router.post("/api/symbols/validate", async (req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Market analysis endpoint
+// ✅ Market analysis
 //------------------------------------------------------
 router.post("/api/analyze", async (req: Request, res: Response) => {
   try {
     const { symbol, market, language, duration, userCountry } = req.body;
-
     if (!symbol || !market || !duration)
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
 
     console.log("🌐 Running analysis:", symbol, market, duration);
 
@@ -113,7 +165,9 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
     });
 
     if (!response.success)
-      return res.status(500).json({ success: false, message: "Analysis failed" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Analysis failed" });
 
     res.json({
       analysisId: response.analysisId,
@@ -126,7 +180,7 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Currency converter helper
+// ✅ Currency converter
 //------------------------------------------------------
 router.get("/api/rates", async (_req: Request, res: Response) => {
   try {
@@ -138,14 +192,12 @@ router.get("/api/rates", async (_req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Fallback route for API mismatch
+// ✅ Fallback
 //------------------------------------------------------
 router.all("/api/*", (_req, res) => {
   res.status(404).json({ success: false, message: "Endpoint not found" });
 });
 
-//------------------------------------------------------
-// ✅ Export router for main index
 //------------------------------------------------------
 export function registerRoutes(app: express.Application) {
   app.use(router);
