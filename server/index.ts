@@ -1,9 +1,8 @@
-// server/index.ts
 //------------------------------------------------------
 // TrendPilot Server v2.8 (Dec-2025 build)
 //------------------------------------------------------
 // Unified Express bootstrap for Render/Replit
-// Works with new AI engine, routes, and frontend
+// Includes cache-busting fix for stuck update popup
 //------------------------------------------------------
 
 import path from "path";
@@ -26,9 +25,7 @@ const app = express();
 const server = http.createServer(app);
 
 /* ---------------------- Health ---------------------- */
-app.get("/healthz", (_req, res) => {
-  res.status(200).send("ok");
-});
+app.get("/healthz", (_req, res) => res.status(200).send("ok"));
 app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
@@ -77,6 +74,14 @@ app.use((req, res, next) => {
     }
   });
 
+  next();
+});
+
+/* ------------- Cache-busting for version check ------- */
+app.use(["/version", "/api/version"], (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   next();
 });
 
