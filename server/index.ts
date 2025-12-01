@@ -1,10 +1,19 @@
+// server/index.ts
+//------------------------------------------------------
+// TrendPilot Server v2.8 (Dec-2025 build)
+//------------------------------------------------------
+// Unified Express bootstrap for Render/Replit
+// Works with new AI engine, routes, and frontend
+//------------------------------------------------------
+
 import path from "path";
 import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import express, { type Request, Response, NextFunction } from "express";
+import http from "http";
 
 import { registerRoutes } from "./routes.js";
-import { initializeSymbolRegistry } from "./symbolRegistry";
+import { initializeSymbolRegistry } from "./symbolRegistry.js";
 
 /* ---------------- ESM __dirname shim ---------------- */
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +23,7 @@ const __dirname = path.dirname(__filename);
 config({ path: path.resolve(__dirname, "..", ".env") });
 
 const app = express();
+const server = http.createServer(app);
 
 /* ---------------------- Health ---------------------- */
 app.get("/healthz", (_req, res) => {
@@ -62,7 +72,7 @@ app.use((req, res, next) => {
       const ms = Date.now() - start;
       let line = `${req.method} ${p} ${res.statusCode} in ${ms}ms`;
       if (capturedJson) line += ` :: ${JSON.stringify(capturedJson)}`;
-      if (line.length > 120) line = line.slice(0, 119) + "…";
+      if (line.length > 150) line = line.slice(0, 149) + "…";
       log(line);
     }
   });
@@ -80,29 +90,20 @@ app.use((req, res, next) => {
 
     console.log(
       isProduction
-        ? "🚀 Starting server in production mode..."
-        : "🔧 Starting server in development mode..."
+        ? "🚀 Starting TrendPilot in production mode..."
+        : "🔧 Starting TrendPilot in development mode..."
     );
 
-    if (isProduction) {
-      const requiredSecrets = ["DATABASE_URL", "SESSION_SECRET"];
-      const missing = requiredSecrets.filter((k) => !process.env[k]);
-      if (missing.length) {
-        console.warn(`⚠️ Missing production secrets: ${missing.join(", ")}`);
-        console.warn("   Server will continue but may have limited features.");
-      } else {
-        console.log("✅ All required production secrets are configured");
-      }
-    }
-
+    /* ----------------- Symbol Registry ---------------- */
     console.log("🔧 Initializing symbol registry...");
     initializeSymbolRegistry();
 
-    console.log("📦 Registering routes...");
-    const server = await registerRoutes(app);
+    /* ----------------- Register Routes ---------------- */
+    console.log("📦 Registering API routes...");
+    registerRoutes(app);
     console.log("✅ Routes registered successfully");
 
-    // Global error handler
+    /* ----------------- Global Error Handler ----------- */
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -110,45 +111,38 @@ app.use((req, res, next) => {
       res.status(status).json({ message });
     });
 
-    /* --------- Dev uses Vite; Prod serves static files ---------- */
-    if (!isProduction) {
-      const { setupVite } = await import("./vite.js").catch(async () => {
-        return await import("./vite.ts");
-      });
-      console.log("🎨 Setting up Vite development server...");
-      await setupVite(app, server);
-      console.log("✅ Vite development server ready");
-    } else {
-      const { serveStatic } = await import("./vite.js").catch(async () => {
-        return await import("./vite.ts");
-      });
-      console.log("📁 Serving static files...");
-
-      // ✅ Serve the built frontend from dist/public
+    /* ----------------- Frontend Integration ----------- */
+    if (isProduction) {
       const distPath = path.join(__dirname, "../dist/public");
+      console.log("📁 Serving static frontend from:", distPath);
       app.use(express.static(distPath));
 
-      // ✅ Fallback for all client-side routes
       app.get("*", (_req, res) => {
         res.sendFile(path.join(distPath, "index.html"));
       });
-
-      serveStatic(app);
-      console.log("✅ Static file server ready");
+    } else {
+      try {
+        const { setupVite } = await import("./vite.js").catch(async () => {
+          return await import("./vite.ts");
+        });
+        console.log("🎨 Setting up Vite development server...");
+        await setupVite(app, server);
+        console.log("✅ Vite dev server ready");
+      } catch {
+        console.warn("⚠️ Vite setup skipped (development mode only)");
+      }
     }
 
-    /* -------------------- LISTEN -------------------- */
+    /* ----------------- Server Listen ------------------ */
     const port = Number(process.env.PORT) || 5000;
-    const host = !isProduction ? "127.0.0.1" : "0.0.0.0";
+    const host = isProduction ? "0.0.0.0" : "127.0.0.1";
 
     server.listen(port, host, () => {
-      console.log(`✅ Server is running on http://${host}:${port}`);
+      console.log(`✅ TrendPilot running on http://${host}:${port}`);
       console.log(`🌐 Health check: http://${host}:${port}/healthz`);
-      log(`serving on ${host}:${port}`);
     });
   } catch (err) {
-    console.error("❌ Fatal error during server startup:");
-    console.error(err);
+    console.error("❌ Fatal error during startup:", err);
     process.exit(1);
   }
 })();
