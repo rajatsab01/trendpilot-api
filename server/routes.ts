@@ -1,8 +1,7 @@
 //------------------------------------------------------
 // TrendPilot Routes v2.8 (Dec-2025 build)
 //------------------------------------------------------
-// Handles all /api endpoints with new analysis pipeline.
-// Restores versionGuard compatibility for frontend popup.
+// Restores full compatibility: versionGuard + login flow
 //------------------------------------------------------
 
 import express, { Request, Response } from "express";
@@ -16,10 +15,7 @@ const router = express.Router();
 // ✅ Version Guard + Health
 //------------------------------------------------------
 router.get("/api/version", (_req, res) => {
-  // Stable version expected by current frontend build
   const frontendVersion = "1.2.5";
-
-  // Version guard object (used by popup dismiss & refresh logic)
   const versionGuard = {
     version: frontendVersion,
     message: "Frontend and backend versions synced",
@@ -45,6 +41,30 @@ router.get("/api/health", (_req, res) => {
 });
 
 //------------------------------------------------------
+// ✅ Authentication Routes (restored from old build)
+//------------------------------------------------------
+
+// Phone verification mock (used by frontend OTP flow)
+router.post("/api/auth/verify-phone", (req: Request, res: Response) => {
+  const { phoneNumber, countryCode } = req.body;
+  if (!phoneNumber || !countryCode) {
+    return res.status(400).json({ verified: false, message: "Missing phone number or country code" });
+  }
+  console.log(`📱 Verifying phone ${countryCode}${phoneNumber} → OK`);
+  res.json({ phoneNumber, countryCode, verified: true });
+});
+
+// Simple login handler (frontend token link)
+router.post("/api/auth/login", (req: Request, res: Response) => {
+  const { userId, tokens } = req.body;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: "Missing userId" });
+  }
+  console.log(`👤 Login for ${userId} → success`);
+  res.json({ userId, tokens: tokens || 20 });
+});
+
+//------------------------------------------------------
 // ✅ Symbol validation
 //------------------------------------------------------
 router.post("/api/symbols/validate", async (req: Request, res: Response) => {
@@ -53,15 +73,11 @@ router.post("/api/symbols/validate", async (req: Request, res: Response) => {
     const { symbol, market } = req.body;
 
     if (!symbol || !market)
-      return res
-        .status(400)
-        .json({ isValid: false, message: "Missing symbol or market" });
+      return res.status(400).json({ isValid: false, message: "Missing symbol or market" });
 
     const result = await validateSymbol(symbol, market);
     if (!result.isValid)
-      return res
-        .status(400)
-        .json({ isValid: false, message: "Invalid symbol" });
+      return res.status(400).json({ isValid: false, message: "Invalid symbol" });
 
     res.json({
       isValid: true,
@@ -84,9 +100,7 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
     const { symbol, market, language, duration, userCountry } = req.body;
 
     if (!symbol || !market || !duration)
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
+      return res.status(400).json({ success: false, message: "Missing required fields" });
 
     console.log("🌐 Running analysis:", symbol, market, duration);
 
@@ -99,9 +113,7 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
     });
 
     if (!response.success)
-      return res
-        .status(500)
-        .json({ success: false, message: "Analysis failed" });
+      return res.status(500).json({ success: false, message: "Analysis failed" });
 
     res.json({
       analysisId: response.analysisId,
@@ -133,7 +145,7 @@ router.all("/api/*", (_req, res) => {
 });
 
 //------------------------------------------------------
-// ✅ Register router for main app
+// ✅ Export router for main index
 //------------------------------------------------------
 export function registerRoutes(app: express.Application) {
   app.use(router);
