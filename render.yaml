@@ -7,25 +7,9 @@ services:
 
     buildCommand: |
       npm install
-      npx esbuild server/index.ts --platform=node --format=esm --bundle --outfile=dist/index.js \
-      --external:@babel/preset-typescript \
-      --external:lightningcss \
-      --external:fs \
-      --external:path \
-      --external:url \
-      --external:dotenv \
-      --external:express \
-      --external:util \
-      --external:razorpay \
-      --external:axios \
-      --external:combined-stream \
-      --external:vite \
-      --external:cors \
-      --external:morgan \
-      --alias:@shared=./shared
       npm run build
 
-    startCommand: node dist/index.js
+    startCommand: npx tsx server/index.ts
 
     envVars:
       - key: NODE_ENV
