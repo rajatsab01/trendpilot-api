@@ -16,3 +16,21 @@ services:
         value: production
       - key: PORT
         value: 10000
+services:
+  - type: web
+    name: trendpilot
+    env: node
+    region: oregon
+    plan: free
+
+    buildCommand: |
+      npm install
+      npm run build
+
+    startCommand: npx tsx server/index.ts
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
