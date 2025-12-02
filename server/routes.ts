@@ -15,7 +15,7 @@ const router = express.Router();
 // ✅ Version Guard
 //------------------------------------------------------
 router.get("/api/version", (_req, res) => {
-  const frontendVersion = "1.2.5";
+  const frontendVersion = "1.2.9";
   const versionGuard = {
     version: frontendVersion,
     message: "Frontend and backend versions synced",
@@ -47,35 +47,51 @@ router.get("/api/health", (_req, res) => {
 // ✅ Authentication
 //------------------------------------------------------
 
-// Verify Phone – now fully compatible with all builds
+// Verify Phone – flexible for all frontend versions
 router.post("/api/auth/verify-phone", (req: Request, res: Response) => {
   const body = req.body || {};
-  const phoneNumber =
-    body.phoneNumber || body.phone || body.mobile || body.number || "";
-  const countryCode =
-    body.countryCode || (phoneNumber.startsWith("+91") ? "+91" : "+1");
+  let rawPhone =
+    body.phoneNumber ||
+    body.phone ||
+    body.mobile ||
+    body.number ||
+    body.input ||
+    "";
 
-  if (!phoneNumber) {
-    console.warn("⚠️ Missing phoneNumber in request:", body);
+  // Clean number
+  rawPhone = rawPhone.toString().replace(/\D/g, "");
+
+  // Require 8+ digits
+  if (!rawPhone || rawPhone.length < 8) {
+    console.warn("⚠️ Invalid phone:", body);
     return res
       .status(400)
-      .json({ verified: false, message: "Missing or invalid phone number" });
+      .json({ verified: false, message: "Invalid or missing phone number" });
   }
 
-  const normalized = phoneNumber.startsWith("+")
-    ? phoneNumber
-    : `${countryCode}${phoneNumber.replace(/\D/g, "")}`;
+  // Infer country code if missing
+  let countryCode = body.countryCode;
+  if (!countryCode) {
+    if (rawPhone.startsWith("91")) countryCode = "+91";
+    else if (rawPhone.startsWith("1")) countryCode = "+1";
+    else countryCode = "+91"; // default India
+  }
 
-  console.log(`📱 Verified phone request: ${normalized}`);
+  const normalized = rawPhone.startsWith("+")
+    ? rawPhone
+    : `${countryCode}${rawPhone}`;
+
+  console.log(`📞 Verified phone: ${normalized}`);
+
   return res.json({
+    verified: true,
     phoneNumber: normalized,
     countryCode,
-    verified: true,
-    message: "Phone verification successful",
+    message: "Phone verified successfully",
   });
 });
 
-// Simple Login mock
+// Simple Login
 router.post("/api/auth/login", (req: Request, res: Response) => {
   const { userId, tokens } = req.body;
   if (!userId) {
@@ -92,26 +108,23 @@ router.post("/api/auth/login", (req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Basic user & messages routes (frontend safety nets)
+// ✅ Basic user & messages routes
 //------------------------------------------------------
 router.get("/api/user/:id", (req: Request, res: Response) => {
   const id = req.params.id;
   res.json({
     success: true,
     userId: id,
-    name: "rajat sabharwal",
+    name: "Rajat Sabharwal",
     mobile: "+919811209473",
     language: "en",
     createdAt: new Date().toISOString(),
   });
 });
 
-router.get(
-  "/api/messages/unread-count/:id",
-  (req: Request, res: Response) => {
-    res.json({ count: 0 });
-  }
-);
+router.get("/api/messages/unread-count/:id", (_req: Request, res: Response) => {
+  res.json({ success: true, count: 0 });
+});
 
 //------------------------------------------------------
 // ✅ Symbol validation
@@ -189,6 +202,20 @@ router.get("/api/rates", async (_req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
+});
+
+//------------------------------------------------------
+// ✅ Config endpoints (to stop 404 spam)
+//------------------------------------------------------
+router.get(["/api/config", "/api/v1/config", "/api/v2/config"], (_req, res) => {
+  res.json({
+    success: true,
+    config: {
+      appName: "TrendPilot",
+      version: "1.2.9",
+      status: "active",
+    },
+  });
 });
 
 //------------------------------------------------------
