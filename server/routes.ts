@@ -1,7 +1,7 @@
 //------------------------------------------------------
-// TrendPilot Routes v2.9 (Dec-2025 full compatibility)
+// TrendPilot Routes v1.2.5 (Stable Frontend Sync)
 //------------------------------------------------------
-// Includes: versionGuard + login fix + verify-phone fix
+// Fixes: version mismatch popup + missing download link
 //------------------------------------------------------
 
 import express, { Request, Response } from "express";
@@ -12,23 +12,25 @@ import { fetchExchangeRates } from "./currencyConverter.js";
 const router = express.Router();
 
 //------------------------------------------------------
-// ✅ Version Guard
+// ✅ Version Guard (sync with frontend build 1.2.5)
 //------------------------------------------------------
 router.get("/api/version", (_req, res) => {
-  const frontendVersion = "1.2.9";
+  const frontendVersion = "1.2.5"; // <-- lock backend version to frontend
   const versionGuard = {
     version: frontendVersion,
     message: "Frontend and backend versions synced",
     updateRequired: false,
+    downloadUrl: "https://trendpilot.replit.app",
   };
 
   res.json({
     version: frontendVersion,
     updateRequired: false,
     versionGuard,
+    downloadUrl: "https://trendpilot.replit.app",
     status: "ok",
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || "development",
+    env: process.env.NODE_ENV || "production",
   });
 });
 
@@ -39,47 +41,33 @@ router.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || "development",
+    env: process.env.NODE_ENV || "production",
   });
 });
 
 //------------------------------------------------------
 // ✅ Authentication
 //------------------------------------------------------
-
-// Verify Phone – flexible for all frontend versions
 router.post("/api/auth/verify-phone", (req: Request, res: Response) => {
   const body = req.body || {};
   let rawPhone =
-    body.phoneNumber ||
-    body.phone ||
-    body.mobile ||
-    body.number ||
-    body.input ||
-    "";
+    body.phoneNumber || body.phone || body.mobile || body.number || body.input || "";
 
-  // Clean number
   rawPhone = rawPhone.toString().replace(/\D/g, "");
 
-  // Require 8+ digits
   if (!rawPhone || rawPhone.length < 8) {
     console.warn("⚠️ Invalid phone:", body);
-    return res
-      .status(400)
-      .json({ verified: false, message: "Invalid or missing phone number" });
+    return res.status(400).json({ verified: false, message: "Invalid or missing phone number" });
   }
 
-  // Infer country code if missing
   let countryCode = body.countryCode;
   if (!countryCode) {
     if (rawPhone.startsWith("91")) countryCode = "+91";
     else if (rawPhone.startsWith("1")) countryCode = "+1";
-    else countryCode = "+91"; // default India
+    else countryCode = "+91";
   }
 
-  const normalized = rawPhone.startsWith("+")
-    ? rawPhone
-    : `${countryCode}${rawPhone}`;
+  const normalized = rawPhone.startsWith("+") ? rawPhone : `${countryCode}${rawPhone}`;
 
   console.log(`📞 Verified phone: ${normalized}`);
 
@@ -91,20 +79,13 @@ router.post("/api/auth/verify-phone", (req: Request, res: Response) => {
   });
 });
 
-// Simple Login
 router.post("/api/auth/login", (req: Request, res: Response) => {
   const { userId, tokens } = req.body;
   if (!userId) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Missing userId for login" });
+    return res.status(400).json({ success: false, message: "Missing userId for login" });
   }
   console.log(`👤 Login OK for ${userId}`);
-  res.json({
-    userId,
-    tokens: tokens || 20,
-    success: true,
-  });
+  res.json({ userId, tokens: tokens || 20, success: true });
 });
 
 //------------------------------------------------------
@@ -133,15 +114,11 @@ router.post("/api/symbols/validate", async (req: Request, res: Response) => {
   try {
     const { symbol, market } = req.body;
     if (!symbol || !market)
-      return res
-        .status(400)
-        .json({ isValid: false, message: "Missing symbol or market" });
+      return res.status(400).json({ isValid: false, message: "Missing symbol or market" });
 
     const result = await validateSymbol(symbol, market);
     if (!result.isValid)
-      return res
-        .status(400)
-        .json({ isValid: false, message: "Invalid symbol" });
+      return res.status(400).json({ isValid: false, message: "Invalid symbol" });
 
     res.json({
       isValid: true,
@@ -163,9 +140,7 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
   try {
     const { symbol, market, language, duration, userCountry } = req.body;
     if (!symbol || !market || !duration)
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
+      return res.status(400).json({ success: false, message: "Missing required fields" });
 
     console.log("🌐 Running analysis:", symbol, market, duration);
 
@@ -178,14 +153,9 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
     });
 
     if (!response.success)
-      return res
-        .status(500)
-        .json({ success: false, message: "Analysis failed" });
+      return res.status(500).json({ success: false, message: "Analysis failed" });
 
-    res.json({
-      analysisId: response.analysisId,
-      ...response.data,
-    });
+    res.json({ analysisId: response.analysisId, ...response.data });
   } catch (err: any) {
     console.error("❌ /api/analyze error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -205,15 +175,16 @@ router.get("/api/rates", async (_req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Config endpoints (to stop 404 spam)
+// ✅ Config endpoints (stop 404 spam)
 //------------------------------------------------------
 router.get(["/api/config", "/api/v1/config", "/api/v2/config"], (_req, res) => {
   res.json({
     success: true,
     config: {
       appName: "TrendPilot",
-      version: "1.2.9",
+      version: "1.2.5",
       status: "active",
+      downloadUrl: "https://trendpilot.replit.app",
     },
   });
 });
