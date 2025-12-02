@@ -1412,3 +1412,27 @@ export class PgStorage implements IStorage {
 
 // Use PostgreSQL storage in production, in-memory for development
 export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();
+// ---------------------------------------------------------
+// Compatibility exports for TrendPilot routes
+// ---------------------------------------------------------
+
+// Universal user save/load that delegates to whichever storage is active
+export async function saveUser(user: any) {
+  if ("createUser" in storage) {
+    return (storage as any).createUser(user);
+  }
+  throw new Error("saveUser not supported in this storage mode");
+}
+
+export async function loadUser(id: string) {
+  if ("getUser" in storage) {
+    return (storage as any).getUser(id);
+  }
+  throw new Error("loadUser not supported in this storage mode");
+}
+
+// Simple version guard shared between backend and frontend
+export const versionGuard = {
+  version: "1.2.8",
+  message: "Frontend and backend versions synchronized",
+};
