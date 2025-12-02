@@ -1,10 +1,16 @@
 //------------------------------------------------------
 // TrendPilot Routes v1.2.5 (Stable Frontend Sync)
 //------------------------------------------------------
-// Fixes: version mismatch popup + missing download link
+// Includes:
+// - Version guard sync (popup fix)
+// - Phone + login auth
+// - Market/symbol validation
+// - Instrument search (Binance + CoinGecko fallback)
+// - Config + analysis endpoints
 //------------------------------------------------------
 
 import express, { Request, Response } from "express";
+import axios from "axios";
 import { runMarketAnalysis } from "./analysisEngine.js";
 import { validateSymbol } from "./symbolValidator.js";
 import { fetchExchangeRates } from "./currencyConverter.js";
@@ -12,10 +18,10 @@ import { fetchExchangeRates } from "./currencyConverter.js";
 const router = express.Router();
 
 //------------------------------------------------------
-// ✅ Version Guard (sync with frontend build 1.2.5)
+// ✅ Version Guard (sync with frontend 1.2.5)
 //------------------------------------------------------
 router.get("/api/version", (_req, res) => {
-  const frontendVersion = "1.2.5"; // <-- lock backend version to frontend
+  const frontendVersion = "1.2.5";
   const versionGuard = {
     version: frontendVersion,
     message: "Frontend and backend versions synced",
@@ -35,7 +41,7 @@ router.get("/api/version", (_req, res) => {
 });
 
 //------------------------------------------------------
-// ✅ Health
+// ✅ Health Check
 //------------------------------------------------------
 router.get("/api/health", (_req, res) => {
   res.json({
@@ -68,7 +74,6 @@ router.post("/api/auth/verify-phone", (req: Request, res: Response) => {
   }
 
   const normalized = rawPhone.startsWith("+") ? rawPhone : `${countryCode}${rawPhone}`;
-
   console.log(`📞 Verified phone: ${normalized}`);
 
   return res.json({
@@ -108,7 +113,57 @@ router.get("/api/messages/unread-count/:id", (_req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Symbol validation
+// ✅ Instrument Search (Auto-suggestions)
+//------------------------------------------------------
+router.get("/api/search-instruments", async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q || "").toString().trim().toUpperCase();
+
+    // Fetch Binance spot prices
+    const { data } = await axios.get("https://api.binance.com/api/v3/ticker/price");
+    const binanceList = data
+      .filter((item: any) => item.symbol && item.symbol.includes("USDT"))
+      .slice(0, 120)
+      .map((item: any) => ({
+        symbol: item.symbol,
+        name: item.symbol.replace("USDT", ""),
+        price: item.price,
+        source: "Binance",
+      }));
+
+    let results = query
+      ? binanceList.filter((x) => x.symbol.includes(query))
+      : binanceList;
+
+    // Optional fallback: CoinGecko
+    if (results.length === 0) {
+      const cg = await axios.get("https://api.coingecko.com/api/v3/coins/markets", {
+        params: { vs_currency: "usd", order: "market_cap_desc", per_page: 100, page: 1 },
+      });
+      const cgList = cg.data.map((c: any) => ({
+        symbol: c.symbol.toUpperCase(),
+        name: c.name,
+        price: c.current_price,
+        source: "CoinGecko",
+      }));
+      results = query
+        ? cgList.filter((x) => x.symbol.includes(query))
+        : cgList;
+    }
+
+    res.json({
+      success: true,
+      instruments: results,
+      total: results.length,
+    });
+  } catch (err: any) {
+    console.error("❌ /api/search-instruments error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+//------------------------------------------------------
+// ✅ Symbol Validation
 //------------------------------------------------------
 router.post("/api/symbols/validate", async (req: Request, res: Response) => {
   try {
@@ -134,7 +189,7 @@ router.post("/api/symbols/validate", async (req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Market analysis
+// ✅ Market Analysis
 //------------------------------------------------------
 router.post("/api/analyze", async (req: Request, res: Response) => {
   try {
@@ -163,7 +218,7 @@ router.post("/api/analyze", async (req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Currency converter
+// ✅ Currency Converter
 //------------------------------------------------------
 router.get("/api/rates", async (_req: Request, res: Response) => {
   try {
@@ -175,7 +230,7 @@ router.get("/api/rates", async (_req: Request, res: Response) => {
 });
 
 //------------------------------------------------------
-// ✅ Config endpoints (stop 404 spam)
+// ✅ Config Endpoints (stop 404 spam)
 //------------------------------------------------------
 router.get(["/api/config", "/api/v1/config", "/api/v2/config"], (_req, res) => {
   res.json({
