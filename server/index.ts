@@ -37,12 +37,12 @@ app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 app.use("/", appRoutes);
 
 // ---------------------------------------------
-// 🗂️ Static Files (Frontend Build)
+// 🗂️ Serve Frontend Build (React/Vite)
 // ---------------------------------------------
 const publicPath = path.join(__dirname, "dist", "public");
 app.use(express.static(publicPath));
 
-// Fallback for SPA routing (React/Vite frontend)
+// ✅ Fallback: Send React index.html for all other routes
 app.get("*", (_req: Request, res: Response) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
@@ -59,7 +59,7 @@ app.listen(PORT, () => {
 });
 
 // ---------------------------------------------
-// 🧠 Graceful Shutdown (optional for Render)
+// 🧠 Graceful Shutdown (Render-compatible)
 // ---------------------------------------------
 process.on("SIGINT", () => {
   console.log("🛑 Server shutting down...");
