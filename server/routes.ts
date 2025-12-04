@@ -2,7 +2,7 @@
  * TrendPilot API Routes
  * ---------------------
  * Central router for all API endpoints.
- * Includes: health check, version info, and authentication routes.
+ * Includes: health check, version info, phone verification, and login.
  */
 
 import { Router, Request, Response } from "express";
@@ -17,7 +17,7 @@ router.get("/healthz", (_req: Request, res: Response) => {
 });
 
 // ------------------------------------------------------
-// 📦 API Version
+// 📦 API Version Info
 // ------------------------------------------------------
 router.get("/api/version", (_req: Request, res: Response) => {
   res.json({
@@ -28,40 +28,91 @@ router.get("/api/version", (_req: Request, res: Response) => {
 });
 
 // ------------------------------------------------------
-// 📱 Phone Verification (production placeholder)
+// 📱 Phone Verification via Phone.Email
 // ------------------------------------------------------
-// NOTE: Connect your real verification service here.
-// e.g., Twilio, Firebase Auth, or your custom OTP logic.
-
 router.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
   try {
-    const { phone } = req.body;
+    const { userJsonUrl } = req.body;
 
-    if (!phone) {
-      return res.status(400).json({ success: false, message: "Phone number is required" });
+    if (!userJsonUrl) {
+      return res.status(400).json({ success: false, message: "Missing userJsonUrl" });
     }
 
-    // 🧩 Example integration (replace with your actual service)
-    // await sendOtpToPhone(phone);
+    const response = await fetch(userJsonUrl);
+    if (!response.ok) {
+      throw new Error(`Fetch failed with status ${response.status}`);
+    }
 
-    // Respond success (for now, simple confirmation)
+    const data = await response.json();
+
+    // Extract phone number from multiple possible keys
+    const phone =
+      data.phone_email?.phone_number ||
+      data.phone_number ||
+      data.phone ||
+      null;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing phone number in user JSON",
+      });
+    }
+
+    // ✅ Send verified phone number back to client
     return res.status(200).json({
       success: true,
-      message: "Verification request received",
-      phone,
+      phoneNumber: phone,
     });
   } catch (error: any) {
-    console.error("❌ Phone verification error:", error);
+    console.error("❌ verify-phone error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error during phone verification",
+      message: "Failed to verify phone",
       error: error.message || "Unknown error",
     });
   }
 });
 
 // ------------------------------------------------------
-// ⚙️ Optional: Email verification placeholder
+// 👤 Login Route
+// ------------------------------------------------------
+router.post("/api/auth/login", async (req: Request, res: Response) => {
+  try {
+    const { name, mobile, language } = req.body;
+
+    if (!name || !mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing name or mobile number",
+      });
+    }
+
+    // Example: in future you can connect this to DB (Firebase / Mongo)
+    const fakeUserId = `${mobile}-${Date.now()}`;
+
+    console.log(`✅ User logged in: ${name} (${mobile}) [${language}]`);
+
+    return res.status(200).json({
+      success: true,
+      userId: fakeUserId,
+      name,
+      mobile,
+      language,
+      message: "Login successful",
+    });
+  } catch (error: any) {
+    console.error("❌ login error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to complete login",
+      error: error.message || "Unknown error",
+    });
+  }
+});
+
+// ------------------------------------------------------
+// ⚙️ Optional Email verification placeholder
 // ------------------------------------------------------
 router.post("/api/auth/verify-email", async (req: Request, res: Response) => {
   try {
@@ -70,8 +121,6 @@ router.post("/api/auth/verify-email", async (req: Request, res: Response) => {
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
-
-    // e.g., await sendEmailVerification(email);
 
     return res.status(200).json({
       success: true,
