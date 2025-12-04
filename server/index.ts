@@ -38,7 +38,7 @@ app.use("/api", appRoutes);
 // ---------------------------------------------
 // 🗂️ Serve Frontend (React build)
 // ---------------------------------------------
-const publicPath = path.join(__dirname, "dist", "public");
+const publicPath = path.join(__dirname, "..", "dist", "public"); // ✅ corrected path
 app.use(express.static(publicPath));
 
 // ✅ Fallback for React Router (SPA)
