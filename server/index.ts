@@ -2,7 +2,7 @@
  * TrendPilot API Server (Main Entry)
  * ----------------------------------
  * Loads environment variables, sets up Express,
- * attaches API routes, and starts the server.
+ * attaches API routes, and serves built frontend.
  */
 
 import express, { Request, Response } from "express";
@@ -37,12 +37,12 @@ app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 app.use("/", appRoutes);
 
 // ---------------------------------------------
-// 🗂️ Serve Frontend Build (React/Vite)
+// 🗂️ Serve Frontend (Vite/React build)
 // ---------------------------------------------
-const publicPath = path.join(__dirname, "dist", "public");
+const publicPath = path.join(__dirname, "../dist/public");
 app.use(express.static(publicPath));
 
-// ✅ Fallback: Send React index.html for all other routes
+// ✅ Fallback for SPA routing (React/Vite frontend)
 app.get("*", (_req: Request, res: Response) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
@@ -59,7 +59,7 @@ app.listen(PORT, () => {
 });
 
 // ---------------------------------------------
-// 🧠 Graceful Shutdown (Render-compatible)
+// 🧠 Graceful Shutdown
 // ---------------------------------------------
 process.on("SIGINT", () => {
   console.log("🛑 Server shutting down...");
