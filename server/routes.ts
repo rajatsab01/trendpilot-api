@@ -35,6 +35,7 @@ router.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
     const { userJsonUrl } = req.body;
 
     if (!userJsonUrl) {
+      console.error("❌ Missing userJsonUrl in body");
       return res.status(400).json({ success: false, message: "Missing userJsonUrl" });
     }
 
@@ -83,9 +84,9 @@ router.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("❌ verify-phone error:", error);
 
-    // Optional fallback for testing
+    // Optional fallback for testing or network errors
     const fallbackPhone = "+910000000000";
-    console.log("⚠️ Using fallback phone:", fallbackPhone);
+    console.warn("⚠️ Using fallback phone:", fallbackPhone);
 
     return res.status(200).json({
       success: true,
@@ -141,6 +142,8 @@ router.post("/api/auth/verify-email", async (req: Request, res: Response) => {
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
+
+    console.log("📧 Email verification request for:", email);
 
     return res.status(200).json({
       success: true,
