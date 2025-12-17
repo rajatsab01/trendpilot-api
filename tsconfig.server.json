@@ -1,18 +1,23 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["shared/*"]
-    },
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
     "rootDir": ".",
     "outDir": "dist",
-    "module": "ESNext",
-    "target": "ES2020",
+
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    }
   },
+
   "include": ["server/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

@@ -29,7 +29,7 @@ import {
   reports,
   reactions,
   pinnedTraders,
-} from "@shared/schema";
+} from "@shared/schema.js";
 
 import { randomUUID } from "crypto";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
@@ -65,6 +65,7 @@ export interface IStorage {
   toggleSaveAnalysis(id: string): Promise<Analysis | undefined>;
   updateAnalysisStatus(id: string, status: string, profit: string | null): Promise<Analysis | undefined>;
   deleteAnalysis(id: string): Promise<boolean>;
+
 
   // Brokers
   getBroker(id: string): Promise<Broker | undefined>;
@@ -168,24 +169,28 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = {
-      ...insertUser,
-      id,
-      exchange: insertUser.exchange ?? null,
-      currency: insertUser.currency ?? "USD",
-      maxTokens: insertUser.maxTokens ?? 20,
-      pwaInstallBonusClaimed: insertUser.pwaInstallBonusClaimed ?? 0,
-      isAdmin: insertUser.isAdmin ?? 0,
-      alias: insertUser.alias ?? null,
-      rulesAccepted: insertUser.rulesAccepted ?? 0,
-      lastSeen: insertUser.lastSeen ?? null,
-      isBanned: insertUser.isBanned ?? 0,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
-    return user;
-  }
+  const id = randomUUID();
+
+  const user: User = {
+    ...insertUser,
+    id,
+    language: insertUser.language ?? "en",
+    exchange: insertUser.exchange ?? null,
+    currency: insertUser.currency ?? "USD",
+    tokens: insertUser.tokens ?? 0,
+    maxTokens: insertUser.maxTokens ?? 20,
+    pwaInstallBonusClaimed: insertUser.pwaInstallBonusClaimed ?? 0,
+    isAdmin: insertUser.isAdmin ?? 0,
+    alias: insertUser.alias ?? null,
+    rulesAccepted: insertUser.rulesAccepted ?? 0,
+    lastSeen: insertUser.lastSeen ?? null,
+    isBanned: insertUser.isBanned ?? 0,
+    createdAt: new Date(),
+  };
+
+  this.users.set(id, user);
+  return user;
+}
 
   async updateUserTokens(id: string, tokens: number): Promise<User | undefined> {
     const user = this.users.get(id);
@@ -335,6 +340,9 @@ export class MemStorage implements IStorage {
 
   async deleteAnalysis(id: string): Promise<boolean> {
     return this.analyses.delete(id);
+  }
+    async findRecentAnalysis() {
+    return null;
   }
 
   // Brokers
@@ -736,6 +744,32 @@ export class PgStorage implements IStorage {
     const result = await this.db.delete(analyses).where(eq(analyses.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
+
+  // Added: Patch for missing findRecentAnalysis implementation
+async findRecentAnalysis(
+  userId: string,
+  symbol: string,
+  duration: string,
+  market: string,
+  language?: string
+) {
+  const result = await this.db
+    .select()
+    .from(analyses)
+    .where(
+      and(
+        eq(analyses.userId, userId),
+        eq(analyses.symbol, symbol),
+        eq(analyses.duration, duration),
+        eq(analyses.market, market),
+        language ? eq(analyses.language, language) : sql`TRUE`
+      )
+    )
+    .orderBy(sql`${analyses.createdAt} DESC`)
+    .limit(1);
+
+  return result[0];
+}
 
   // Brokers
   async getBroker(id: string): Promise<Broker | undefined> {

@@ -7,7 +7,7 @@
  * Sources: Binance + CoinGecko + Yahoo Finance
  */
 
-import { normalizeSymbolForAPI, type MarketType } from "./symbolRegistry";
+import { normalizeSymbolForAPI, type MarketType } from "./symbolRegistry.js";
 
 //------------------------------------------------------
 // ✅ Interface (extended for routes.ts expectations)
