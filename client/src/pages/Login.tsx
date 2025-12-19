@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 
@@ -10,18 +10,21 @@ import PWAInstallModal from "../components/PWAInstallModal";
 
 declare global {
   interface Window {
-    phoneEmailListener?: (userObj: { user_json_url: string }) => void;
+    phoneEmailListener?: (userObj: {
+      phone_number?: string;
+      phone?: string;
+    }) => void;
   }
 }
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
-  const [verifiedPhone, setVerifiedPhone] = useState("");
   const [isVerified, setIsVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
 
   const {
     showInstallModal,
@@ -31,9 +34,9 @@ export default function Login() {
     handleDismiss,
   } = usePWAInstall();
 
-  /* --------------------------------------------------
-     📱 VERIFY PHONE (NEW STABLE FLOW)
-  -------------------------------------------------- */
+  /* -------------------------------
+     📱 VERIFY PHONE (NEW API)
+  -------------------------------- */
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
       const res = await apiRequest("POST", "/api/auth/verify-phone", {
@@ -42,12 +45,12 @@ export default function Login() {
       return res.json();
     },
     onSuccess: (data) => {
-      setVerifiedPhone(data.phoneNumber);
       setIsVerified(true);
+      setVerifiedPhone(data.phoneNumber);
 
       toast({
         title: "Success",
-        description: "Phone number verified",
+        description: "Phone number verified successfully",
       });
     },
     onError: () => {
@@ -59,9 +62,9 @@ export default function Login() {
     },
   });
 
-  /* --------------------------------------------------
+  /* -------------------------------
      🔑 LOGIN
-  -------------------------------------------------- */
+  -------------------------------- */
   const loginMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/login", {
@@ -89,35 +92,29 @@ export default function Login() {
     },
   });
 
-  /* --------------------------------------------------
-     📦 PHONE.EMAIL SCRIPT
-  -------------------------------------------------- */
+  /* -------------------------------
+     📦 LOAD Phone.Email SCRIPT
+  -------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://www.phone.email/sign_in_button_v1.js";
     script.async = true;
     document.body.appendChild(script);
 
-    window.phoneEmailListener = async (userObj) => {
-      try {
-        const res = await fetch(userObj.user_json_url);
-        const data = await res.json();
+    window.phoneEmailListener = (userObj) => {
+      const phone =
+        userObj.phone_number || userObj.phone || "";
 
-        const phone =
-          data?.phone_email?.phone_number ||
-          data?.phone_number ||
-          data?.phone;
-
-        if (!phone) throw new Error("Phone missing");
-
-        verifyPhoneMutation.mutate(phone);
-      } catch (err) {
+      if (!phone) {
         toast({
           title: "Error",
-          description: "Phone verification failed",
+          description: "Phone not received from Phone.Email",
           variant: "destructive",
         });
+        return;
       }
+
+      verifyPhoneMutation.mutate(phone);
     };
 
     return () => {
@@ -126,11 +123,9 @@ export default function Login() {
     };
   }, []);
 
-  /* -------------------------------------------------- */
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && isVerified) {
+    if (name.trim() && isVerified) {
       loginMutation.mutate();
     }
   };
@@ -143,11 +138,11 @@ export default function Login() {
 
       <main className="flex-grow flex items-center justify-center px-6">
         <div className="w-full max-w-md">
-          <div className="text-center mb-6">
+          <div className="flex flex-col items-center mb-6">
             <img
-              src="/trendpilot-logo.png"
-              className="mx-auto h-14 mb-2"
+              src="/assets/trendpilot-logo.png"
               alt="TrendPilot"
+              className="h-14 w-14 mb-2"
             />
             <h1 className="text-[#38e07b] text-2xl font-bold">
               TrendPilot
@@ -180,7 +175,7 @@ export default function Login() {
                 />
               </div>
             ) : (
-              <div className="p-3 border border-[#38e07b] rounded text-white text-sm">
+              <div className="p-3 border border-[#38e07b] rounded text-sm text-white">
                 Phone verified: {verifiedPhone}
               </div>
             )}
