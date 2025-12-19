@@ -12,7 +12,6 @@ declare global {
   interface Window {
     phoneEmailListener?: (userObj: {
       phone_number?: string;
-      phone?: string;
     }) => void;
   }
 }
@@ -34,9 +33,9 @@ export default function Login() {
     handleDismiss,
   } = usePWAInstall();
 
-  /* -------------------------------
-     📱 VERIFY PHONE (NEW API)
-  -------------------------------- */
+  /* --------------------------------------------------
+     📱 VERIFY PHONE (Render-safe)
+  -------------------------------------------------- */
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
       const res = await apiRequest("POST", "/api/auth/verify-phone", {
@@ -62,9 +61,9 @@ export default function Login() {
     },
   });
 
-  /* -------------------------------
+  /* --------------------------------------------------
      🔑 LOGIN
-  -------------------------------- */
+  -------------------------------------------------- */
   const loginMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/login", {
@@ -92,9 +91,9 @@ export default function Login() {
     },
   });
 
-  /* -------------------------------
+  /* --------------------------------------------------
      📦 LOAD Phone.Email SCRIPT
-  -------------------------------- */
+  -------------------------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://www.phone.email/sign_in_button_v1.js";
@@ -102,19 +101,18 @@ export default function Login() {
     document.body.appendChild(script);
 
     window.phoneEmailListener = (userObj) => {
-      const phone =
-        userObj.phone_number || userObj.phone || "";
+      console.log("Phone.Email callback:", userObj);
 
-      if (!phone) {
+      if (!userObj?.phone_number) {
         toast({
           title: "Error",
-          description: "Phone not received from Phone.Email",
+          description: "Phone number not received",
           variant: "destructive",
         });
         return;
       }
 
-      verifyPhoneMutation.mutate(phone);
+      verifyPhoneMutation.mutate(userObj.phone_number);
     };
 
     return () => {
@@ -125,7 +123,7 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && isVerified) {
+    if (name.trim() && isVerified && verifiedPhone) {
       loginMutation.mutate();
     }
   };
@@ -144,9 +142,7 @@ export default function Login() {
               alt="TrendPilot"
               className="h-14 w-14 mb-2"
             />
-            <h1 className="text-[#38e07b] text-2xl font-bold">
-              TrendPilot
-            </h1>
+            <h1 className="text-[#38e07b] text-2xl font-bold">TrendPilot</h1>
             <p className="text-[#9eb7a8] text-sm">
               AI-Powered Trading Analyzer
             </p>
