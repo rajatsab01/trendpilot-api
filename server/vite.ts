@@ -5,6 +5,7 @@ import * as vite from "vite";
 const createViteServer = vite.createServer as any;
 const createLogger = vite.createLogger as any;
 import { type Server } from "http";
+// @ts-ignore
 import viteConfig from "../vite.config.js";
 import { nanoid } from "nanoid";
 
