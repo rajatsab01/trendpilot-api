@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 
@@ -16,12 +16,12 @@ declare global {
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
 
   const {
     showInstallModal,
@@ -31,25 +31,23 @@ export default function Login() {
     handleDismiss,
   } = usePWAInstall();
 
-  // 🔐 Verify phone
+  /* --------------------------------------------------
+     📱 VERIFY PHONE (NEW STABLE FLOW)
+  -------------------------------------------------- */
   const verifyPhoneMutation = useMutation({
-    mutationFn: async (userJsonUrl: string) => {
+    mutationFn: async (phoneNumber: string) => {
       const res = await apiRequest("POST", "/api/auth/verify-phone", {
-        userJsonUrl,
+        phoneNumber,
       });
       return res.json();
     },
     onSuccess: (data) => {
-      if (!data?.phoneNumber) {
-        throw new Error("Phone missing");
-      }
-
-      setIsVerified(true);
       setVerifiedPhone(data.phoneNumber);
+      setIsVerified(true);
 
       toast({
         title: "Success",
-        description: "Phone number verified successfully",
+        description: "Phone number verified",
       });
     },
     onError: () => {
@@ -61,7 +59,9 @@ export default function Login() {
     },
   });
 
-  // 🔑 Login
+  /* --------------------------------------------------
+     🔑 LOGIN
+  -------------------------------------------------- */
   const loginMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/login", {
@@ -89,16 +89,35 @@ export default function Login() {
     },
   });
 
-  // 📱 Phone.Email script
+  /* --------------------------------------------------
+     📦 PHONE.EMAIL SCRIPT
+  -------------------------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://www.phone.email/sign_in_button_v1.js";
     script.async = true;
     document.body.appendChild(script);
 
-    window.phoneEmailListener = (userObj) => {
-      console.log("Phone.Email callback:", userObj);
-      verifyPhoneMutation.mutate(userObj.user_json_url);
+    window.phoneEmailListener = async (userObj) => {
+      try {
+        const res = await fetch(userObj.user_json_url);
+        const data = await res.json();
+
+        const phone =
+          data?.phone_email?.phone_number ||
+          data?.phone_number ||
+          data?.phone;
+
+        if (!phone) throw new Error("Phone missing");
+
+        verifyPhoneMutation.mutate(phone);
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Phone verification failed",
+          variant: "destructive",
+        });
+      }
     };
 
     return () => {
@@ -107,9 +126,11 @@ export default function Login() {
     };
   }, []);
 
+  /* -------------------------------------------------- */
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && isVerified && verifiedPhone) {
+    if (name && isVerified) {
       loginMutation.mutate();
     }
   };
@@ -122,13 +143,15 @@ export default function Login() {
 
       <main className="flex-grow flex items-center justify-center px-6">
         <div className="w-full max-w-md">
-          <div className="flex flex-col items-center mb-6">
+          <div className="text-center mb-6">
             <img
               src="/trendpilot-logo.png"
+              className="mx-auto h-14 mb-2"
               alt="TrendPilot"
-              className="h-14 w-14 mb-2"
             />
-            <h1 className="text-[#38e07b] text-2xl font-bold">TrendPilot</h1>
+            <h1 className="text-[#38e07b] text-2xl font-bold">
+              TrendPilot
+            </h1>
             <p className="text-[#9eb7a8] text-sm">
               AI-Powered Trading Analyzer
             </p>
@@ -157,7 +180,7 @@ export default function Login() {
                 />
               </div>
             ) : (
-              <div className="p-3 border border-[#38e07b] rounded text-sm text-white">
+              <div className="p-3 border border-[#38e07b] rounded text-white text-sm">
                 Phone verified: {verifiedPhone}
               </div>
             )}

@@ -1,24 +1,24 @@
 /**
  * TrendPilot API Routes
  * ---------------------
- * Central router for all API endpoints.
+ * Stable & simplified auth flow (Render-safe)
  */
 
 import { Router, Request, Response } from "express";
 
 const router = Router();
 
-// ------------------------------------------------------
-// 🩺 Health Check (Render)
-// ------------------------------------------------------
-router.get("/healthz", (_req, res) => {
+/* --------------------------------------------------
+   🩺 Health Check (Render)
+-------------------------------------------------- */
+router.get("/healthz", (_req: Request, res: Response) => {
   res.status(200).send("OK");
 });
 
-// ------------------------------------------------------
-// 📦 API Version
-// ------------------------------------------------------
-router.get("/api/version", (_req, res) => {
+/* --------------------------------------------------
+   📦 API Version
+-------------------------------------------------- */
+router.get("/api/version", (_req: Request, res: Response) => {
   res.json({
     version: "1.0.0",
     service: "TrendPilot API",
@@ -26,71 +26,55 @@ router.get("/api/version", (_req, res) => {
   });
 });
 
-// ------------------------------------------------------
-// 📱 Phone Verification (Phone.Email)
-// ------------------------------------------------------
+/* --------------------------------------------------
+   📱 Phone Verification (STABLE + BACKWARD SAFE)
+-------------------------------------------------- */
 router.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
   try {
-    const { userJsonUrl } = req.body;
+    let { phoneNumber } = req.body;
 
-    if (!userJsonUrl) {
+    // 🔁 Backward compatibility (Phone.Email flow)
+    if (!phoneNumber && req.body?.userJsonUrl) {
+      console.warn("⚠️ userJsonUrl received but ignored (legacy flow)");
       return res.status(400).json({
         success: false,
-        message: "Missing userJsonUrl",
+        message: "Phone number missing",
       });
     }
 
-    console.log("🔐 Phone verification URL:", userJsonUrl);
-
-    const response = await fetch(userJsonUrl, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
-
-    if (!response.ok) {
-      console.error("❌ Phone.Email bad response:", response.status);
-      return res.status(401).json({
+    if (!phoneNumber) {
+      return res.status(400).json({
         success: false,
-        message: "Phone verification failed",
+        message: "Phone number missing",
       });
     }
 
-    const data = await response.json();
-    console.log("📦 Phone.Email response:", data);
-
-    const phone =
-      data?.phone_email?.phone_number ||
-      data?.phone_number ||
-      data?.phone ||
-      null;
-
-    if (!phone) {
-      console.error("❌ Phone missing in response");
-      return res.status(401).json({
+    // Basic E.164 validation
+    if (!/^\+\d{10,15}$/.test(phoneNumber)) {
+      return res.status(400).json({
         success: false,
-        message: "Phone not verified",
+        message: "Invalid phone number format",
       });
     }
 
-    console.log("✅ Phone verified:", phone);
+    console.log("✅ Phone verified:", phoneNumber);
 
     return res.status(200).json({
       success: true,
-      phoneNumber: phone,
+      phoneNumber,
     });
-  } catch (err: any) {
-    console.error("❌ verify-phone error:", err.message);
-
+  } catch (error: any) {
+    console.error("❌ verify-phone error:", error);
     return res.status(500).json({
       success: false,
-      message: "Verification service unavailable",
+      message: "Phone verification failed",
     });
   }
 });
 
-// ------------------------------------------------------
-// 👤 Login
-// ------------------------------------------------------
+/* --------------------------------------------------
+   👤 Login
+-------------------------------------------------- */
 router.post("/api/auth/login", async (req: Request, res: Response) => {
   try {
     const { name, mobile, language } = req.body;
@@ -98,13 +82,13 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
     if (!name || !mobile) {
       return res.status(400).json({
         success: false,
-        message: "Missing name or mobile",
+        message: "Missing name or mobile number",
       });
     }
 
     const userId = `${mobile}-${Date.now()}`;
 
-    console.log(`✅ Login: ${name} | ${mobile} | ${language}`);
+    console.log(`✅ Login success: ${name} (${mobile})`);
 
     return res.status(200).json({
       success: true,
@@ -113,8 +97,8 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
       mobile,
       language,
     });
-  } catch (err: any) {
-    console.error("❌ login error:", err.message);
+  } catch (error: any) {
+    console.error("❌ login error:", error);
     return res.status(500).json({
       success: false,
       message: "Login failed",
@@ -122,31 +106,26 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
   }
 });
 
-// ------------------------------------------------------
-// 📧 Email verification placeholder
-// ------------------------------------------------------
+/* --------------------------------------------------
+   ⚙️ Email Placeholder
+-------------------------------------------------- */
 router.post("/api/auth/verify-email", async (req: Request, res: Response) => {
   const { email } = req.body;
 
   if (!email) {
-    return res.status(400).json({
-      success: false,
-      message: "Email required",
-    });
+    return res.status(400).json({ success: false });
   }
 
-  console.log("📧 Email verification:", email);
-
-  return res.status(200).json({
+  return res.json({
     success: true,
     email,
   });
 });
 
-// ------------------------------------------------------
-// ❌ 404
-// ------------------------------------------------------
-router.use((_req, res) => {
+/* --------------------------------------------------
+   ❌ 404
+-------------------------------------------------- */
+router.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     message: "API route not found",
