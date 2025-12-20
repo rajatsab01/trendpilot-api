@@ -9,25 +9,22 @@ import { usePWAInstall } from "../hooks/usePWAInstall";
 import PWAInstallModal from "../components/PWAInstallModal";
 
 /* --------------------------------------------------
-   🌐 Phone.Email global
+   🌍 Phone.Email global callback
 -------------------------------------------------- */
 declare global {
   interface Window {
-    phoneEmailListener?: (userObj: {
-      phone_number?: string;
-      phone?: string;
-    }) => void;
+    phoneEmailListener?: (userObj: any) => void;
   }
 }
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
 
   const {
     showInstallModal,
@@ -38,22 +35,26 @@ export default function Login() {
   } = usePWAInstall();
 
   /* --------------------------------------------------
-     📱 VERIFY PHONE (Render-safe)
+     📱 VERIFY PHONE (NO FORMAT ASSUMPTIONS)
   -------------------------------------------------- */
   const verifyPhoneMutation = useMutation({
-    mutationFn: async (phoneNumber: string) => {
+    mutationFn: async (phone: string) => {
       const res = await apiRequest("POST", "/api/auth/verify-phone", {
-        phoneNumber,
+        phoneNumber: phone,
       });
       return res.json();
     },
     onSuccess: (data) => {
-      setIsVerified(true);
+      if (!data?.phoneNumber) {
+        throw new Error("Phone missing from server");
+      }
+
       setVerifiedPhone(data.phoneNumber);
+      setIsVerified(true);
 
       toast({
         title: "Success",
-        description: "Phone number verified successfully",
+        description: "Phone number verified",
       });
     },
     onError: () => {
@@ -96,7 +97,7 @@ export default function Login() {
   });
 
   /* --------------------------------------------------
-     📦 LOAD Phone.Email SCRIPT
+     📦 LOAD Phone.Email SCRIPT (TRUST PROVIDER)
   -------------------------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
@@ -104,15 +105,18 @@ export default function Login() {
     script.async = true;
     document.body.appendChild(script);
 
-    window.phoneEmailListener = (userObj) => {
-      console.log("📞 Phone.Email callback:", userObj);
+    window.phoneEmailListener = (userObj: any) => {
+      console.log("📞 Phone.Email payload:", userObj);
 
-      const phone = userObj?.phone_number || userObj?.phone;
+      const phone =
+        userObj?.phone_number ||
+        userObj?.phone ||
+        "";
 
       if (!phone) {
         toast({
           title: "Error",
-          description: "Phone number not received",
+          description: "Phone not received from Phone.Email",
           variant: "destructive",
         });
         return;
@@ -127,24 +131,27 @@ export default function Login() {
     };
   }, []);
 
+  /* --------------------------------------------------
+     🧠 SUBMIT
+  -------------------------------------------------- */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && isVerified && verifiedPhone) {
-      loginMutation.mutate();
-    }
+    if (!name.trim() || !isVerified || !verifiedPhone) return;
+    loginMutation.mutate();
   };
 
+  /* --------------------------------------------------
+     🎨 UI
+  -------------------------------------------------- */
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
-      <header className="p-4 text-center text-white font-bold">
-        Login
-      </header>
+      <header className="p-4 text-center text-white font-bold">Login</header>
 
       <main className="flex-grow flex items-center justify-center px-6">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-6">
             <img
-              src="/trendpilot-logo.png"
+              src="/assets/trendpilot-logo.png"
               alt="TrendPilot"
               className="h-14 w-14 mb-2"
             />
