@@ -12,13 +12,14 @@ declare global {
   interface Window {
     phoneEmailListener?: (userObj: {
       phone_number?: string;
+      phone?: string;
     }) => void;
   }
 }
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
@@ -34,7 +35,7 @@ export default function Login() {
   } = usePWAInstall();
 
   /* --------------------------------------------------
-     📱 VERIFY PHONE (Render-safe)
+     📱 VERIFY PHONE (Render-safe backend)
   -------------------------------------------------- */
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
@@ -44,6 +45,15 @@ export default function Login() {
       return res.json();
     },
     onSuccess: (data) => {
+      if (!data?.phoneNumber) {
+        toast({
+          title: "Error",
+          description: "Invalid phone verification response",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsVerified(true);
       setVerifiedPhone(data.phoneNumber);
 
@@ -101,9 +111,9 @@ export default function Login() {
     document.body.appendChild(script);
 
     window.phoneEmailListener = (userObj) => {
-      console.log("Phone.Email callback:", userObj);
+      const phone = userObj.phone_number || userObj.phone;
 
-      if (!userObj?.phone_number) {
+      if (!phone) {
         toast({
           title: "Error",
           description: "Phone number not received",
@@ -112,7 +122,8 @@ export default function Login() {
         return;
       }
 
-      verifyPhoneMutation.mutate(userObj.phone_number);
+      console.log("📞 Phone.Email verified:", phone);
+      verifyPhoneMutation.mutate(phone);
     };
 
     return () => {
