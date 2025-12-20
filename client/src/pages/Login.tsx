@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 
@@ -8,6 +8,9 @@ import { useToast } from "../hooks/use-toast";
 import { usePWAInstall } from "../hooks/usePWAInstall";
 import PWAInstallModal from "../components/PWAInstallModal";
 
+/* --------------------------------------------------
+   🌐 Phone.Email global
+-------------------------------------------------- */
 declare global {
   interface Window {
     phoneEmailListener?: (userObj: {
@@ -19,7 +22,7 @@ declare global {
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
@@ -35,7 +38,7 @@ export default function Login() {
   } = usePWAInstall();
 
   /* --------------------------------------------------
-     📱 VERIFY PHONE (Render-safe backend)
+     📱 VERIFY PHONE (Render-safe)
   -------------------------------------------------- */
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
@@ -45,15 +48,6 @@ export default function Login() {
       return res.json();
     },
     onSuccess: (data) => {
-      if (!data?.phoneNumber) {
-        toast({
-          title: "Error",
-          description: "Invalid phone verification response",
-          variant: "destructive",
-        });
-        return;
-      }
-
       setIsVerified(true);
       setVerifiedPhone(data.phoneNumber);
 
@@ -111,7 +105,9 @@ export default function Login() {
     document.body.appendChild(script);
 
     window.phoneEmailListener = (userObj) => {
-      const phone = userObj.phone_number || userObj.phone;
+      console.log("📞 Phone.Email callback:", userObj);
+
+      const phone = userObj?.phone_number || userObj?.phone;
 
       if (!phone) {
         toast({
@@ -122,7 +118,6 @@ export default function Login() {
         return;
       }
 
-      console.log("📞 Phone.Email verified:", phone);
       verifyPhoneMutation.mutate(phone);
     };
 
@@ -149,7 +144,7 @@ export default function Login() {
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-6">
             <img
-              src="/assets/trendpilot-logo.png"
+              src="/trendpilot-logo.png"
               alt="TrendPilot"
               className="h-14 w-14 mb-2"
             />
