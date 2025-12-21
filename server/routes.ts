@@ -34,7 +34,7 @@ router.get(["/healthz", "/api/healthz"], (_req, res) => {
 router.get(["/version", "/api/version"], (_req, res) => {
   res.json({
     service: "TrendPilot API",
-    version: "1.0.0",
+    version: "1.2.25",
     status: "active",
   });
 });
