@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 
@@ -10,13 +10,13 @@ import PWAInstallModal from "../components/PWAInstallModal";
 
 declare global {
   interface Window {
-    phoneEmailListener?: (userObj: any) => void;
+    phoneEmailListener?: (userObj: { user_json_url: string }) => void;
   }
 }
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
@@ -31,42 +31,46 @@ export default function Login() {
     handleDismiss,
   } = usePWAInstall();
 
-  /* -------------------------------
-     VERIFY PHONE
-  -------------------------------- */
+  /* --------------------------------------------------
+     📱 VERIFY PHONE (Phone.Email)
+  -------------------------------------------------- */
   const verifyPhoneMutation = useMutation({
-    mutationFn: async (payload: {
-      phoneNumber?: string;
-      userJsonUrl?: string;
-    }) => {
-      const res = await apiRequest("POST", "/api/auth/verify-phone", payload);
+    mutationFn: async (userJsonUrl: string) => {
+      const res = await apiRequest("POST", "/api/auth/verify-phone", {
+        userJsonUrl,
+      });
       return res.json();
     },
     onSuccess: (data) => {
       if (!data?.phoneNumber) {
         toast({
           title: "Error",
-          description: "Phone verification failed",
+          description: "Phone number not received",
           variant: "destructive",
         });
         return;
       }
+
       setVerifiedPhone(data.phoneNumber);
       setIsVerified(true);
-      toast({ title: "Success", description: "Phone verified" });
+
+      toast({
+        title: "Success",
+        description: "Phone number verified",
+      });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Phone verification failed",
+        description: "Failed to verify phone number",
         variant: "destructive",
       });
     },
   });
 
-  /* -------------------------------
-     LOGIN
-  -------------------------------- */
+  /* --------------------------------------------------
+     🔑 LOGIN
+  -------------------------------------------------- */
   const loginMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/login", {
@@ -79,79 +83,67 @@ export default function Login() {
     onSuccess: (data) => {
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("loginCompleted", "true");
+
       incrementLoginCount();
       triggerInstallPrompt("login");
+
       setLocation("/welcome");
     },
   });
 
-  /* -------------------------------
-     Phone.Email Loader
-  -------------------------------- */
+  /* --------------------------------------------------
+     📦 LOAD Phone.Email SCRIPT
+  -------------------------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://www.phone.email/sign_in_button_v1.js";
     script.async = true;
     document.body.appendChild(script);
 
-    window.phoneEmailListener = (userObj: any) => {
-      console.log("📦 Phone.Email payload:", userObj);
-
-      if (userObj?.user_json_url) {
-        verifyPhoneMutation.mutate({
-          userJsonUrl: userObj.user_json_url,
-        });
-        return;
-      }
-
-      const phone = userObj?.phone_number || userObj?.phone;
-      if (phone) {
-        verifyPhoneMutation.mutate({ phoneNumber: phone });
-        return;
-      }
-
-      toast({
-        title: "Error",
-        description: "Phone not received from Phone.Email",
-        variant: "destructive",
-      });
+    window.phoneEmailListener = (userObj) => {
+      console.log("📞 Phone.Email callback:", userObj);
+      verifyPhoneMutation.mutate(userObj.user_json_url);
     };
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
       delete window.phoneEmailListener;
     };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && isVerified) loginMutation.mutate();
+    if (name.trim() && isVerified) {
+      loginMutation.mutate();
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
-      <header className="p-4 text-white text-center font-bold">Login</header>
+      <header className="p-4 text-center text-white font-bold">Login</header>
 
       <main className="flex-grow flex items-center justify-center px-6">
         <div className="w-full max-w-md">
-          <h1 className="text-[#38e07b] text-2xl text-center font-bold mb-2">
+          <h1 className="text-[#38e07b] text-2xl font-bold text-center">
             TrendPilot
           </h1>
-          <p className="text-[#9eb7a8] text-center mb-6">
+          <p className="text-center text-[#9eb7a8] mb-6">
             AI-Powered Trading Analyzer
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
+              className="w-full h-12 rounded px-4 bg-[#29382f] text-white"
+              placeholder="Your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="w-full h-12 px-4 rounded bg-[#29382f] text-white"
             />
 
             {!isVerified ? (
               <div>
-                <p className="text-[#6a7f72] text-sm mb-2">
+                <p className="text-sm text-[#6a7f72] mb-2">
                   Verify your phone number
                 </p>
                 <div
@@ -160,15 +152,15 @@ export default function Login() {
                 />
               </div>
             ) : (
-              <div className="p-3 border border-[#38e07b] text-white rounded">
-                Verified: {verifiedPhone}
+              <div className="p-3 border border-[#38e07b] rounded text-sm text-white">
+                Phone verified: {verifiedPhone}
               </div>
             )}
 
             <button
               type="submit"
               disabled={!isVerified}
-              className="w-full h-12 bg-[#38e07b] rounded-full font-bold text-black"
+              className="w-full h-12 rounded-full bg-[#38e07b] text-black font-bold disabled:opacity-50"
             >
               Login
             </button>

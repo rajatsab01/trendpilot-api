@@ -1,121 +1,108 @@
 /**
  * TrendPilot API Routes
  * ---------------------
- * Render-safe + Phone.Email external approval compatible
+ * FINAL, STABLE, Phone.Email–compatible
  */
 
 import { Router, Request, Response } from "express";
 
 const router = Router();
 
-/* --------------------------------------------------
-   Helpers
--------------------------------------------------- */
+/* ---------------------------------------
+   Utils
+--------------------------------------- */
 async function fetchWithTimeout(url: string, ms = 15000) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-
+  const t = setTimeout(() => controller.abort(), ms);
   try {
     return await fetch(url, { signal: controller.signal });
   } finally {
-    clearTimeout(timer);
+    clearTimeout(t);
   }
 }
 
-/* --------------------------------------------------
+/* ---------------------------------------
    Health
--------------------------------------------------- */
+--------------------------------------- */
 router.get(["/healthz", "/api/healthz"], (_req, res) => {
   res.status(200).send("OK");
 });
 
-/* --------------------------------------------------
+/* ---------------------------------------
    Version
--------------------------------------------------- */
+--------------------------------------- */
 router.get(["/version", "/api/version"], (_req, res) => {
   res.json({
-    version: "1.0.0",
     service: "TrendPilot API",
+    version: "1.0.0",
     status: "active",
   });
 });
 
-/* --------------------------------------------------
-   Phone Verification (Phone.Email)
--------------------------------------------------- */
+/* ---------------------------------------
+   PHONE VERIFICATION (Phone.Email)
+--------------------------------------- */
 router.post(
   ["/auth/verify-phone", "/api/auth/verify-phone"],
   async (req: Request, res: Response) => {
     try {
       const { userJsonUrl, phoneNumber } = req.body || {};
 
-      /* ---- Case 1: phone already sent ---- */
+      // ✅ Case 1: Direct phone (some countries/configs)
       if (typeof phoneNumber === "string" && phoneNumber.trim()) {
-        const digits = phoneNumber.replace(/[^\d]/g, "");
-        if (digits.length < 10) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid phone number",
-            received: phoneNumber,
-          });
-        }
+        const cleaned = phoneNumber.replace(/[^\d]/g, "");
+        const normalized = `+${cleaned}`;
 
-        const normalized = `+${digits}`;
         console.log("✅ Phone verified (direct):", normalized);
-        return res.json({ success: true, phoneNumber: normalized });
+
+        return res.json({
+          success: true,
+          phoneNumber: normalized,
+        });
       }
 
-      /* ---- Case 2: Phone.Email callback URL ---- */
+      // ✅ Case 2: Phone.Email external approval
       if (!userJsonUrl || typeof userJsonUrl !== "string") {
         return res.status(400).json({
           success: false,
-          message: "Missing userJsonUrl from Phone.Email",
+          message: "Phone.Email callback missing userJsonUrl",
         });
       }
 
       console.log("🔗 Fetching Phone.Email JSON:", userJsonUrl);
 
-      const resp = await fetchWithTimeout(userJsonUrl);
-      if (!resp.ok) {
+      const response = await fetchWithTimeout(userJsonUrl);
+      if (!response.ok) {
         return res.status(400).json({
           success: false,
-          message: "Phone.Email fetch failed",
-          status: resp.status,
+          message: "Failed to fetch Phone.Email data",
         });
       }
 
-      const data: any = await resp.json();
+      const data: any = await response.json();
 
-      const raw =
+      const rawPhone =
         data?.phone_email?.phone_number ||
         data?.phone_number ||
         data?.phone ||
         data?.user?.phone_number;
 
-      if (!raw || typeof raw !== "string") {
+      if (!rawPhone) {
         return res.status(400).json({
           success: false,
           message: "Phone number not found in Phone.Email payload",
         });
       }
 
-      const digits = raw.replace(/[^\d]/g, "");
-      if (digits.length < 10) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid phone received from Phone.Email",
-          raw,
-        });
-      }
+      const normalized = `+${rawPhone.replace(/[^\d]/g, "")}`;
 
-      const normalized = `+${digits}`;
       console.log("✅ Phone verified (Phone.Email):", normalized);
 
       return res.json({
         success: true,
         phoneNumber: normalized,
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error("❌ verify-phone error:", err);
       return res.status(500).json({
         success: false,
@@ -125,14 +112,15 @@ router.post(
   }
 );
 
-/* --------------------------------------------------
-   Login
--------------------------------------------------- */
+/* ---------------------------------------
+   LOGIN
+--------------------------------------- */
 router.post(
   ["/auth/login", "/api/auth/login"],
   async (req: Request, res: Response) => {
     try {
       const { name, mobile, language } = req.body || {};
+
       if (!name || !mobile) {
         return res.status(400).json({
           success: false,
@@ -141,9 +129,10 @@ router.post(
       }
 
       const userId = `${mobile}-${Date.now()}`;
+
       console.log(`✅ Login success: ${name} (${mobile})`);
 
-      res.json({
+      return res.json({
         success: true,
         userId,
         name,
@@ -151,14 +140,18 @@ router.post(
         language,
       });
     } catch (err) {
-      res.status(500).json({ success: false, message: "Login failed" });
+      console.error("❌ login error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Login failed",
+      });
     }
   }
 );
 
-/* --------------------------------------------------
+/* ---------------------------------------
    404
--------------------------------------------------- */
+--------------------------------------- */
 router.use((req, res) => {
   res.status(404).json({
     success: false,
