@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 
@@ -8,12 +8,13 @@ import { useToast } from "../hooks/use-toast";
 import { usePWAInstall } from "../hooks/usePWAInstall";
 import PWAInstallModal from "../components/PWAInstallModal";
 
-/* --------------------------------------------------
-   🌍 Phone.Email global callback
--------------------------------------------------- */
 declare global {
   interface Window {
-    phoneEmailListener?: (userObj: any) => void;
+    phoneEmailListener?: (userObj: {
+      user_json_url?: string;
+      phone_number?: string;
+      phone?: string;
+    }) => void;
   }
 }
 
@@ -23,8 +24,8 @@ export default function Login() {
   const { toast } = useToast();
 
   const [name, setName] = useState("");
-  const [verifiedPhone, setVerifiedPhone] = useState("");
   const [isVerified, setIsVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
 
   const {
     showInstallModal,
@@ -34,27 +35,30 @@ export default function Login() {
     handleDismiss,
   } = usePWAInstall();
 
-  /* --------------------------------------------------
-     📱 VERIFY PHONE (NO FORMAT ASSUMPTIONS)
-  -------------------------------------------------- */
+  /* -------------------------------
+     📱 VERIFY PHONE (SERVER HANDLES LOGIC)
+  -------------------------------- */
   const verifyPhoneMutation = useMutation({
-    mutationFn: async (phone: string) => {
-      const res = await apiRequest("POST", "/api/auth/verify-phone", {
-        phoneNumber: phone,
-      });
+    mutationFn: async (payload: { userJsonUrl?: string; phoneNumber?: string }) => {
+      const res = await apiRequest("POST", "/api/auth/verify-phone", payload);
       return res.json();
     },
     onSuccess: (data) => {
       if (!data?.phoneNumber) {
-        throw new Error("Phone missing from server");
+        toast({
+          title: "Error",
+          description: "Phone verification failed",
+          variant: "destructive",
+        });
+        return;
       }
 
-      setVerifiedPhone(data.phoneNumber);
       setIsVerified(true);
+      setVerifiedPhone(data.phoneNumber);
 
       toast({
         title: "Success",
-        description: "Phone number verified",
+        description: "Phone verified successfully",
       });
     },
     onError: () => {
@@ -66,9 +70,9 @@ export default function Login() {
     },
   });
 
-  /* --------------------------------------------------
+  /* -------------------------------
      🔑 LOGIN
-  -------------------------------------------------- */
+  -------------------------------- */
   const loginMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/login", {
@@ -87,42 +91,38 @@ export default function Login() {
 
       setLocation("/welcome");
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Login failed",
-        variant: "destructive",
-      });
-    },
   });
 
-  /* --------------------------------------------------
-     📦 LOAD Phone.Email SCRIPT (TRUST PROVIDER)
-  -------------------------------------------------- */
+  /* -------------------------------
+     📦 LOAD Phone.Email SCRIPT
+  -------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://www.phone.email/sign_in_button_v1.js";
     script.async = true;
     document.body.appendChild(script);
 
-    window.phoneEmailListener = (userObj: any) => {
-      console.log("📞 Phone.Email payload:", userObj);
+    window.phoneEmailListener = (userObj) => {
+      console.log("📩 Phone.Email callback:", userObj);
 
-      const phone =
-        userObj?.phone_number ||
-        userObj?.phone ||
-        "";
-
-      if (!phone) {
-        toast({
-          title: "Error",
-          description: "Phone not received from Phone.Email",
-          variant: "destructive",
-        });
+      // Preferred path: user_json_url
+      if (userObj?.user_json_url) {
+        verifyPhoneMutation.mutate({ userJsonUrl: userObj.user_json_url });
         return;
       }
 
-      verifyPhoneMutation.mutate(phone);
+      // Fallback: direct phone number
+      const phone = userObj?.phone_number || userObj?.phone;
+      if (phone) {
+        verifyPhoneMutation.mutate({ phoneNumber: phone });
+        return;
+      }
+
+      toast({
+        title: "Error",
+        description: "Phone.Email did not return phone data",
+        variant: "destructive",
+      });
     };
 
     return () => {
@@ -131,39 +131,27 @@ export default function Login() {
     };
   }, []);
 
-  /* --------------------------------------------------
-     🧠 SUBMIT
-  -------------------------------------------------- */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !isVerified || !verifiedPhone) return;
-    loginMutation.mutate();
+    if (name.trim() && isVerified && verifiedPhone) {
+      loginMutation.mutate();
+    }
   };
 
-  /* --------------------------------------------------
-     🎨 UI
-  -------------------------------------------------- */
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
-      <header className="p-4 text-center text-white font-bold">Login</header>
+      <header className="p-4 text-center text-white font-bold">
+        Login
+      </header>
 
       <main className="flex-grow flex items-center justify-center px-6">
         <div className="w-full max-w-md">
-          <div className="flex flex-col items-center mb-6">
-            <img
-              src="/assets/trendpilot-logo.png"
-              alt="TrendPilot"
-              className="h-14 w-14 mb-2"
-            />
-            <h1 className="text-[#38e07b] text-2xl font-bold">TrendPilot</h1>
-            <p className="text-[#9eb7a8] text-sm">
-              AI-Powered Trading Analyzer
-            </p>
-          </div>
-
-          <h2 className="text-white text-xl text-center mb-6">
-            Welcome back
-          </h2>
+          <h1 className="text-[#38e07b] text-2xl font-bold text-center mb-2">
+            TrendPilot
+          </h1>
+          <p className="text-[#9eb7a8] text-sm text-center mb-6">
+            AI-Powered Trading Analyzer
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -194,7 +182,7 @@ export default function Login() {
               disabled={!isVerified || loginMutation.isPending}
               className="w-full h-12 rounded-full bg-[#38e07b] text-black font-bold disabled:opacity-50"
             >
-              {loginMutation.isPending ? "Logging in…" : "Login"}
+              Login
             </button>
           </form>
         </div>
