@@ -1,7 +1,7 @@
 /**
  * TrendPilot API Routes
  * ---------------------
- * Stable & simplified auth flow (Render-safe)
+ * Render-safe + Phone.Email external approval compatible
  */
 
 import { Router, Request, Response } from "express";
@@ -9,16 +9,30 @@ import { Router, Request, Response } from "express";
 const router = Router();
 
 /* --------------------------------------------------
-   🩺 Health Check (Render)
+   Helpers
 -------------------------------------------------- */
-router.get("/healthz", (_req: Request, res: Response) => {
+async function fetchWithTimeout(url: string, ms = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* --------------------------------------------------
+   Health
+-------------------------------------------------- */
+router.get(["/healthz", "/api/healthz"], (_req, res) => {
   res.status(200).send("OK");
 });
 
 /* --------------------------------------------------
-   📦 API Version
+   Version
 -------------------------------------------------- */
-router.get("/api/version", (_req: Request, res: Response) => {
+router.get(["/version", "/api/version"], (_req, res) => {
   res.json({
     version: "1.0.0",
     service: "TrendPilot API",
@@ -27,108 +41,129 @@ router.get("/api/version", (_req: Request, res: Response) => {
 });
 
 /* --------------------------------------------------
-   📱 Phone Verification (STABLE + BACKWARD SAFE)
+   Phone Verification (Phone.Email)
 -------------------------------------------------- */
-router.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
-  try {
-    let { phoneNumber } = req.body;
+router.post(
+  ["/auth/verify-phone", "/api/auth/verify-phone"],
+  async (req: Request, res: Response) => {
+    try {
+      const { userJsonUrl, phoneNumber } = req.body || {};
 
-    // 🔁 Backward compatibility (Phone.Email flow)
-    if (!phoneNumber && req.body?.userJsonUrl) {
-      console.warn("⚠️ userJsonUrl received but ignored (legacy flow)");
-      return res.status(400).json({
+      /* ---- Case 1: phone already sent ---- */
+      if (typeof phoneNumber === "string" && phoneNumber.trim()) {
+        const digits = phoneNumber.replace(/[^\d]/g, "");
+        if (digits.length < 10) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid phone number",
+            received: phoneNumber,
+          });
+        }
+
+        const normalized = `+${digits}`;
+        console.log("✅ Phone verified (direct):", normalized);
+        return res.json({ success: true, phoneNumber: normalized });
+      }
+
+      /* ---- Case 2: Phone.Email callback URL ---- */
+      if (!userJsonUrl || typeof userJsonUrl !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Missing userJsonUrl from Phone.Email",
+        });
+      }
+
+      console.log("🔗 Fetching Phone.Email JSON:", userJsonUrl);
+
+      const resp = await fetchWithTimeout(userJsonUrl);
+      if (!resp.ok) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone.Email fetch failed",
+          status: resp.status,
+        });
+      }
+
+      const data: any = await resp.json();
+
+      const raw =
+        data?.phone_email?.phone_number ||
+        data?.phone_number ||
+        data?.phone ||
+        data?.user?.phone_number;
+
+      if (!raw || typeof raw !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number not found in Phone.Email payload",
+        });
+      }
+
+      const digits = raw.replace(/[^\d]/g, "");
+      if (digits.length < 10) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid phone received from Phone.Email",
+          raw,
+        });
+      }
+
+      const normalized = `+${digits}`;
+      console.log("✅ Phone verified (Phone.Email):", normalized);
+
+      return res.json({
+        success: true,
+        phoneNumber: normalized,
+      });
+    } catch (err: any) {
+      console.error("❌ verify-phone error:", err);
+      return res.status(500).json({
         success: false,
-        message: "Phone number missing",
+        message: "Phone verification failed",
       });
     }
-
-    if (!phoneNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone number missing",
-      });
-    }
-
-    // Basic E.164 validation
-    if (!/^\+\d{10,15}$/.test(phoneNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid phone number format",
-      });
-    }
-
-    console.log("✅ Phone verified:", phoneNumber);
-
-    return res.status(200).json({
-      success: true,
-      phoneNumber,
-    });
-  } catch (error: any) {
-    console.error("❌ verify-phone error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Phone verification failed",
-    });
   }
-});
+);
 
 /* --------------------------------------------------
-   👤 Login
+   Login
 -------------------------------------------------- */
-router.post("/api/auth/login", async (req: Request, res: Response) => {
-  try {
-    const { name, mobile, language } = req.body;
+router.post(
+  ["/auth/login", "/api/auth/login"],
+  async (req: Request, res: Response) => {
+    try {
+      const { name, mobile, language } = req.body || {};
+      if (!name || !mobile) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing name or mobile",
+        });
+      }
 
-    if (!name || !mobile) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing name or mobile number",
+      const userId = `${mobile}-${Date.now()}`;
+      console.log(`✅ Login success: ${name} (${mobile})`);
+
+      res.json({
+        success: true,
+        userId,
+        name,
+        mobile,
+        language,
       });
+    } catch (err) {
+      res.status(500).json({ success: false, message: "Login failed" });
     }
-
-    const userId = `${mobile}-${Date.now()}`;
-
-    console.log(`✅ Login success: ${name} (${mobile})`);
-
-    return res.status(200).json({
-      success: true,
-      userId,
-      name,
-      mobile,
-      language,
-    });
-  } catch (error: any) {
-    console.error("❌ login error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Login failed",
-    });
   }
-});
+);
 
 /* --------------------------------------------------
-   ⚙️ Email Placeholder
+   404
 -------------------------------------------------- */
-router.post("/api/auth/verify-email", async (req: Request, res: Response) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ success: false });
-  }
-
-  return res.json({
-    success: true,
-    email,
-  });
-});
-
-/* --------------------------------------------------
-   ❌ 404
--------------------------------------------------- */
-router.use((_req: Request, res: Response) => {
+router.use((req, res) => {
   res.status(404).json({
     success: false,
     message: "API route not found",
+    path: req.path,
   });
 });
 

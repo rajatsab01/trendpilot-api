@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 
@@ -10,11 +10,7 @@ import PWAInstallModal from "../components/PWAInstallModal";
 
 declare global {
   interface Window {
-    phoneEmailListener?: (userObj: {
-      user_json_url?: string;
-      phone_number?: string;
-      phone?: string;
-    }) => void;
+    phoneEmailListener?: (userObj: any) => void;
   }
 }
 
@@ -24,8 +20,8 @@ export default function Login() {
   const { toast } = useToast();
 
   const [name, setName] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
 
   const {
     showInstallModal,
@@ -36,10 +32,13 @@ export default function Login() {
   } = usePWAInstall();
 
   /* -------------------------------
-     📱 VERIFY PHONE (SERVER HANDLES LOGIC)
+     VERIFY PHONE
   -------------------------------- */
   const verifyPhoneMutation = useMutation({
-    mutationFn: async (payload: { userJsonUrl?: string; phoneNumber?: string }) => {
+    mutationFn: async (payload: {
+      phoneNumber?: string;
+      userJsonUrl?: string;
+    }) => {
       const res = await apiRequest("POST", "/api/auth/verify-phone", payload);
       return res.json();
     },
@@ -52,26 +51,21 @@ export default function Login() {
         });
         return;
       }
-
-      setIsVerified(true);
       setVerifiedPhone(data.phoneNumber);
-
-      toast({
-        title: "Success",
-        description: "Phone verified successfully",
-      });
+      setIsVerified(true);
+      toast({ title: "Success", description: "Phone verified" });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to verify phone number",
+        description: "Phone verification failed",
         variant: "destructive",
       });
     },
   });
 
   /* -------------------------------
-     🔑 LOGIN
+     LOGIN
   -------------------------------- */
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -85,16 +79,14 @@ export default function Login() {
     onSuccess: (data) => {
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("loginCompleted", "true");
-
       incrementLoginCount();
       triggerInstallPrompt("login");
-
       setLocation("/welcome");
     },
   });
 
   /* -------------------------------
-     📦 LOAD Phone.Email SCRIPT
+     Phone.Email Loader
   -------------------------------- */
   useEffect(() => {
     const script = document.createElement("script");
@@ -102,16 +94,16 @@ export default function Login() {
     script.async = true;
     document.body.appendChild(script);
 
-    window.phoneEmailListener = (userObj) => {
-      console.log("📩 Phone.Email callback:", userObj);
+    window.phoneEmailListener = (userObj: any) => {
+      console.log("📦 Phone.Email payload:", userObj);
 
-      // Preferred path: user_json_url
       if (userObj?.user_json_url) {
-        verifyPhoneMutation.mutate({ userJsonUrl: userObj.user_json_url });
+        verifyPhoneMutation.mutate({
+          userJsonUrl: userObj.user_json_url,
+        });
         return;
       }
 
-      // Fallback: direct phone number
       const phone = userObj?.phone_number || userObj?.phone;
       if (phone) {
         verifyPhoneMutation.mutate({ phoneNumber: phone });
@@ -120,7 +112,7 @@ export default function Login() {
 
       toast({
         title: "Error",
-        description: "Phone.Email did not return phone data",
+        description: "Phone not received from Phone.Email",
         variant: "destructive",
       });
     };
@@ -133,37 +125,33 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && isVerified && verifiedPhone) {
-      loginMutation.mutate();
-    }
+    if (name && isVerified) loginMutation.mutate();
   };
 
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
-      <header className="p-4 text-center text-white font-bold">
-        Login
-      </header>
+      <header className="p-4 text-white text-center font-bold">Login</header>
 
       <main className="flex-grow flex items-center justify-center px-6">
         <div className="w-full max-w-md">
-          <h1 className="text-[#38e07b] text-2xl font-bold text-center mb-2">
+          <h1 className="text-[#38e07b] text-2xl text-center font-bold mb-2">
             TrendPilot
           </h1>
-          <p className="text-[#9eb7a8] text-sm text-center mb-6">
+          <p className="text-[#9eb7a8] text-center mb-6">
             AI-Powered Trading Analyzer
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
-              className="w-full h-12 rounded px-4 bg-[#29382f] text-white"
-              placeholder="Your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="w-full h-12 px-4 rounded bg-[#29382f] text-white"
             />
 
             {!isVerified ? (
               <div>
-                <p className="text-sm text-[#6a7f72] mb-2">
+                <p className="text-[#6a7f72] text-sm mb-2">
                   Verify your phone number
                 </p>
                 <div
@@ -172,15 +160,15 @@ export default function Login() {
                 />
               </div>
             ) : (
-              <div className="p-3 border border-[#38e07b] rounded text-sm text-white">
-                Phone verified: {verifiedPhone}
+              <div className="p-3 border border-[#38e07b] text-white rounded">
+                Verified: {verifiedPhone}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={!isVerified || loginMutation.isPending}
-              className="w-full h-12 rounded-full bg-[#38e07b] text-black font-bold disabled:opacity-50"
+              disabled={!isVerified}
+              className="w-full h-12 bg-[#38e07b] rounded-full font-bold text-black"
             >
               Login
             </button>
