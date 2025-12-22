@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { APP_VERSION } from "@shared/schema";
+
+// ⛔ DO NOT USE @shared/schema here
+const APP_VERSION = "1.2.5";
+
+// ✅ USE RELATIVE IMPORTS ONLY
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "./ui/dialog";
 
 export default function VersionChecker() {
   const [open, setOpen] = useState(false);
@@ -16,82 +20,80 @@ export default function VersionChecker() {
     checkVersion();
   }, []);
 
-  async function checkVersion() {
+  const checkVersion = async () => {
     try {
-      const res = await fetch("/api/version", { cache: "no-store" });
+      const res = await fetch("/api/version");
       if (!res.ok) return;
 
       const data = await res.json();
       setServerVersion(data.version);
 
-      if (APP_VERSION !== data.version) {
+      if (data.version && data.version !== APP_VERSION) {
         setOpen(true);
       }
-    } catch {
-      // fail silently
+    } catch (err) {
+      console.error("Version check failed", err);
     }
-  }
+  };
 
-  async function forceUpdate() {
+  const handleRefresh = async () => {
     try {
-      // 1. Unregister service workers
+      // Unregister service workers
       if ("serviceWorker" in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
+        for (const r of regs) await r.unregister();
       }
 
-      // 2. Clear all caches
+      // Clear caches
       if ("caches" in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
+        await Promise.all(keys.map((k) => caches.delete(k)));
       }
 
-      // 3. Hard reload with cache busting
-      window.location.replace(`/?v=${Date.now()}`);
-    } catch {
+      // Hard reload
+      window.location.reload();
+    } catch (e) {
       window.location.reload();
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        className="bg-[#1a1f1c] border-[#2a3530] text-white max-w-md"
-      >
+      <DialogContent className="bg-[#1a1f1c] border-[#2a3530] text-white max-w-md">
+
+        {/* ❌ CLOSE ICON ENABLED */}
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute right-4 top-4 text-[#9eb7a8] hover:text-white"
+        >
+          ✕
+        </button>
+
         <DialogHeader>
-          <DialogTitle className="text-center">
+          <DialogTitle className="text-xl text-center">
             Update Required
           </DialogTitle>
-          <DialogDescription className="text-center text-[#9eb7a8]">
+          <DialogDescription className="text-center">
             Please update to continue using TrendPilot.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="text-sm text-[#9eb7a8]">
-            <div className="flex justify-between">
-              <span>Your version</span>
-              <span>{APP_VERSION}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Latest version</span>
-              <span className="text-[#38e07b]">{serverVersion}</span>
-            </div>
+        <div className="mt-4 space-y-3">
+          <div className="text-sm flex justify-between">
+            <span>Your Version:</span>
+            <span>{APP_VERSION}</span>
+          </div>
+
+          <div className="text-sm flex justify-between">
+            <span>Latest Version:</span>
+            <span className="text-[#38e07b]">{serverVersion}</span>
           </div>
 
           <button
-            onClick={forceUpdate}
-            className="w-full bg-[#38e07b] hover:bg-[#2fc76a] text-black font-bold py-3 rounded-lg"
+            onClick={handleRefresh}
+            className="mt-4 w-full bg-[#38e07b] text-black font-bold py-3 rounded-lg"
           >
             Install New Version
-          </button>
-
-          {/* OPTIONAL close */}
-          <button
-            onClick={() => setOpen(false)}
-            className="w-full text-xs text-[#6a7f72]"
-          >
-            Close (not recommended)
           </button>
         </div>
       </DialogContent>
