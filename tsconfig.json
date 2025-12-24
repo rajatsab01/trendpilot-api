@@ -7,19 +7,19 @@
     "strict": false,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-
     "module": "ESNext",
     "moduleResolution": "Node",
-
     "resolveJsonModule": true,
     "isolatedModules": true,
-
     "jsx": "react-jsx",
 
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["client/src/*"],
+      "@shared/*": ["shared/*"],
+      "@assets/*": ["client/src/assets/*"]
+    }
   },
-  "include": [
-    "client/src",
-    "shared"
-  ]
+  "include": ["client/src", "server", "shared", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

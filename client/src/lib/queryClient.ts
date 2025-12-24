@@ -1,16 +1,14 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { APP_VERSION } from "@shared/schema";
 
-// IMPORTANT: In production, prefer an explicit API base via Vite env
 const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE
-    ? (import.meta as any).env.VITE_API_BASE
-    : (import.meta.env.MODE === "development" ? "http://127.0.0.1:5000" : "");
+  import.meta.env.MODE === "development"
+    ? "http://localhost:10000"
+    : ""; // production uses same domain
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = await res.text();
+    throw new Error(text || res.statusText);
   }
 }
 
@@ -19,14 +17,9 @@ export async function apiRequest(
   url: string,
   data?: unknown
 ): Promise<Response> {
-  const fullUrl = `${API_BASE}${url.startsWith("/") ? url : `/${url}`}`;
-
-  const res = await fetch(fullUrl, {
+  const res = await fetch(`${API_BASE}${url}`, {
     method,
-    headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      "x-app-version": APP_VERSION, // server version guard
-    },
+    headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -35,39 +28,23 @@ export async function apiRequest(
   return res;
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
-
 export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
+  on401: "returnNull" | "throw";
 }) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey, signal }) => {
-    const path = queryKey.join("/") as string;
-    const fullUrl = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
-
-    const res = await fetch(fullUrl, {
+  () =>
+  async ({ queryKey }) => {
+    const res = await fetch(`${API_BASE}${queryKey[0]}`, {
       credentials: "include",
-      headers: {
-        "x-app-version": APP_VERSION, // server version guard
-      },
-      signal, // allow React Query to cancel in-flight requests
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null as unknown as T;
-    }
-
     await throwIfResNotOk(res);
-    return (await res.json()) as T;
+    return res.json();
   };
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
       retry: false,
     },
     mutations: {
