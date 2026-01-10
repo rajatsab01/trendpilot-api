@@ -1,43 +1,36 @@
-import express, { Request, Response } from "express";
+import express from "express";
 
 const router = express.Router();
 
-router.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
+router.post("/auth/verify-phone", async (req, res) => {
   try {
-    console.log("📥 RAW BODY:", req.body);
+    console.log("📥 Incoming body:", req.body);
 
-    const {
-      phone,
-      country_code,
-      json_url,
-      name
-    } = req.body;
+    const { phone, country_code, json_url } = req.body;
 
-    // Hard validation
     if (!phone || !country_code || !json_url) {
-      console.error("❌ Missing fields", { phone, country_code, json_url });
+      console.error("❌ Missing fields:", req.body);
       return res.status(400).json({
         success: false,
-        message: "Missing phone verification fields",
+        message: "Invalid phone verification payload",
       });
     }
 
     const fullPhone = `${country_code}${phone}`;
 
-    console.log("✅ VERIFIED PHONE:", fullPhone);
+    console.log("✅ Verified Phone:", fullPhone);
     console.log("✅ JSON URL:", json_url);
 
-    return res.status(200).json({
+    return res.json({
       success: true,
       phone: fullPhone,
       json_url,
-      name: name || "User",
     });
   } catch (error) {
-    console.error("🔥 VERIFY PHONE CRASH:", error);
+    console.error("🔥 Verify phone error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Server error",
     });
   }
 });
