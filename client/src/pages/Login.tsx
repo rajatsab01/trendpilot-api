@@ -28,10 +28,6 @@ export default function Login() {
       return;
     }
 
-    // clear old session
-    localStorage.clear();
-    sessionStorage.clear();
-
     window.PhoneEmail.open({
       client_id: "166143163031613842048",
       app_name: "TrendPilot",
@@ -42,9 +38,9 @@ export default function Login() {
 
         try {
           const payload = {
-            phone: userObj.user_phone_number,
-            country_code: userObj.user_country_code,
-            json_url: userObj.user_json_url,
+            user_phone_number: userObj.user_phone_number,
+            user_country_code: userObj.user_country_code,
+            user_json_url: userObj.user_json_url,
           };
 
           console.log("➡️ Sending payload to backend:", payload);
@@ -79,7 +75,7 @@ export default function Login() {
 
         <input
           type="text"
-          placeholder="Enter your name"
+          placeholder="Your name"
           className="w-full p-3 rounded bg-zinc-800 text-white outline-none"
           value={name}
           onChange={(e) => setName(e.target.value)}

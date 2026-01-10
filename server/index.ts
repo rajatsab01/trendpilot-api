@@ -11,7 +11,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const NODE_ENV = process.env.NODE_ENV || "development";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +24,6 @@ app.get("/healthz", (_, res) => res.send("OK"));
 
 app.use("/api", routes);
 
-// serve frontend
 const publicPath = path.join(__dirname, "..", "public");
 app.use(express.static(publicPath));
 
@@ -36,6 +34,5 @@ app.get("*", (_, res) => {
 app.listen(PORT, () => {
   console.log("========================================");
   console.log(`🚀 TrendPilot API running on port: ${PORT}`);
-  console.log(`🌍 Environment: ${NODE_ENV}`);
   console.log("========================================");
 });
