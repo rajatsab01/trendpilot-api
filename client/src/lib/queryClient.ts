@@ -3,7 +3,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 const API_BASE =
   import.meta.env.MODE === "development"
     ? "http://localhost:10000"
-    : ""; // production uses same domain
+    : "";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -19,9 +19,10 @@ export async function apiRequest(
 ): Promise<Response> {
   const res = await fetch(`${API_BASE}${url}`, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -29,14 +30,11 @@ export async function apiRequest(
 }
 
 export const getQueryFn: <T>(options: {
-  on401: "returnNull" | "throw";
+  on401: "throw" | "returnNull";
 }) => QueryFunction<T> =
   () =>
   async ({ queryKey }) => {
-    const res = await fetch(`${API_BASE}${queryKey[0]}`, {
-      credentials: "include",
-    });
-
+    const res = await fetch(`${API_BASE}${queryKey[0]}`);
     await throwIfResNotOk(res);
     return res.json();
   };
@@ -44,8 +42,9 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
       retry: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
     },
     mutations: {
       retry: false,
