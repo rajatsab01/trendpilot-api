@@ -28,23 +28,20 @@ export default function Login() {
       return;
     }
 
-    // clear old session
-    localStorage.clear();
-    sessionStorage.clear();
-
     window.PhoneEmail.open({
       client_id: "166143163031613842048",
       app_name: "TrendPilot",
-      redirect_url: "https://trendpilot.in/login",
+      redirect_url: "https://trendpilot.in", // 🔴 NOT /login
 
       callback: async (userObj: any) => {
         console.log("📞 RAW Phone.Email callback object:", userObj);
 
         try {
           const payload = {
-            phone: userObj.phone,
-            country_code: userObj.country_code,
-            json_url: userObj.json_url,
+            phone: userObj.user_phone_number,
+            country_code: userObj.user_country_code,
+            json_url: userObj.user_json_url,
+            name: name || "User",
           };
 
           console.log("➡️ Sending payload to backend:", payload);
