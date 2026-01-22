@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Phone Callback</title>
+  </head>
+  <body>
+    <script>
+      if (window.opener) {
+        window.opener.postMessage(window.location.search
+          ? Object.fromEntries(new URLSearchParams(window.location.search))
+          : {}, "*");
+        window.close();
+      }
+    </script>
+    Processing...
+  </body>
+</html>
