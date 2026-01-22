@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { t, language, setLanguage } = useLanguage();
   const { toast } = useToast();
   const [symbol, setSymbol] = useState("");
-  const [duration, setDuration] = useState("short_term");
+  const [duration, setDuration] = useState("swing");
   const [market, setMarket] = useState("");
   const [showAdModal, setShowAdModal] = useState(false);
   const [adCountdown, setAdCountdown] = useState(60);
@@ -386,6 +386,7 @@ export default function Dashboard() {
         market,
         currency, // Pass user's preferred currency
         exchange, // Pass user's preferred exchange
+        language,
       });
       return await result.json();
     },
@@ -846,9 +847,9 @@ export default function Dashboard() {
                 onChange={(e) => setDuration(e.target.value)}
                 data-testid="select-duration"
               >
-                <option value="scalping">{t.scalping}</option>
+                <option value="scalping">{t.scalping || "Scalping (5min)"}</option>
+                <option value="swing">{t.swingTrade || "Swing Trade (15min)"}</option>
                 <option value="short_term">{t.shortTerm}</option>
-                <option value="swing_trade">{t.swingTrade || "Swing Trade (15min)"}</option>
                 <option value="long_term">{t.longTerm}</option>
               </select>
             </label>

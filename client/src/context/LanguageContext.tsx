@@ -12,13 +12,25 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem("language") as Language;
-    const validLanguages: Language[] = ["en", "hi", "es", "zh", "ar", "fr", "de", "pt", "ru", "ja", "ko", "it"];
+    const validLanguages: Language[] = [
+      "en", "hi", "es", "zh", "ar", "fr", "de", "pt", "ru", "ja", "ko", "it",
+    ];
     return validLanguages.includes(saved) ? saved : "en";
   });
+
+  // ✅ Ensure context stays in sync with stored language on app load
+  useEffect(() => {
+    const stored = localStorage.getItem("language") as Language | null;
+    if (stored && stored !== language) {
+      setLanguageState(stored);
+      console.log("🌐 Language re-synced from storage:", stored);
+    }
+  }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem("language", lang);
+    console.log("🌐 Language set to:", lang);
   };
 
   const t = getTranslations(language);
