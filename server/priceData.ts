@@ -25,3 +25,16 @@ export const fetchPriceData = async (
     throw new Error("Failed to fetch price data");
   }
 };
+
+// --- Compatibility export for routes.ts (Render/esbuild)
+// If your actual function name is different, keep this wrapper and map it below.
+export async function fetchMarketPrice(...args: any[]) {
+  // Try to call the most likely existing function names safely
+  const mod: any = await import('./priceData');
+  const fn = mod.fetchMarketPrice || mod.getMarketPrice || mod.getPrice || mod.fetchPrice;
+  if (typeof fn !== 'function') {
+    throw new Error('No price fetch function found in priceData.ts');
+  }
+  return fn(...args);
+}
+

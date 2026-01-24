@@ -29,7 +29,7 @@ import {
   reports,
   reactions,
   pinnedTraders,
-} from "@shared/schema";
+} from "../shared/schema";
 
 import { randomUUID } from "crypto";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";

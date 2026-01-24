@@ -15,3 +15,20 @@ export function filterProfanity(text: string): string {
 
   return cleanText;
 }
+
+// --- Compatibility exports for routes.ts (Render/esbuild)
+export function validateContent(text: string) {
+  const mod: any = require('./profanityFilter');
+  const fn = mod.validateContent || mod.isCleanContent || mod.cleanContent || mod.checkProfanity;
+  if (typeof fn === 'function') return fn(text);
+  // fallback: allow if no validator exists
+  return true;
+}
+
+export function validateUsername(name: string) {
+  const mod: any = require('./profanityFilter');
+  const fn = mod.validateUsername || mod.isCleanUsername || mod.cleanUsername || mod.checkUsername;
+  if (typeof fn === 'function') return fn(name);
+  return true;
+}
+

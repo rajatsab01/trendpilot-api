@@ -9,7 +9,7 @@ import { validateSymbol } from "./symbolValidator";
 import { symbolRegistry } from "./symbolRegistry";
 import { validateContent, validateUsername } from "./profanityFilter";
 import { z } from "zod";
-import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "@shared/schema";
+import { insertUserSchema, insertBrokerSchema, APP_VERSION } from "../shared/schema";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { searchInstruments, getPopularInstruments } from "./instrumentSearch";
