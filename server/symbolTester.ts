@@ -1,12 +1,12 @@
-/**
+﻿/**
  * Symbol Testing Suite
  * 
  * Automated system to test ALL symbols in the instrument database
  * against real Yahoo Finance and Binance APIs to ensure they work.
  * 
  * Generates a comprehensive health report showing:
- * - Which symbols are working ✅
- * - Which symbols are broken ❌
+ * - Which symbols are working âœ…
+ * - Which symbols are broken âŒ
  * - Suggestions for fixes
  */
 
@@ -132,7 +132,7 @@ async function testCryptoSymbolCoinGecko(
     };
     
     // Normalize symbol: extract base currency from various formats
-    // BTC-USD → BTC, BTCUSDT → BTC, BITCOIN → BTC
+    // BTC-USD â†’ BTC, BTCUSDT â†’ BTC, BITCOIN â†’ BTC
     let cleanSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
     
     // Try to extract base symbol by removing common quote currencies
@@ -311,7 +311,7 @@ async function testYahooSymbol(
  * Test all symbols in the instrument database
  */
 export async function testAllSymbols(): Promise<SymbolHealthReport> {
-  console.log('🧪 Starting comprehensive symbol testing suite...\n');
+  console.log('ðŸ§ª Starting comprehensive symbol testing suite...\n');
   
   const results: SymbolTestResult[] = [];
   const totalSymbols: number[] = [];
@@ -341,9 +341,9 @@ export async function testAllSymbols(): Promise<SymbolHealthReport> {
         
         // Show immediate result
         if (result.status === 'working') {
-          console.log(`  ✅ Working - Price: $${result.price} (${result.responseTime}ms)`);
+          console.log(`  âœ… Working - Price: $${result.price} (${result.responseTime}ms)`);
         } else {
-          console.log(`  ❌ Broken - ${result.error} (${result.responseTime}ms)`);
+          console.log(`  âŒ Broken - ${result.error} (${result.responseTime}ms)`);
         }
         
         // Small delay to avoid rate limiting
@@ -375,12 +375,12 @@ export async function testAllSymbols(): Promise<SymbolHealthReport> {
   
   // Print summary
   console.log('\n' + '='.repeat(60));
-  console.log('📊 SYMBOL HEALTH REPORT');
+  console.log('ðŸ“Š SYMBOL HEALTH REPORT');
   console.log('='.repeat(60));
   console.log(`Generated: ${report.generatedAt}`);
   console.log(`Total Symbols Tested: ${report.totalSymbols}`);
-  console.log(`✅ Working: ${report.workingSymbols} (${report.successRate}%)`);
-  console.log(`❌ Broken: ${report.brokenSymbols} (${(100 - report.successRate).toFixed(2)}%)`);
+  console.log(`âœ… Working: ${report.workingSymbols} (${report.successRate}%)`);
+  console.log(`âŒ Broken: ${report.brokenSymbols} (${(100 - report.successRate).toFixed(2)}%)`);
   
   if (Object.keys(brokenByMarket).length > 0) {
     console.log('\nBroken Symbols by Market:');
@@ -411,8 +411,8 @@ export function getWorkingSymbols(report: SymbolHealthReport): SymbolTestResult[
 /**
  * CLI runner for manual testing
  */
-if (import.meta.url === `file://${process.argv[1]}`) {
-  console.log('🚀 Running Symbol Testing Suite...\n');
+const argvPath = (process.argv[1] || "").replace(/\\\\/g, "/");`nif (argvPath.endsWith("/symbolTester.ts") || argvPath.endsWith("/symbolTester.js")) {
+  console.log('ðŸš€ Running Symbol Testing Suite...\n');
   
   testAllSymbols()
     .then(report => {
@@ -420,23 +420,23 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const fs = require('fs');
       const reportPath = './symbol-health-report.json';
       fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-      console.log(`✅ Report saved to: ${reportPath}\n`);
+      console.log(`âœ… Report saved to: ${reportPath}\n`);
       
       // Show broken symbols if any
       if (report.brokenSymbols > 0) {
-        console.log('❌ BROKEN SYMBOLS:');
+        console.log('âŒ BROKEN SYMBOLS:');
         const broken = getBrokenSymbols(report);
         broken.forEach(symbol => {
           console.log(`  - ${symbol.symbol} (${symbol.market}): ${symbol.error}`);
         });
         process.exit(1);
       } else {
-        console.log('🎉 All symbols are working perfectly!');
+        console.log('ðŸŽ‰ All symbols are working perfectly!');
         process.exit(0);
       }
     })
     .catch(error => {
-      console.error('❌ Testing failed:', error);
+      console.error('âŒ Testing failed:', error);
       process.exit(1);
     });
 }
