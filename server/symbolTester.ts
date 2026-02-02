@@ -411,8 +411,14 @@ export function getWorkingSymbols(report: SymbolHealthReport): SymbolTestResult[
 /**
  * CLI runner for manual testing
  */
-const argvPath = (process.argv[1] || "").replace(/\\\\/g, "/");`nif (argvPath.endsWith("/symbolTester.ts") || argvPath.endsWith("/symbolTester.js")) {
-  console.log('ðŸš€ Running Symbol Testing Suite...\n');
+const argvPath = (process.argv[1] || "").replace(/\\/g, "/");
+
+if (
+  argvPath.endsWith("/symbolTester.ts") ||
+  argvPath.endsWith("/symbolTester.js")
+) {
+  console.log(`Report saved to: ${reportPath}`);
+}
   
   testAllSymbols()
     .then(report => {
@@ -420,7 +426,7 @@ const argvPath = (process.argv[1] || "").replace(/\\\\/g, "/");`nif (argvPath.en
       const fs = require('fs');
       const reportPath = './symbol-health-report.json';
       fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-      console.log(`âœ… Report saved to: ${reportPath}\n`);
+      console.log("Report saved to:", reportPath);
       
       // Show broken symbols if any
       if (report.brokenSymbols > 0) {
