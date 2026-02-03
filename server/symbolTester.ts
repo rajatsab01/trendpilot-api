@@ -411,38 +411,35 @@ export function getWorkingSymbols(report: SymbolHealthReport): SymbolTestResult[
 /**
  * CLI runner for manual testing
  */
+/**
+ * CLI runner for manual testing
+ * Runs only when this file is executed directly (not imported).
+ */
 const argvPath = (process.argv[1] || "").replace(/\\/g, "/");
 
-if (
-  argvPath.endsWith("/symbolTester.ts") ||
-  argvPath.endsWith("/symbolTester.js")
-) {
-  console.log(`Report saved to: ${reportPath}`);
-}
-  
+if (argvPath.endsWith("/symbolTester.ts") || argvPath.endsWith("/symbolTester.js")) {
   testAllSymbols()
-    .then(report => {
-      // Save report to file
-      const fs = require('fs');
-      const reportPath = './symbol-health-report.json';
+    .then((report) => {
+      const fs = require("fs");
+      const reportPath = "./symbol-health-report.json";
+
       fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-      console.log("Report saved to:", reportPath);
-      
-      // Show broken symbols if any
+      console.log(`✅ Report saved to: ${reportPath}`);
+
       if (report.brokenSymbols > 0) {
-        console.log('âŒ BROKEN SYMBOLS:');
+        console.log("❌ BROKEN SYMBOLS:");
         const broken = getBrokenSymbols(report);
-        broken.forEach(symbol => {
-          console.log(`  - ${symbol.symbol} (${symbol.market}): ${symbol.error}`);
+        broken.forEach((s) => {
+          console.log(`  - ${s.symbol} (${s.market}): ${s.error}`);
         });
         process.exit(1);
       } else {
-        console.log('ðŸŽ‰ All symbols are working perfectly!');
+        console.log("🎉 All symbols are working perfectly!");
         process.exit(0);
       }
     })
-    .catch(error => {
-      console.error('âŒ Testing failed:', error);
+    .catch((error: any) => {
+      console.error("❌ Testing failed:", error);
       process.exit(1);
     });
 }
