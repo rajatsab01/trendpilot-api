@@ -2,8 +2,9 @@
 import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import routes from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
+
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
 
 dotenv.config();
 
@@ -18,18 +19,18 @@ app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
 app.get("/healthz", (_req, res) => res.status(200).send("OK"));
 
-app.use("/api", routes);
-
 (async () => {
+  const server = await registerRoutes(app);
+
   if (NODE_ENV === "production") {
     serveStatic(app);
   } else {
     await setupVite(app);
   }
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     log("========================================");
-    log(`🚀 TrendPilot API running on port: ${PORT}`);
+    log(`🚀 TrendPilot running on port: ${PORT}`);
     log(`🌍 Environment: ${NODE_ENV}`);
     log("========================================");
   });
