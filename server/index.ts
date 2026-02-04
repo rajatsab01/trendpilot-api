@@ -1,17 +1,17 @@
-﻿// server/index.ts
-/**
+﻿/**
  * TrendPilot API Server
  * ---------------------
- * - Registers API routes (server/routes.ts)
- * - Serves built React frontend from dist/public in production (SPA fallback)
+ * - Serves API routes
+ * - Serves built React frontend from dist/public in production
+ * - CJS-safe build (no import.meta, no top-level await)
  */
 
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
+import dotenv from "dotenv";
 
 import registerRoutes from "./routes";
 
@@ -20,68 +20,58 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT || 10000);
 const NODE_ENV = process.env.NODE_ENV || "development";
-const IS_PROD = NODE_ENV === "production";
 
-// Render/Proxies
-app.set("trust proxy", 1);
-
-// ---------------------------------------------
+// -------------------------------
 // Middlewares
-// ---------------------------------------------
+// -------------------------------
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(morgan(IS_PROD ? "combined" : "dev"));
+app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
-// Simple health check
+// -------------------------------
+// Health
+// -------------------------------
 app.get("/health", (_req: Request, res: Response) => {
-  res.status(200).send("ok");
+  res.json({ ok: true, env: NODE_ENV });
 });
 
-// ---------------------------------------------
-// Paths
-// ---------------------------------------------
-// Use process.cwd() to stay CJS-safe after esbuild bundling
-const PUBLIC_DIR = path.resolve(process.cwd(), "dist", "public");
-const INDEX_HTML = path.join(PUBLIC_DIR, "index.html");
-
-// ---------------------------------------------
-// Start
-// ---------------------------------------------
+// -------------------------------
+// Start server (NO top-level await)
+// -------------------------------
 async function start() {
-  try {
-    // ✅ 1) Register API routes FIRST (so SPA fallback never steals /api/*)
-    const httpServer = await registerRoutes(app);
+  // Register API routes (your routes.ts returns an http Server)
+  const httpServer = await registerRoutes(app);
 
-    // ✅ 2) Serve frontend only in production and only if build exists
-    if (IS_PROD && fs.existsSync(INDEX_HTML)) {
-      app.use(express.static(PUBLIC_DIR));
+  // Serve frontend in production
+  if (NODE_ENV === "production") {
+    const publicDir = path.resolve(process.cwd(), "dist", "public");
+    console.log("ENV:", NODE_ENV);
+    console.log("Serving frontend from:", publicDir);
 
-      // SPA fallback
-      app.get("*", (req: Request, res: Response) => {
-        // Let API 404s behave normally (safety guard)
-        if (req.path.startsWith("/api/")) {
-          return res.status(404).json({ error: "Not Found" });
-        }
-        return res.sendFile(INDEX_HTML);
+    if (fs.existsSync(publicDir)) {
+      // Static assets
+      app.use(express.static(publicDir));
+
+      // SPA fallback (React Router)
+      app.get("*", (_req: Request, res: Response, next: NextFunction) => {
+        const indexHtml = path.join(publicDir, "index.html");
+        if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
+        return next();
       });
+    } else {
+      console.warn("⚠️ dist/public not found. Frontend will not be served.");
     }
-
-    // Global error handler (last)
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      console.error("❌ Unhandled error:", err);
-      res.status(500).json({ error: "Internal server error" });
-    });
-
-    httpServer.listen(PORT, "0.0.0.0", () => {
-      console.log(`✅ Server running on port ${PORT}`);
-      console.log(`ENV: ${NODE_ENV}`);
-      if (IS_PROD) console.log(`Serving frontend from: ${PUBLIC_DIR}`);
-    });
-  } catch (err) {
-    console.error("❌ Server failed to start:", err);
-    process.exit(1);
   }
+
+  // Listen
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    console.log(`✅ Server running on port ${PORT}`);
+  });
 }
 
-start();
+// Hard fail if start crashes
+start().catch((err) => {
+  console.error("❌ Fatal startup error:", err);
+  process.exit(1);
+});
