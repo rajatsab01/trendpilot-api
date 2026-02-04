@@ -1,6 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
@@ -11,10 +15,12 @@ export default defineConfig({
       "@assets": path.resolve(__dirname, "attached_assets"),
     },
   },
-  root: path.join(__dirname, "client"), // ✅ use absolute path join for Render
+  root: path.join(__dirname, "client"),
   build: {
-    outDir: path.join(__dirname, "dist", "public"), // ✅ correct output
+    outDir: path.join(__dirname, "dist", "public"),
     emptyOutDir: true,
+    assetsDir: "assets",
+    sourcemap: false,
   },
   server: {
     port: 5173,
