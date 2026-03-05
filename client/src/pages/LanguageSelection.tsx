@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
-import logoImage from "@assets/trendpilot-logo.png";
+const trendPilotLogo = "/trendpilot-logo.png";
 
 export default function LanguageSelection() {
   const [, setLocation] = useLocation();

@@ -1,150 +1,146 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 declare global {
   interface Window {
-    PhoneEmail?: any;
+    recaptchaVerifier?: RecaptchaVerifier;
+    confirmationResult?: any;
   }
 }
 
-const PHONEEMAIL_SCRIPT_ID = "phoneemail-sdk";
-
 export default function Login() {
   const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [phone, setPhone] = useState(""); // +9199xxxxxxxx
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
   const [loading, setLoading] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
+  const [error, setError] = useState("");
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
+
+  const canSendOtp = useMemo(() => {
+    return phone.trim().startsWith("+") && phone.trim().length >= 10;
+  }, [phone]);
 
   useEffect(() => {
-    // If already loaded
-    if (window.PhoneEmail) {
-      setSdkReady(true);
-      return;
-    }
+    // Create reCAPTCHA only once (AFTER DOM has the container)
+    const initRecaptcha = async () => {
+      try {
+        if (!window.recaptchaVerifier) {
+          window.recaptchaVerifier = new RecaptchaVerifier(
+            "recaptcha-container",
+            { size: "invisible" },
+            auth
+          );
 
-    // If script already exists, just wait a bit for it to attach
-    const existing = document.getElementById(PHONEEMAIL_SCRIPT_ID) as HTMLScriptElement | null;
-    if (existing) {
-      const t = setInterval(() => {
-        if (window.PhoneEmail) {
-          setSdkReady(true);
-          clearInterval(t);
+          // IMPORTANT: render it once
+          await window.recaptchaVerifier.render();
         }
-      }, 200);
-      setTimeout(() => clearInterval(t), 8000);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = PHONEEMAIL_SCRIPT_ID;
-    script.src = "https://www.phone.email/sign_in_button_v1.js";
-    script.async = true;
-
-    script.onload = () => {
-      if (window.PhoneEmail) setSdkReady(true);
+        setRecaptchaReady(true);
+      } catch (e) {
+        console.error("reCAPTCHA init failed:", e);
+        setError("reCAPTCHA failed to load. Please refresh and try again.");
+      }
     };
 
-    script.onerror = () => {
-      setError("PhoneEmail SDK failed to load. Please refresh and try again.");
-      setSdkReady(false);
-    };
-
-    document.head.appendChild(script);
+    initRecaptcha();
   }, []);
 
-  const handlePhoneLogin = () => {
+  const sendOtp = async () => {
     setError("");
 
-    const cleanName = name.trim();
-    if (!cleanName) {
-      setError("Please enter your name first.");
+    if (!recaptchaReady) {
+      setError("Please wait… reCAPTCHA is loading.");
       return;
     }
 
-    if (!window.PhoneEmail || typeof window.PhoneEmail.open !== "function") {
-      setError("PhoneEmail SDK not loaded. Please refresh the page.");
+    if (!canSendOtp) {
+      setError("Enter phone in international format, like +9198XXXXXXXX");
       return;
     }
 
     setLoading(true);
+    try {
+      const appVerifier = window.recaptchaVerifier!;
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phone.trim(),
+        appVerifier
+      );
 
-    const redirectUrl = `${window.location.origin}/login`;
+      window.confirmationResult = confirmation;
 
-    window.PhoneEmail.open({
-      client_id: "166143163031613842048",
-      app_name: "TrendPilot",
-      redirect_url: redirectUrl,
+      localStorage.setItem("tp_name", name.trim());
+      localStorage.setItem("tp_phone", phone.trim());
 
-      callback: async (userObj: any) => {
-        try {
-          console.log("📞 RAW Phone.Email callback object:", userObj);
+      setStep("otp");
+    } catch (err: any) {
+      console.error("sendOtp error:", err);
 
-          // Phone.Email typically returns user_json_url
-          const userJsonUrl = userObj?.user_json_url || userObj?.userJsonUrl;
-          if (!userJsonUrl) {
-            throw new Error("Phone verification failed: missing user_json_url.");
-          }
+      // If reCAPTCHA gets into a bad state, reset it
+      try {
+        window.recaptchaVerifier?.clear();
+        window.recaptchaVerifier = undefined;
+        setRecaptchaReady(false);
+      } catch {}
 
-          // 1) Verify phone via backend (your backend expects userJsonUrl)
-          const verifyRes = await fetch("/api/auth/verify-phone", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userJsonUrl }),
-          });
+      setError(err?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          const verifyData = await verifyRes.json();
-          console.log("⬅️ /api/auth/verify-phone:", verifyData);
+  const verifyOtp = async () => {
+    setError("");
 
-          if (!verifyRes.ok) {
-            throw new Error(verifyData?.error || "Failed to verify phone number.");
-          }
+    if (!otp.trim() || otp.trim().length < 4) {
+      setError("Enter the OTP you received");
+      return;
+    }
 
-          const phoneNumber = verifyData?.phoneNumber;
-          if (!phoneNumber) {
-            throw new Error("Verification did not return a phone number.");
-          }
+    setLoading(true);
+    try {
+      const confirmation = window.confirmationResult;
+      if (!confirmation) {
+        setError("OTP session missing. Please go back and request OTP again.");
+        setStep("phone");
+        return;
+      }
 
-          // 2) Create/Get user (this gives you userId + tokens)
-          const loginRes = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: cleanName,
-              mobile: phoneNumber,
-              language: "en",
-            }),
-          });
+      const result = await confirmation.confirm(otp.trim());
+      const user = result.user;
 
-          const loginData = await loginRes.json();
-          console.log("⬅️ /api/auth/login:", loginData);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          uid: user.uid,
+          phoneNumber: user.phoneNumber,
+          name: localStorage.getItem("tp_name") || "",
+        })
+      );
 
-          if (!loginRes.ok) {
-            throw new Error(loginData?.error || "Login failed.");
-          }
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      console.error("verifyOtp error:", err);
+      setError(err?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          // Store a single user object your app can use
-          const userToStore = {
-            name: cleanName,
-            mobile: phoneNumber,
-            userId: loginData.userId,
-            tokens: loginData.tokens,
-          };
-
-          localStorage.setItem("user", JSON.stringify(userToStore));
-          window.location.href = "/";
-        } catch (err: any) {
-          console.error("❌ Login/Verification error:", err);
-          setError(err?.message || "Login failed");
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
+  const goBack = () => {
+    setError("");
+    setOtp("");
+    setStep("phone");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
       <div className="w-full max-w-md p-6 space-y-4 bg-zinc-900 rounded-lg shadow">
         <h1 className="text-2xl font-bold text-center">Login</h1>
+
+        {/* MUST exist in DOM before RecaptchaVerifier */}
+        <div id="recaptcha-container" />
 
         <input
           type="text"
@@ -154,25 +150,69 @@ export default function Login() {
           onChange={(e) => setName(e.target.value)}
         />
 
-        {!sdkReady && (
-          <div className="p-3 bg-zinc-800 text-white rounded text-center">
-            Loading Phone login...
-          </div>
+        {step === "phone" && (
+          <>
+            <input
+              type="tel"
+              placeholder="Phone (e.g. +9198XXXXXXXX)"
+              className="w-full p-3 rounded bg-zinc-800 text-white outline-none"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+
+            {error && (
+              <div className="p-3 bg-red-600 rounded text-center">{error}</div>
+            )}
+
+            <button
+              onClick={sendOtp}
+              disabled={loading || !recaptchaReady}
+              className="w-full py-3 bg-green-600 hover:bg-green-700 rounded text-white font-semibold disabled:opacity-60"
+            >
+              {loading
+                ? "Sending OTP..."
+                : recaptchaReady
+                ? "Send OTP"
+                : "Loading Phone login..."}
+            </button>
+          </>
         )}
 
-        {error && (
-          <div className="p-3 bg-red-600 text-white rounded text-center">
-            {error}
-          </div>
-        )}
+        {step === "otp" && (
+          <>
+            <div className="text-sm text-zinc-300">
+              OTP sent to <b>{phone}</b>
+            </div>
 
-        <button
-          onClick={handlePhoneLogin}
-          disabled={loading || !sdkReady}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 rounded text-white font-semibold"
-        >
-          {loading ? "Verifying..." : "Sign in with Phone"}
-        </button>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              className="w-full p-3 rounded bg-zinc-800 text-white outline-none"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+
+            {error && (
+              <div className="p-3 bg-red-600 rounded text-center">{error}</div>
+            )}
+
+            <button
+              onClick={verifyOtp}
+              disabled={loading}
+              className="w-full py-3 bg-green-600 hover:bg-green-700 rounded text-white font-semibold"
+            >
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+
+            <button
+              onClick={goBack}
+              disabled={loading}
+              className="w-full py-3 bg-zinc-700 hover:bg-zinc-600 rounded text-white font-semibold"
+            >
+              Back
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
