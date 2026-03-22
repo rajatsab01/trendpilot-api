@@ -111,22 +111,25 @@ export default function ReportModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a241f] rounded-xl max-w-md w-full p-6 border border-[#2a3c33]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 sm:items-center sm:p-4">
+      <div className="flex h-[min(92dvh,640px)] max-h-[92dvh] w-full max-w-md min-h-0 flex-col rounded-t-2xl border border-[#2a3c33] bg-[#1a241f] sm:h-[min(90dvh,640px)] sm:rounded-xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-bold text-lg">{title}</h2>
+        <div className="flex shrink-0 items-center justify-between border-b border-[#2a3c33] px-4 py-3 sm:px-6 sm:pt-5">
+          <h2 className="pr-2 text-base font-bold text-white sm:text-lg">{title}</h2>
           <button
+            type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="text-[#9eb7a8] hover:text-white disabled:opacity-50"
+            className="shrink-0 text-[#9eb7a8] hover:text-white disabled:opacity-50"
             data-testid="button-close-report"
           >
-            <span className="material-symbols-outlined text-2xl">close</span>
+            <span className="material-symbols-outlined text-2xl leading-none">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3 sm:px-6 sm:pt-4">
+          <div className="space-y-4 pb-2">
           {/* Report Type */}
           <div>
             <label className="text-white text-sm font-semibold mb-2 block">
@@ -177,24 +180,27 @@ export default function ReportModal({
               onChange={(e) => setMessage(e.target.value)}
               disabled={isSubmitting}
               placeholder="Provide detailed information about your report..."
-              rows={5}
-              className="w-full bg-[#111714] text-white rounded-xl px-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72] resize-none disabled:opacity-50"
+              rows={4}
+              className="min-h-[88px] w-full resize-y bg-[#111714] text-white rounded-xl px-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none placeholder:text-[#6a7f72] disabled:opacity-50 sm:min-h-[100px]"
               data-testid="textarea-report-message"
             />
             <p className="text-[#6a7f72] text-xs mt-1">
               Minimum 10 characters ({message.length}/10)
             </p>
           </div>
+          </div>
+          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting || !subject.trim() || message.trim().length < 10}
-            className="w-full bg-[#38e07b] text-[#111714] py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            data-testid="button-submit-report"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Report"}
-          </button>
+          <div className="shrink-0 border-t border-[#2a3c33] bg-[#1a241f] px-4 py-3 sm:px-6 sm:py-4">
+            <button
+              type="submit"
+              disabled={isSubmitting || !subject.trim() || message.trim().length < 10}
+              className="w-full rounded-xl bg-[#38e07b] py-3 font-semibold text-[#111714] disabled:cursor-not-allowed disabled:opacity-50"
+              data-testid="button-submit-report"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Report"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

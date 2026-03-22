@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import BottomNav from "@/components/BottomNav";
-import trendPilotLogo from "@assets/trendpilot-logo.png";
+const trendPilotLogo = "/trendpilot-logo.png";
 
 export default function ContactUs() {
   const [, setLocation] = useLocation();
@@ -27,7 +27,7 @@ export default function ContactUs() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-3">
               <img 
-                src={trendPilotLogo}
+                src="/trendpilot-logo.png"
                 alt="TrendPilot Logo"
                 className="h-12 w-12 object-contain rounded-lg"
                 data-testid="img-contact-logo"

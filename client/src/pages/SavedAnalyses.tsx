@@ -53,6 +53,7 @@ export default function SavedAnalyses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
+      queryClient.invalidateQueries({ queryKey: ["/api/community/feed", userId] });
       toast({
         title: t.published,
         description: t.analysisPublishedSuccessfully,
@@ -76,6 +77,7 @@ export default function SavedAnalyses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
+      queryClient.invalidateQueries({ queryKey: ["/api/community/feed", userId] });
       toast({
         title: t.unpublished,
         description: t.analysisUnpublishedSuccessfully,
@@ -233,7 +235,7 @@ export default function SavedAnalyses() {
               {t.saveAnalysesToTrack}
             </p>
             <button
-              onClick={() => setLocation("/analyzer")}
+              onClick={() => setLocation("/dashboard")}
               className="bg-[#38e07b] text-[#111714] font-bold py-3 px-6 rounded-full hover:bg-opacity-90 transition-colors"
               data-testid="button-go-to-analyzer"
             >
@@ -250,7 +252,7 @@ export default function SavedAnalyses() {
               return (
                 <div
                   key={analysis.id}
-                  onClick={() => setLocation(`/analyzer?analysisId=${analysis.id}&fromSaved=true`)}
+                  onClick={() => setLocation(`/dashboard?analysisId=${analysis.id}&fromSaved=true`)}
                   className="bg-[#1c2620] border border-[#29382f] rounded-xl p-3 cursor-pointer hover:border-[#38e07b] transition-colors"
                   data-testid={`card-saved-analysis-${analysis.id}`}
                 >

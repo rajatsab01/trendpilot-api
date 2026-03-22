@@ -10,6 +10,12 @@
   ],
   "overrides": [
     {
+      "type": "exact",
+      "pattern": "TATAMOTORS.NS",
+      "replacement": "NSE:TMCV",
+      "comment": "Yahoo delisted TATAMOTORS.NS; TradingView NSE ticker is TMCV"
+    },
+    {
       "pattern": "\\.NS$",
       "type": "regex",
       "action": "extractBase",

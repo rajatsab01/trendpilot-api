@@ -1,77 +1,132 @@
-﻿/**
+/**
  * TrendPilot API Server
  * ---------------------
- * - Serves API routes
- * - Serves built React frontend from dist/public in production
- * - CJS-safe build (no import.meta, no top-level await)
+ * Dev:   tsx server/index.ts
+ * Prod:  node dist/index.cjs (built by esbuild)
+ *
+ * - Registers API routes from ./routes
+ * - Serves built frontend from dist/public in production
+ * - Prevents double-listen + handles EADDRINUSE nicely
  */
 
-import express, { Request, Response, NextFunction } from "express";
+import dotenv from "dotenv";
+dotenv.config();
+
+import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import path from "path";
-import fs from "fs";
-import dotenv from "dotenv";
+import { existsSync } from "fs";
 
-import registerRoutes from "./routes";
-
-dotenv.config();
+import routes from "./routes"; // expects default export
 
 const app = express();
 const PORT = Number(process.env.PORT || 10000);
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-// -------------------------------
+// ----------------------------
 // Middlewares
-// -------------------------------
+// ----------------------------
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
-// -------------------------------
+// ----------------------------
 // Health
-// -------------------------------
+// ----------------------------
 app.get("/health", (_req: Request, res: Response) => {
   res.json({ ok: true, env: NODE_ENV });
 });
 
-// -------------------------------
-// Start server (NO top-level await)
-// -------------------------------
-async function start() {
-  // Register API routes (your routes.ts returns an http Server)
-  const httpServer = await registerRoutes(app);
-
-  // Serve frontend in production
+// ----------------------------
+// Start
+// ----------------------------
+function startExpress() {
+  // Serve frontend only in production
   if (NODE_ENV === "production") {
     const publicDir = path.resolve(process.cwd(), "dist", "public");
     console.log("ENV:", NODE_ENV);
     console.log("Serving frontend from:", publicDir);
 
-    if (fs.existsSync(publicDir)) {
-      // Static assets
+    if (existsSync(publicDir)) {
       app.use(express.static(publicDir));
 
-      // SPA fallback (React Router)
-      app.get("*", (_req: Request, res: Response, next: NextFunction) => {
-        const indexHtml = path.join(publicDir, "index.html");
-        if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
-        return next();
+      // SPA fallback
+      app.get("*", (_req: Request, res: Response) => {
+        res.sendFile(path.join(publicDir, "index.html"));
       });
     } else {
-      console.warn("⚠️ dist/public not found. Frontend will not be served.");
+      console.warn("⚠️ dist/public not found. Run `npm run build` first.");
     }
   }
 
-  // Listen
-  httpServer.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`✅ Server running on port ${PORT}`);
+  });
+
+  server.on("error", (err: any) => {
+    if (err?.code === "EADDRINUSE") {
+      console.error(`❌ Port ${PORT} already in use. Kill the PID and retry.`);
+      process.exit(1);
+    }
+    console.error("Server error:", err);
+    process.exit(1);
   });
 }
 
-// Hard fail if start crashes
-start().catch((err) => {
-  console.error("❌ Fatal startup error:", err);
-  process.exit(1);
-});
+(async () => {
+  try {
+    // routes(app) might just register routes OR might return an http server
+    const maybeServer: any = await (routes as any)(app);
+
+    if (NODE_ENV !== "production") {
+      console.log("🛠️ Setting up Vite middleware for development frontend...");
+      const { setupVite } = await import("./vite");
+      await setupVite(app);
+    }
+
+    // If routes.ts returned a real server that is already listening, do nothing.
+    // If it returned a server but not listening, listen here.
+    if (maybeServer && typeof maybeServer.listen === "function") {
+      const alreadyListening =
+        typeof maybeServer.listening === "boolean" ? maybeServer.listening : false;
+
+      if (!alreadyListening) {
+        maybeServer.listen(PORT, "0.0.0.0", () => {
+          console.log(`✅ Server running on port ${PORT}`);
+        });
+      } else {
+        console.log("✅ Server already listening (from routes.ts)");
+      }
+
+      maybeServer.on?.("error", (err: any) => {
+        if (err?.code === "EADDRINUSE") {
+          console.error(`❌ Port ${PORT} already in use. Kill the PID and retry.`);
+          process.exit(1);
+        }
+        console.error("Server error:", err);
+        process.exit(1);
+      });
+
+      // Still serve frontend if production and routes.ts started server
+      if (NODE_ENV === "production") {
+        const publicDir = path.resolve(process.cwd(), "dist", "public");
+        console.log("ENV:", NODE_ENV);
+        console.log("Serving frontend from:", publicDir);
+
+        if (existsSync(publicDir)) {
+          app.use(express.static(publicDir));
+          app.get("*", (_req: Request, res: Response) => {
+            res.sendFile(path.join(publicDir, "index.html"));
+          });
+        }
+      }
+    } else {
+      startExpress();
+    }
+  } catch (e) {
+    console.error("❌ Failed to start server:", e);
+    process.exit(1);
+  }
+})();

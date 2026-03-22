@@ -1,5 +1,5 @@
 // Trend Pilot Service Worker - PWA Support
-const CACHE_NAME = 'trend-pilot-v1';
+const CACHE_NAME = 'trend-pilot-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -49,23 +49,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for API calls
+  // Skip cross-origin requests to prevent breaking 3rd party scripts (Phone.Email, Razorpay, etc)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Skip Vite HMR websocket connecting path
+  if (url.port === '24678' || url.pathname.includes('@vite')) {
+    return;
+  }
+
+  // API: always hit the network — never cache /api (stale tokens, saved lists, user profile).
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Clone response to cache it
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Return cached version if network fails
-          return caches.match(request);
-        })
-    );
+    event.respondWith(fetch(request));
     return;
   }
 
@@ -76,17 +72,23 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
-        return fetch(request).then((response) => {
-          // Don't cache if not a valid response
-          if (!response || response.status !== 200 || response.type === 'error') {
+        return fetch(request)
+          .then((response) => {
+            // Don't cache if not a valid response
+            if (!response || response.status !== 200 || response.type === 'error') {
+              return response;
+            }
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
             return response;
-          }
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
+          })
+          .catch((error) => {
+            console.warn('Service Worker fetch failed:', error);
+            // Return a basic fallback response or just fail gracefully
+            throw error;
           });
-          return response;
-        });
       })
   );
 });

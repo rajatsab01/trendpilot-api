@@ -7,7 +7,12 @@
  * Sources: Binance + CoinGecko + Yahoo Finance
  */
 
-import { normalizeSymbolForAPI, type MarketType } from "./symbolRegistry.js";
+import { normalizeSymbolForAPI, type MarketType, symbolRegistry } from "./symbolRegistry.js";
+
+/** Bare NSE tickers where Yahoo’s listing symbol differs from the old name (e.g. corporate re-list). */
+const NSE_BARE_TICKER_REMAP: Record<string, string> = {
+  TATAMOTORS: "TMCV.NS",
+};
 
 //------------------------------------------------------
 // ✅ Interface (extended for routes.ts expectations)
@@ -172,31 +177,259 @@ async function fetchYahooSuggestions(partial: string): Promise<Array<{ symbol: s
   }
 }
 
+const YAHOO_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+
+function priceFromChartResult(res: Record<string, unknown> | undefined): number | null {
+  if (!res) return null;
+  const meta = res.meta as Record<string, unknown> | undefined;
+  const tryNum = (v: unknown): number | null => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  if (meta) {
+    for (const k of [
+      "regularMarketPrice",
+      "postMarketPrice",
+      "preMarketPrice",
+      "previousClose",
+      "chartPreviousClose",
+      "regularMarketPreviousClose",
+    ]) {
+      const hit = tryNum(meta[k]);
+      if (hit != null) return hit;
+    }
+  }
+  const quote = (res.indicators as Record<string, unknown> | undefined)?.quote as
+    | Array<{ close?: (number | null)[] }>
+    | undefined;
+  const closes = quote?.[0]?.close;
+  if (Array.isArray(closes)) {
+    for (let i = closes.length - 1; i >= 0; i--) {
+      const hit = tryNum(closes[i]);
+      if (hit != null) return hit;
+    }
+  }
+  const adj = (res.indicators as Record<string, unknown> | undefined)?.adjclose as
+    | Array<{ adjclose?: (number | null)[] }>
+    | undefined;
+  const adjc = adj?.[0]?.adjclose;
+  if (Array.isArray(adjc)) {
+    for (let i = adjc.length - 1; i >= 0; i--) {
+      const hit = tryNum(adjc[i]);
+      if (hit != null) return hit;
+    }
+  }
+  return null;
+}
+
+/** Lightweight quote endpoint — often works for NSE/BSE when chart meta is sparse. */
+async function tryYahooQuoteV7(yahooSymbol: string, market: string): Promise<SymbolValidationResult | null> {
+  const encoded = encodeURIComponent(yahooSymbol);
+  const urls = [
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encoded}`,
+    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encoded}`,
+  ];
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url, {
+        headers: { "User-Agent": YAHOO_UA, Accept: "application/json" },
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const q = data?.quoteResponse?.result?.[0];
+      if (!q?.symbol) continue;
+      const price =
+        q.regularMarketPrice ??
+        q.postMarketPrice ??
+        q.preMarketPrice ??
+        q.regularMarketPreviousClose ??
+        q.bid;
+      const n = Number(price);
+      if (!Number.isFinite(n) || n <= 0) continue;
+      return {
+        isValid: true,
+        correctedSymbol: q.symbol,
+        assetName: q.longName || q.shortName || q.symbol,
+        currentPrice: n,
+        sourceCurrency: getExchangeCurrency(String(q.symbol), market),
+        exchange: q.fullExchangeName || "Yahoo",
+        source: "Yahoo",
+      };
+    } catch {
+      /* next */
+    }
+  }
+  return null;
+}
+
+/**
+ * Yahoo often returns HTTP 200 with chart.error in JSON, or empty meta — treat as failure.
+ * Prefer query2 (same as priceData). Try several ranges so .NS / off-hours still yield a last close.
+ */
+async function tryYahooChartQuote(
+  yahooSymbol: string,
+  market: string
+): Promise<SymbolValidationResult | null> {
+  const encoded = encodeURIComponent(yahooSymbol);
+  const ranges = ["5d", "1mo", "3mo", "1y"];
+  const bases = ["query2.finance.yahoo.com", "query1.finance.yahoo.com"];
+
+  for (const range of ranges) {
+    for (const host of bases) {
+      const url = `https://${host}/v8/finance/chart/${encoded}?interval=1d&range=${range}`;
+      try {
+        const resp = await fetch(url, {
+          headers: { "User-Agent": YAHOO_UA, Accept: "application/json" },
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!resp.ok) continue;
+
+        const data = await resp.json();
+        if (data?.chart?.error) continue;
+
+        const res = data?.chart?.result?.[0] as Record<string, unknown> | undefined;
+        const meta = res?.meta as Record<string, unknown> | undefined;
+        if (!res || !meta) continue;
+
+        const n = priceFromChartResult(res);
+        if (n == null) continue;
+
+        return {
+          isValid: true,
+          correctedSymbol: (meta.symbol as string) || yahooSymbol,
+          assetName:
+            (meta.longName as string) ||
+            (meta.shortName as string) ||
+            (meta.symbol as string) ||
+            yahooSymbol,
+          currentPrice: n,
+          sourceCurrency: getExchangeCurrency(String(meta.symbol || yahooSymbol), market),
+          exchange: "Yahoo",
+          source: "Yahoo",
+        };
+      } catch {
+        /* try next */
+      }
+    }
+  }
+  return null;
+}
+
+/** When Yahoo search is empty (rate limits / blocks), still offer NSE/BSE tickers from our registry. */
+function registryStockSuggestions(query: string): Array<{ symbol: string; name: string; price?: number }> {
+  const raw = query.toUpperCase().trim();
+  if (raw.length < 2) return [];
+  const stripSuffix = (s: string) => s.replace(/\.(NS|BO)$/i, "");
+  const qBase = stripSuffix(raw);
+  const seen = new Set<string>();
+  const out: Array<{ symbol: string; name: string }> = [];
+
+  for (const m of symbolRegistry.getAll()) {
+    if (m.market !== "stock") continue;
+    const sym = m.symbol.toUpperCase();
+    const base = stripSuffix(sym);
+    const match =
+      sym === raw ||
+      base === qBase ||
+      sym.includes(raw) ||
+      base.startsWith(qBase) ||
+      qBase.length >= 3 && base.includes(qBase);
+    if (!match) continue;
+    if (seen.has(sym)) continue;
+    seen.add(sym);
+    out.push({ symbol: m.symbol, name: m.name });
+  }
+
+  out.sort((a, b) => {
+    const ab = stripSuffix(a.symbol.toUpperCase());
+    const bb = stripSuffix(b.symbol.toUpperCase());
+    if (ab === qBase && bb !== qBase) return -1;
+    if (bb === qBase && ab !== qBase) return 1;
+    return a.symbol.localeCompare(b.symbol);
+  });
+
+  return out.slice(0, 10);
+}
+
 //------------------------------------------------------
 // ✅ Yahoo validation (stocks / forex / commodities)
 //------------------------------------------------------
 async function validateYahooSymbol(symbol: string, market: string): Promise<SymbolValidationResult> {
+  const stripSuffix = (s: string) => s.replace(/\.(NS|BO)$/i, "");
   try {
-    const yahooSymbol = normalizeSymbolForAPI(symbol, market as MarketType);
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-    const resp = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-    if (!resp.ok) {
-      const s = await fetchYahooSuggestions(symbol);
-      return s.length ? { isValid: false, suggestions: s, error: `Symbol "${symbol}" not found.` } : { isValid: false, error: `Symbol not found.` };
+    const trimmed = symbol.trim();
+    const primary = normalizeSymbolForAPI(trimmed, market as MarketType);
+
+    let hit = await tryYahooChartQuote(primary, market);
+    if (hit) return hit;
+    hit = await tryYahooQuoteV7(primary, market);
+    if (hit) return hit;
+
+    // NSE/BSE: user typed bare ticker (e.g. TATAMOTORS) — Yahoo needs .NS or .BO
+    if (
+      market === "stock" &&
+      /^[A-Z][A-Z0-9]{1,14}$/.test(primary) &&
+      !primary.includes(".") &&
+      !primary.includes("=")
+    ) {
+      for (const suf of [".NS", ".BO"] as const) {
+        const y = `${primary}${suf}`;
+        hit = await tryYahooChartQuote(y, market);
+        if (hit) return hit;
+        hit = await tryYahooQuoteV7(y, market);
+        if (hit) return hit;
+      }
+      // Yahoo renamed some NSE tickers (e.g. TATAMOTORS → TMCV.NS)
+      const renamed = NSE_BARE_TICKER_REMAP[primary.toUpperCase()];
+      if (renamed) {
+        hit = await tryYahooChartQuote(renamed, market);
+        if (hit) return hit;
+        hit = await tryYahooQuoteV7(renamed, market);
+        if (hit) return hit;
+      }
     }
-    const data = await resp.json();
-    const res = data?.chart?.result?.[0];
-    const meta = res?.meta;
-    const price = meta?.regularMarketPrice ?? meta?.previousClose;
-    return {
-      isValid: true,
-      correctedSymbol: yahooSymbol,
-      assetName: meta?.longName || yahooSymbol,
-      currentPrice: price,
-      sourceCurrency: getExchangeCurrency(yahooSymbol, market),
-      exchange: "Yahoo",
-      source: "Yahoo",
-    };
+
+    // Registry match (e.g. TATAMOTORS.NS) — retry quote APIs if primary string differed
+    if (market === "stock") {
+      const reg = registryStockSuggestions(stripSuffix(primary) || primary);
+      const exact =
+        reg.find((r) => r.symbol.toUpperCase() === primary.toUpperCase()) ||
+        reg.find((r) => stripSuffix(r.symbol.toUpperCase()) === stripSuffix(primary.toUpperCase()));
+      if (exact && exact.symbol.toUpperCase() !== primary.toUpperCase()) {
+        hit = await tryYahooChartQuote(exact.symbol, market);
+        if (hit) return hit;
+        hit = await tryYahooQuoteV7(exact.symbol, market);
+        if (hit) return hit;
+      }
+    }
+
+    let suggestions = await fetchYahooSuggestions(trimmed);
+    if (!suggestions.length && trimmed !== primary) {
+      suggestions = await fetchYahooSuggestions(primary);
+    }
+    const regSug = registryStockSuggestions(trimmed);
+    const merged: Array<{ symbol: string; name: string; price?: number }> = [...suggestions];
+    const have = new Set(merged.map((s) => s.symbol.toUpperCase()));
+    for (const r of regSug) {
+      if (!have.has(r.symbol.toUpperCase())) {
+        merged.push(r);
+        have.add(r.symbol.toUpperCase());
+      }
+    }
+
+    const top = suggestions[0];
+    if (top?.symbol && top.symbol.toUpperCase() !== primary.toUpperCase()) {
+      hit = await tryYahooChartQuote(top.symbol, market);
+      if (hit) return hit;
+      hit = await tryYahooQuoteV7(top.symbol, market);
+      if (hit) return hit;
+    }
+
+    return merged.length
+      ? { isValid: false, suggestions: merged, error: `Symbol "${trimmed}" not found.` }
+      : { isValid: false, error: `Symbol not found.` };
   } catch (e: any) {
     return { isValid: false, error: e.message };
   }

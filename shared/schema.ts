@@ -11,8 +11,8 @@ export const users = pgTable("users", {
   language: text("language").notNull().default("en"), // 'en', 'hi', 'es', 'zh', 'ar', 'fr', 'de', 'pt', 'ru', 'ja', 'ko', 'it'
   currency: text("currency").notNull().default("USD"), // Preferred currency for analysis and display
   exchange: text("exchange"), // Preferred exchange/country for symbol resolution (optional)
-  tokens: integer("tokens").notNull().default(20),
-  maxTokens: integer("max_tokens").notNull().default(20), // Tracks the highest token count ever owned
+  tokens: integer("tokens").notNull().default(0),
+  maxTokens: integer("max_tokens").notNull().default(0), // Tracks the highest token count ever owned
   pwaInstallBonusClaimed: integer("pwa_install_bonus_claimed").notNull().default(0), // 0 = not claimed, 1 = claimed
   isAdmin: integer("is_admin").notNull().default(0), // 0 = regular user, 1 = admin
   // Community features
@@ -48,6 +48,7 @@ export const analyses = pgTable("analyses", {
   confidence: integer("confidence").notNull(), // 0-100
   sentiment: text("sentiment").notNull(), // 'Bullish' or 'Bearish'
   marketSentiment: text("market_sentiment"), // Market sentiment analysis
+  newsHighlights: text("news_highlights"), // Recent news / sentiment / catalysts (AI + search)
   deepAnalysis: text("deep_analysis"), // Deep technical analysis
   analysis: text("analysis").notNull(), // Final AI verdict
   rsi: text("rsi"),

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import trendPilotLogo from "@assets/trendpilot-logo.png";
+const trendPilotLogo = "/trendpilot-logo.png";
 
 export default function Welcome() {
   const [, setLocation] = useLocation();
@@ -51,14 +52,19 @@ export default function Welcome() {
     setLocation("/dashboard");
   };
 
-  const handleLanguageChange = (lang: Language) => {
+  const handleLanguageChange = async (lang: Language) => {
     setLanguage(lang);
-    // Clear onboarding flags to restart flow from language screen
-    localStorage.removeItem("languageCompleted");
-    localStorage.removeItem("loginCompleted");
     setShowSettings(false);
-    // Redirect to language screen to restart onboarding
-    setLocation("/");
+    const uid = localStorage.getItem("userId");
+    if (uid) {
+      try {
+        await apiRequest("PATCH", `/api/user/${uid}`, { language: lang });
+        queryClient.invalidateQueries({ queryKey: ["/api/user", uid] });
+      } catch (e) {
+        console.error("Failed to sync language to account:", e);
+      }
+    }
+    // Keep languageCompleted / loginCompleted and stay on this screen so saved data and session stay tied to the same user.
   };
 
   const handleInstallApp = async () => {

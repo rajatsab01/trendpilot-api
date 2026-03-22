@@ -80,6 +80,13 @@ export default function BuyTokens() {
               title: "Success!",
               description: `${tokens} tokens added to your account (Demo mode)`,
             });
+            // Update cache immediately
+            if (result.newBalance !== undefined) {
+              queryClient.setQueryData(["/api/user", userId], (old: any) => ({
+                ...old,
+                tokens: result.newBalance
+              }));
+            }
             queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
             setLocation("/dashboard");
           }
@@ -129,6 +136,13 @@ export default function BuyTokens() {
                 title: "Payment Successful!",
                 description: `${tokens} tokens added to your account`,
               });
+              // Update cache immediately
+              if (result.newBalance !== undefined) {
+                queryClient.setQueryData(["/api/user", userId], (old: any) => ({
+                  ...old,
+                  tokens: result.newBalance
+                }));
+              }
               queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
               setLocation("/dashboard");
             }

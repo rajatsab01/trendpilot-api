@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { Analysis } from "@shared/schema"
+import type { Analysis, User } from "@shared/schema"
 
 import stockConfig from "@/config/chartMappings/stock.json"
 import commodityConfig from "@/config/chartMappings/commodity.json"
@@ -9,6 +9,26 @@ import cryptoConfig from "@/config/chartMappings/crypto.json"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/** Community: show only the chosen community handle — never the legal/account full name. */
+export function communityDisplayName(user: User | null | undefined): string {
+  if (!user) return "Anonymous";
+  const alias = user.alias?.trim();
+  if (alias) return alias;
+  return "Anonymous";
+}
+
+/** Strip "(Analysis in English)" / "(Analysis in …)" prefixes from LLM or legacy fallback output */
+export function stripAnalysisMetaPrefix(s: string | null | undefined): string {
+  if (!s) return "";
+  let t = s.trim();
+  for (let i = 0; i < 4; i++) {
+    const next = t.replace(/^\(Analysis in [^)]+\)\s*/i, "").replace(/^\(English\)\s*/i, "").trim();
+    if (next === t) break;
+    t = next;
+  }
+  return t;
 }
 
 interface ChartConfig {

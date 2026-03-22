@@ -9,12 +9,14 @@ import { analyzeMarketWithPerplexity } from "./perplexity";
 import { searchCryptoSymbols } from "./marketData";
 import { fetchMarketPrice } from "./priceData";
 import { validateSymbol } from "./symbolValidator";
-import { symbolRegistry } from "./symbolRegistry";
+import { findRecentAnalysis } from "./storage";
+import { initializeSymbolRegistry, symbolRegistry } from "./symbolRegistry";
 import { validateContent, validateUsername } from "./profanityFilter";
 import { searchInstruments, getPopularInstruments } from "./instrumentSearch";
 import { askPerplexity } from "./pplx";
+import { maybeRelocalizeStoredAnalysis } from "./relocalizeOfflineAnalysis";
 
-import { insertBrokerSchema, APP_VERSION } from "../shared/schema";
+import { insertBrokerSchema, insertReactionSchema, insertReportSchema, APP_VERSION } from "../shared/schema";
 
 // -------------------------------
 // ✅ Strong language typing (fixes TS2322)
@@ -55,22 +57,30 @@ function getReqLang(req: Request): AppLang {
 // -------------------------------
 // 🔒 SECURITY: Token cap during testing
 // -------------------------------
-const TEST_MODE_ACTIVE = true; // Set to false when switching to live Razorpay
-const TEST_MODE_TOKEN_CAP = 10; // Maximum tokens allowed during testing
+const TEST_MODE_ACTIVE = (process.env.TEST_MODE ?? "true").toLowerCase() === "true";
+const TEST_MODE_TOKEN_CAP = 20; // Maximum tokens allowed during testing
 
 function checkTokenCap(currentTokens: number, tokensToAdd: number) {
-  if (!TEST_MODE_ACTIVE) return { allowed: true };
+  if (!TEST_MODE_ACTIVE) return { allowed: true, tokensToAdd: tokensToAdd };
 
   const newBalance = currentTokens + tokensToAdd;
   if (newBalance > TEST_MODE_TOKEN_CAP) {
+    if (currentTokens >= TEST_MODE_TOKEN_CAP) {
+      return {
+        allowed: false,
+        error: `Maximum ${TEST_MODE_TOKEN_CAP} tokens allowed. Please use some tokens before adding more.`,
+        maxTokens: TEST_MODE_TOKEN_CAP,
+        tokensToAdd: 0,
+      };
+    }
+    // Cap addition to precisely hit TEST_MODE_TOKEN_CAP
     return {
-      allowed: false,
-      error: `Testing period limit: Maximum ${TEST_MODE_TOKEN_CAP} tokens allowed. You currently have ${currentTokens} tokens. This cap will be removed once the app launches with live payments.`,
-      maxTokens: TEST_MODE_TOKEN_CAP,
+      allowed: true,
+      tokensToAdd: TEST_MODE_TOKEN_CAP - currentTokens,
     };
   }
 
-  return { allowed: true };
+  return { allowed: true, tokensToAdd };
 }
 
 // -------------------------------
@@ -106,6 +116,8 @@ function versionGuardMiddleware(req: Request, res: Response, next: NextFunction)
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  initializeSymbolRegistry();
+
   // ---------------------------------------------
   // ✅ Phone verification
   // ---------------------------------------------
@@ -125,7 +137,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid verification URL" });
       }
 
-      const response = await fetch(userJsonUrl);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(userJsonUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!response.ok) return res.status(400).json({ error: "Failed to verify phone number" });
 
       const data = await response.json();
@@ -137,8 +154,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const phoneNumber = `+${user_country_code}${user_phone_number}`;
       res.json({ phoneNumber, countryCode: user_country_code, verified: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Phone verification error:", error);
+      if (error.name === 'AbortError') {
+        return res.status(408).json({ error: "Request timed out" });
+      }
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -162,39 +182,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { name, mobile, language } = validationResult.data;
 
       const normalizedMobile = mobile.replace(/[\s-]/g, "");
-
-      let user = await storage.getUserByMobile(normalizedMobile);
-
-      // Backwards compatible migration for old phone formats
-      if (!user && normalizedMobile.startsWith("+")) {
-        const withoutPlus = normalizedMobile.substring(1);
-        user = await storage.getUserByMobile(withoutPlus);
-
-        if (!user && withoutPlus.length > 10) {
-          const last10Digits = withoutPlus.slice(-10);
-          user = await storage.getUserByMobile(last10Digits);
-        }
-
-        if (user) {
-          // migrate to new format
-          await (storage as any).updateUserMobile?.(user.id, normalizedMobile);
-        }
+      const mobileDigits = normalizedMobile.replace(/\D/g, "");
+      if (mobileDigits.length < 10) {
+        return res.status(400).json({ error: "Invalid phone number" });
       }
+      const canonicalMobile = `+${mobileDigits}`;
+
+      // Lookup matches by digits only so +91…, 91…, and spacing variants resolve the same account
+      let user = await storage.getUserByMobile(normalizedMobile);
 
       if (!user) {
         user = await storage.createUser({
           name,
-          mobile: normalizedMobile,
+          mobile: canonicalMobile,
           language,
-          tokens: 20,
+          tokens: 20, // Give new users 20 tokens instead of 0
         } as any);
 
         return res.json({ userId: user.id, tokens: user.tokens });
       }
 
+      if (user.mobile !== canonicalMobile) {
+        const updated = await storage.updateUserMobile(user.id, canonicalMobile);
+        if (updated) user = updated;
+      }
+
       if (user.language !== language) {
         await storage.updateUserLanguage(user.id, language);
         user.language = language;
+      }
+
+      // Only gift tokens if user has exactly 0 (initial state or completely used up)
+      if (user.tokens === 0) {
+        console.log(`🎁 Gifting 20 tokens to user ${user.id} (balance was 0)`);
+        user = await storage.updateUserTokens(user.id, 20) || user;
       }
 
       res.json({ userId: user.id, tokens: user.tokens });
@@ -210,8 +231,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/:userId", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ error: "User not found" });
+
       res.json(user);
     } catch (error) {
       console.error("Get user error:", error);
@@ -247,37 +269,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ---------------------------------------------
   // ✅ Dev helpers (SAFE TYPES: no extra schema fields)
+  // ⚠️ Only available in non-production environments
   // ---------------------------------------------
-  app.post("/api/dev/ensure-user", async (req: Request, res: Response) => {
-    try {
-      const id = (req.body as any)?.id?.toString() || "dev-user";
-      let user = await storage.getUser(id);
+  if (process.env.NODE_ENV !== "production") {
+    app.post("/api/dev/ensure-user", async (req: Request, res: Response) => {
+      try {
+        const id = (req.body as any)?.id?.toString() || "dev-user";
+        let user = await storage.getUser(id);
 
-      if (!user) {
-        await storage.createUser({
-          name: `Dev User (${id})`,
-          mobile: "9999999999",
-          language: "en",
-          tokens: 20,
-        } as any);
+        if (!user) {
+          await storage.createUser({
+            name: `Dev User (${id})`,
+            mobile: "9999999999",
+            language: "en",
+            tokens: 20, // Give dev users 20 tokens instead of 0
+          } as any);
 
-        console.log(`✅ Created test user "${id}"`);
-        user = await storage.getUser(id);
+          console.log(`✅ Created test user "${id}"`);
+          user = await storage.getUser(id);
+        }
+
+        if (!user) return res.status(500).json({ error: "Failed to create or retrieve user" });
+        res.json({ ok: true, id: user.id, tokens: user.tokens });
+      } catch (e: any) {
+        console.error("ensure-user error:", e);
+        res.status(500).json({ error: e.message || "ensure-user failed" });
       }
+    });
 
-      if (!user) return res.status(500).json({ error: "Failed to create or retrieve user" });
-      res.json({ ok: true, id: user.id, tokens: user.tokens });
-    } catch (e: any) {
-      console.error("ensure-user error:", e);
-      res.status(500).json({ error: e.message || "ensure-user failed" });
-    }
-  });
-
-  app.get("/api/dev/user/:id", async (req: Request, res: Response) => {
-    const user = await storage.getUser(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json(user);
-  });
+    app.get("/api/dev/user/:id", async (req: Request, res: Response) => {
+      const user = await storage.getUser(req.params.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      res.json(user);
+    });
+  } // end dev-only block
 
   // ---------------------------------------------
   // ✅ Razorpay plural route aliases
@@ -380,8 +405,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        await storage.updateUserTokens(userId, user.tokens + tokens);
-        return res.json({ success: true, newBalance: user.tokens + tokens, message: "Demo payment successful" });
+        await storage.updateUserTokens(userId, user.tokens + capCheck.tokensToAdd);
+        return res.json({ success: true, newBalance: user.tokens + capCheck.tokensToAdd, message: "Demo payment successful" });
       }
 
       if (!paymentId || !signature || !orderId) {
@@ -408,8 +433,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      await storage.updateUserTokens(userId, user.tokens + tokens);
-      res.json({ success: true, newBalance: user.tokens + tokens, message: "Payment successful" });
+      await storage.updateUserTokens(userId, user.tokens + capCheck.tokensToAdd);
+      res.json({ success: true, newBalance: user.tokens + capCheck.tokensToAdd, message: "Payment successful" });
     } catch (error: any) {
       console.error("Verify payment error:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
@@ -596,10 +621,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUserLanguage(user.id, finalLang);
       }
 
-      // ✅ IMPORTANT: Fix TS2554 by calling fetchMarketPrice with 2 args (most codebases use 2)
+      // Fetch OHLCV candle data for the symbol
       let priceData: any;
       try {
-        priceData = await fetchMarketPrice(symbol, duration as any);
+        priceData = await fetchMarketPrice(symbol, duration, market);
       } catch (err: any) {
         console.error(`❌ [PRE-FLIGHT] fetchMarketPrice failed:`, err.message);
         return res.status(400).json({
@@ -608,12 +633,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // ✅ Optional caching (avoid TS error by using any)
-      const existing = await (storage as any).findRecentAnalysis?.(userId, symbol, duration, market);
-      if (existing && String(existing.language || "").toLowerCase() === finalLang.toLowerCase()) {
-        console.log(`♻️ Using cached analysis for ${symbol} (${finalLang}) — no token deduction`);
-        return res.json(existing);
+      /* 
+      // Check for recent cached analysis to avoid duplicate charges
+      if (process.env.DATABASE_URL) {
+        try {
+          const { drizzle } = await import("drizzle-orm/neon-http");
+          const { neon } = await import("@neondatabase/serverless");
+          const sqlClient = neon(process.env.DATABASE_URL);
+          const db = drizzle(sqlClient);
+          const existing = await findRecentAnalysis(db, userId, symbol, duration, market, finalLang);
+          if (existing) {
+            console.log(`♻️ Using cached analysis for ${symbol} (${finalLang}) — no token deduction`);
+            return res.json(existing);
+          }
+        } catch (cacheErr) {
+          console.warn("Cache lookup failed, proceeding with fresh analysis:", cacheErr);
+        }
       }
+      */
 
       const analysisResult = await analyzeMarketWithPerplexity(
         symbol,
@@ -648,6 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confidence: analysisResult.confidence,
         sentiment: analysisResult.sentiment,
         marketSentiment: analysisResult.marketSentiment,
+        newsHighlights: analysisResult.newsHighlights ?? null,
         deepAnalysis: analysisResult.deepAnalysis,
         analysis: analysisResult.analysis,
         rsi: analysisResult.indicators.rsi,
@@ -670,14 +708,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         probabilityScore: analysisResult.probabilityScore,
         explanatoryNotes: analysisResult.explanatoryNotes,
         language: finalLang,
+        isSaved: 1,
       } as any);
 
-      await storage.decrementUserTokens(userId, 2);
+      const updatedUser = await storage.decrementUserTokens(userId, 2);
+      if (!updatedUser) {
+        console.warn(`⚠️ [DEDUCTION FAILED] User ${userId} has insufficient tokens`);
+        return res.status(400).json({ error: "Insufficient tokens for analysis" });
+      }
+      console.log(`✅ [DEDUCTION SUCCESS] User ${userId}: 2 tokens deducted. New balance: ${updatedUser.tokens}`);
 
-      res.json({ analysisId: newAnalysis.id });
+      res.json({ 
+        analysisId: newAnalysis.id, 
+        newBalance: updatedUser.tokens 
+      });
     } catch (err: any) {
-      console.error("Analysis error:", err);
-      res.status(500).json({ error: err.message || "Internal server error" });
+      console.error("❌ [ANALYSIS ERROR]:", err);
+      // Give user a more helpful message
+      const errorMsg = err.message || "An unexpected error occurred during analysis.";
+      res.status(500).json({ error: errorMsg });
     }
   });
 
@@ -686,7 +735,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { analysisId } = req.params;
       const analysis = await storage.getAnalysis(analysisId);
       if (!analysis) return res.status(404).json({ error: "Analysis not found" });
-      res.json(analysis);
+      const uiLang =
+        String(req.headers["x-ui-lang"] || "").trim() ||
+        String((req.query as { lang?: string }).lang || "").trim();
+      res.json(maybeRelocalizeStoredAnalysis(analysis, uiLang || undefined));
     } catch (error) {
       console.error("Get analysis error:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -732,6 +784,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Analysis deleted successfully" });
     } catch (error) {
       console.error("Delete analysis error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/community/publish/:id", async (req: Request, res: Response) => {
+    try {
+      const analysis = await storage.publishAnalysis(req.params.id);
+      if (!analysis) return res.status(404).json({ error: "Analysis not found" });
+      res.json({ success: true, isPublished: true, analysis });
+    } catch (error) {
+      console.error("Publish error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/community/unpublish/:id", async (req: Request, res: Response) => {
+    try {
+      const analysis = await storage.unpublishAnalysis(req.params.id);
+      if (!analysis) return res.status(404).json({ error: "Analysis not found" });
+      res.json({ success: true, isPublished: false, analysis });
+    } catch (error) {
+      console.error("Unpublish error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ---------------------------------------------
+  // ✅ Community & Social
+  // ---------------------------------------------
+  app.get("/api/community/feed/:userId", async (req: Request, res: Response) => {
+    try {
+      const feed = await storage.getPublishedAnalysesFeed(req.params.userId);
+      res.json(feed);
+    } catch (error) {
+      console.error("Get community feed error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/community/rules/accept", async (req: Request, res: Response) => {
+    try {
+      const { userId, alias } = req.body as any;
+      if (!userId || !alias) return res.status(400).json({ error: "Missing required fields" });
+      
+      const user = await storage.acceptCommunityRules(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      
+      const updatedUser = await storage.updateAlias(userId, alias);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Accept rules error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  /** Client (Community.tsx) sets alias first, then calls this to set rulesAccepted. */
+  app.post("/api/community/accept-rules", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body as { userId?: string };
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
+      const user = await storage.acceptCommunityRules(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      res.json(user);
+    } catch (error) {
+      console.error("Accept rules error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/community/pinned-with-notifications/:userId", async (req: Request, res: Response) => {
+    try {
+      const pinned = await storage.getPinnedTradersWithNotifications(req.params.userId);
+      res.json(pinned);
+    } catch (error) {
+      console.error("Get pinned traders error:", error);
+      res.json([]); // Return empty instead of error
+    }
+  });
+
+  app.post("/api/community/mark-trader-notifications-read", async (req: Request, res: Response) => {
+    try {
+      const { userId, traderId } = req.body as { userId?: string; traderId?: string };
+      if (!userId || !traderId) {
+        return res.status(400).json({ error: "Missing userId or traderId" });
+      }
+      await storage.markTraderNotificationsRead(userId, traderId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark trader notifications read error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  const reactionTypeParam = z.enum(["like", "heart", "dislike"]);
+
+  app.post("/api/reactions", async (req: Request, res: Response) => {
+    try {
+      const parsed = insertReactionSchema.safeParse({
+        userId: (req.body as { userId?: string })?.userId,
+        analysisId: (req.body as { analysisId?: string })?.analysisId,
+        reactionType: (req.body as { reactionType?: string })?.reactionType,
+      });
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      }
+      const reaction = await storage.addReaction(parsed.data);
+      res.json(reaction);
+    } catch (error) {
+      console.error("Add reaction error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/reactions/:userId/:analysisId/:reactionType", async (req: Request, res: Response) => {
+    try {
+      const rt = reactionTypeParam.safeParse(req.params.reactionType);
+      if (!rt.success) return res.status(400).json({ error: "Invalid reaction type" });
+      const ok = await storage.removeReaction(req.params.userId, req.params.analysisId, rt.data);
+      res.json({ success: ok });
+    } catch (error) {
+      console.error("Remove reaction error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/reactions/counts/:analysisId", async (req: Request, res: Response) => {
+    try {
+      const counts = await storage.getReactionCounts(req.params.analysisId);
+      res.json(counts);
+    } catch (error) {
+      console.error("Reaction counts error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/reactions/user/:userId/:analysisId", async (req: Request, res: Response) => {
+    try {
+      const r = await storage.getUserReaction(req.params.userId, req.params.analysisId);
+      res.json(r ?? null);
+    } catch (error) {
+      console.error("User reaction error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -857,6 +1050,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Delete broker error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ---------------------------------------------
+  // ✅ Ads & Bonuses
+  // ---------------------------------------------
+  app.post("/api/watch-ad", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body as { userId: string };
+      if (!userId) return res.status(400).json({ error: "User ID required" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const capCheck = checkTokenCap(user.tokens, 2);
+      if (!capCheck.allowed) {
+        return res.status(400).json({ error: capCheck.error });
+      }
+
+      const updatedUser = await storage.updateUserTokens(userId, user.tokens + capCheck.tokensToAdd);
+      res.json({ success: true, newBalance: updatedUser?.tokens });
+    } catch (error) {
+      console.error("Watch ad error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/claim-install-bonus", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body as { userId: string };
+      if (!userId) return res.status(400).json({ error: "User ID required" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      if (user.pwaInstallBonusClaimed) {
+        return res.status(400).json({ error: "Bonus already claimed" });
+      }
+
+      const capCheck = checkTokenCap(user.tokens, 5);
+      if (!capCheck.allowed) {
+        return res.status(400).json({ error: capCheck.error });
+      }
+
+      await storage.updateUserTokens(userId, user.tokens + capCheck.tokensToAdd);
+      const updatedUser = await storage.markInstallBonusClaimed(userId);
+      res.json({ 
+        success: true, 
+        message: "Bonus tokens claimed!", 
+        newBalance: updatedUser?.tokens, 
+        maxTokens: updatedUser?.maxTokens 
+      });
+    } catch (error) {
+      console.error("Claim install bonus error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -1060,12 +1308,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports (community abuse, feedback — visible to submitter; admins see all)
+  app.post("/api/reports", async (req: Request, res: Response) => {
+    try {
+      const parsed = insertReportSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid report" });
+      }
+      const data = parsed.data;
+      if (data.type === "abuse_user" && !data.reportedUserId) {
+        return res.status(400).json({ error: "reportedUserId is required for user reports" });
+      }
+      if (data.type === "abuse_post" && !data.reportedAnalysisId) {
+        return res.status(400).json({ error: "reportedAnalysisId is required for post reports" });
+      }
+
+      if (!validateContent(data.subject)) {
+        return res.status(400).json({ error: "Subject contains inappropriate content" });
+      }
+      if (!validateContent(data.message)) {
+        return res.status(400).json({ error: "Report contains inappropriate content" });
+      }
+
+      const report = await storage.createReport(data);
+      res.json(report);
+    } catch (error) {
+      console.error("Create report error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/reports/:userId", async (req: Request, res: Response) => {
+    try {
+      const requester = await storage.getUser(req.params.userId);
+      if (!requester) return res.status(404).json({ error: "User not found" });
+      const list =
+        requester.isAdmin === 1
+          ? await storage.getReports(undefined)
+          : await storage.getReports(req.params.userId);
+      res.json(list);
+    } catch (error) {
+      console.error("List reports error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/reports/:reportId/status", async (req: Request, res: Response) => {
+    try {
+      const { userId, status } = req.body as { userId?: string; status?: string };
+      if (!userId || !status) return res.status(400).json({ error: "Missing userId or status" });
+
+      const admin = await storage.getUser(userId);
+      if (!admin || admin.isAdmin !== 1) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const updated = await storage.updateReportStatus(req.params.reportId, status);
+      if (!updated) return res.status(404).json({ error: "Report not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Update report status error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
     // App version
   app.get("/api/version", async (_req: Request, res: Response) => {
     res.json({ version: APP_VERSION, updateRequired: false });
   });
 
   // ✅ IMPORTANT: Close the function properly and return server
+
+  app.get("/api/test-reload", (req, res) => {
+    res.json({ reloaded: true, time: new Date().toISOString() });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

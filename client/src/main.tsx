@@ -12,10 +12,11 @@ if ('serviceWorker' in navigator) {
       .then((registration) => {
         console.log('✅ Service Worker registered successfully:', registration.scope);
         
-        // Check for updates periodically
         setInterval(() => {
-          registration.update();
-        }, 60000); // Check every minute
+          registration.update().catch(() => {
+            /* ignore InvalidStateError when SW is installing */
+          });
+        }, 60000);
       })
       .catch((error) => {
         console.log('❌ Service Worker registration failed:', error);

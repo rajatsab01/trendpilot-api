@@ -624,7 +624,13 @@ export const instrumentDatabase: Record<string, InstrumentSuggestion[]> = {
     { symbol: "ADANIENT.NS", name: "Adani Enterprises", market: "stock", description: "Indian conglomerate (NSE)" },
   ],
   "tata": [
-    { symbol: "TATAMOTORS.NS", name: "Tata Motors Limited", market: "stock", description: "Indian auto company (NSE)" },
+    { symbol: "TMCV.NS", name: "Tata Motors Limited", market: "stock", description: "NSE (Yahoo ticker TMCV.NS)" },
+    {
+      symbol: "TATAMOTORS.NS",
+      name: "Tata Motors Limited",
+      market: "stock",
+      description: "Same as TMCV.NS on Yahoo (legacy symbol)",
+    },
   ],
 
   // UK Stocks

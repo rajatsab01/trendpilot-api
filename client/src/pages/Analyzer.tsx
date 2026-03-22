@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -8,25 +8,32 @@ import { useVersionGuard } from "@/hooks/useVersionGuard";
 import BottomNav from "@/components/BottomNav";
 import ReactionButtons from "@/components/ReactionButtons";
 import { Bookmark, BookmarkCheck, Download } from "lucide-react";
-import type { Analysis } from "@shared/schema";
+import type { Analysis, User } from "@shared/schema";
 import { APP_VERSION } from "@shared/schema";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import trendPilotLogo from "@assets/trendpilot-logo.png";
-import { resolveChartSymbol } from "@/lib/utils";
+import { resolveChartSymbol, stripAnalysisMetaPrefix } from "@/lib/utils";
+const trendPilotLogo = "/trendpilot-logo.png";
 
-export default function Analyzer() {
+type AnalyzerProps = {
+  /** When embedded in Dashboard, parent must clear `?analysisId=` from its own state (wouter path alone does not update). */
+  onExitToDashboard?: () => void;
+};
+
+export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+
+  const goDashboard = () => {
+    if (onExitToDashboard) onExitToDashboard();
+    else setLocation("/dashboard", { replace: true });
+  };
+  const { t } = useLanguage();
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
   const searchParams = new URLSearchParams(window.location.search);
   const analysisId = searchParams.get("analysisId");
   const fromSaved = searchParams.get("fromSaved") === "true";
 
-  const [symbol, setSymbol] = useState("");
-  const [duration, setDuration] = useState<"long_term" | "short_term" | "swing" | "scalping">("short_term");
-  const [market, setMarket] = useState<"stock" | "commodity" | "forex" | "cryptocurrency">("stock");
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -34,53 +41,36 @@ export default function Analyzer() {
   const userId = localStorage.getItem("userId");
 
   // Fetch user data for token check
-  const { data: user } = useQuery<{ id: string; tokens: number; name: string; mobile: string; language: string }>({
+  const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/user", userId],
-    enabled: !!userId && !analysisId,
+    enabled: !!userId,
   });
+
+  // Redirect to login if no userId found in localStorage
+  useEffect(() => {
+    if (!userId) {
+      console.log("No userId found, redirecting to login...");
+      setLocation("/login");
+    }
+  }, [userId, setLocation]);
+
+  // Handle 404/NotFound error by redirecting to login (session mismatch after restart)
+  useEffect(() => {
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("404") || msg.includes("Not Found")) {
+        console.log("User session invalid (404), redirecting to login...");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("loginCompleted");
+        setLocation("/login");
+      }
+    }
+  }, [error, setLocation]);
 
   // Fetch analysis results
   const { data: analysis, isLoading: isLoadingAnalysis } = useQuery<Analysis>({
     queryKey: ["/api/analysis", analysisId],
     enabled: !!analysisId,
-  });
-
-  // ✅ Language-sync-safe mutation
-  const analyzeMutation = useMutation({
-    mutationFn: async () => {
-      if (!userId) throw new Error(t.userNotFound);
-
-      // ✅ Force language resolution before sending request
-      const savedLang =
-        (language && language.trim()) ||
-        localStorage.getItem("language") ||
-        user?.language ||
-        navigator.language?.slice(0, 2) ||
-        "en";
-
-      console.log("🧭 Final language sent:", savedLang);
-
-      const result = await apiRequest("POST", "/api/analyze", {
-        userId,
-        symbol,
-        duration,
-        market,
-        language: savedLang,
-        appVersion: APP_VERSION,
-      });
-      return await result.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
-      setLocation(`/analyzer?analysisId=${data.analysisId}`);
-    },
-    onError: (error: any) => {
-      toast({
-        title: t.analysisFailed,
-        description: error.message || t.failedToAnalyzeMarket,
-        variant: "destructive",
-      });
-    },
   });
 
   const saveMutation = useMutation({
@@ -180,29 +170,20 @@ export default function Analyzer() {
     saveMutation.mutate(analysis.id);
   };
 
-  const handleAnalyze = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const versionOk = await guardAction();
-    if (!versionOk) return;
+  useEffect(() => {
+    if (!analysisId) {
+      if (onExitToDashboard) onExitToDashboard();
+      else setLocation("/dashboard", { replace: true });
+    }
+  }, [analysisId, onExitToDashboard, setLocation]);
 
-    if (!symbol.trim()) {
-      toast({
-        title: t.symbolRequired,
-        description: t.pleaseEnterSymbol,
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!user || user.tokens < 2) {
-      toast({
-        title: t.insufficientTokensTitle,
-        description: t.needTokensToAnalyze,
-        variant: "destructive",
-      });
-      return;
-    }
-    analyzeMutation.mutate();
-  };
+  if (!analysisId) {
+    return (
+      <div className="min-h-screen bg-[#111714] flex items-center justify-center">
+        <div className="text-[#9eb7a8] text-sm">{t.loading || "Loading..."}</div>
+      </div>
+    );
+  }
 
   // 🔄 Loading State
   if (analysisId && isLoadingAnalysis) {
@@ -263,6 +244,21 @@ export default function Analyzer() {
     const currencySymbol = getCurrencySymbol(displayCurrency || 'USD');
     console.log(`💵 Currency symbol: "${currencySymbol}" for currency: ${displayCurrency || 'USD'}`);
 
+    const fmtNarrative = (raw: string | null | undefined, replaceUsdInCopy = false) => {
+      let s = stripAnalysisMetaPrefix(raw ?? "");
+      if (!s) return "";
+      if (isForexPair) return s.replace(/[₹$£¥€₽]/g, currencySymbol);
+      if (replaceUsdInCopy) return s.replace(/\$/g, currencySymbol);
+      return s;
+    };
+
+    const displayMarketSentiment = fmtNarrative(analysis.marketSentiment);
+    const displayNewsHighlights = fmtNarrative(analysis.newsHighlights);
+    const displayDeepAnalysis = fmtNarrative(analysis.deepAnalysis);
+    const displayAiVerdict = fmtNarrative(analysis.analysis);
+    const displayTrailing = fmtNarrative(analysis.trailingStopStrategy, true);
+    const displayExplanatory = fmtNarrative(analysis.explanatoryNotes, true);
+
     // Format price with correct currency symbol and decimal places
     // Forex: 4 decimals (e.g., £0.7500) - precision matters in forex
     // Others: 2 decimals (e.g., ₹1234.56)
@@ -301,7 +297,7 @@ export default function Analyzer() {
         <div className="flex-grow">
           <header className="flex items-center p-4 justify-between sticky top-0 bg-[#111714]/80 backdrop-blur-sm z-10">
             <button
-              onClick={() => setLocation("/dashboard")}
+              onClick={goDashboard}
               className="text-white flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1c2620] hover-elevate active-elevate-2"
               data-testid="button-back"
             >
@@ -327,7 +323,7 @@ export default function Analyzer() {
                   <iframe
                     src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${tradingViewSymbol.replace("/", "")}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=en&utm_source=trendpilot&utm_medium=widget`}
                     className="w-full h-full rounded-lg border-0"
-                    allowTransparency
+                    allowtransparency="true"
                     title="TradingView Chart"
                   ></iframe>
                 </div>
@@ -341,7 +337,7 @@ export default function Analyzer() {
             <div className="px-4 pt-6 pb-4 text-center border-b border-[#1c2620]">
               <div className="flex items-center justify-center gap-3 mb-2">
                 <img 
-                  src={trendPilotLogo}
+                  src="/trendpilot-logo.png"
                   alt="TrendPilot Logo"
                   className="h-16 w-16 object-contain rounded-lg"
                 />
@@ -497,34 +493,38 @@ export default function Analyzer() {
               </div>
             </div>
 
-            {analysis.marketSentiment && (
+            {displayMarketSentiment && (
               <div className="rounded-2xl bg-[#1c2620] p-4">
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">sentiment_satisfied</span>
                   {t.marketSentiments}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-market-sentiment">
-                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
-                  {isForexPair 
-                    ? analysis.marketSentiment.replace(/[₹$£¥€₽]/g, currencySymbol)
-                    : analysis.marketSentiment
-                  }
+                  {displayMarketSentiment}
                 </p>
               </div>
             )}
 
-            {analysis.deepAnalysis && (
+            {displayNewsHighlights && (
+              <div className="rounded-2xl bg-[#1c2620] p-4 border border-[#38e07b]/25">
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#38e07b]">newspaper</span>
+                  {t.recentNewsAndSentiment}
+                </h2>
+                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed whitespace-pre-wrap" data-testid="text-news-highlights">
+                  {displayNewsHighlights}
+                </p>
+              </div>
+            )}
+
+            {displayDeepAnalysis && (
               <div className="rounded-2xl bg-[#1c2620] p-4">
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">analytics</span>
                   {t.deepAnalysis}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-deep-analysis">
-                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
-                  {isForexPair 
-                    ? analysis.deepAnalysis.replace(/[₹$£¥€₽]/g, currencySymbol)
-                    : analysis.deepAnalysis
-                  }
+                  {displayDeepAnalysis}
                 </p>
               </div>
             )}
@@ -581,11 +581,7 @@ export default function Analyzer() {
                 </div>
               </div>
               <p className="text-[#9eb7a8] text-base font-normal leading-relaxed text-center" data-testid="text-ai-analysis">
-                {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
-                {isForexPair 
-                  ? analysis.analysis.replace(/[₹$£¥€₽]/g, currencySymbol)
-                  : analysis.analysis
-                }
+                {displayAiVerdict}
               </p>
             </div>
 
@@ -594,10 +590,10 @@ export default function Analyzer() {
                 {t.bracketTrade}
               </h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                    <p className="text-[#9eb7a8] text-sm font-normal">{t.entry}</p>
-                    <p className="text-white text-lg font-bold mt-1" data-testid="text-entry">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
+                    <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">{t.entry}</p>
+                    <p className="text-white text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-entry">
                       {formatPrice(analysis.entry)}
                     </p>
                     <div className="flex justify-center mt-2">
@@ -609,9 +605,9 @@ export default function Analyzer() {
                       />
                     </div>
                   </div>
-                  <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                    <p className="text-[#9eb7a8] text-sm font-normal">{t.takeProfit}</p>
-                    <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-take-profit">
+                  <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
+                    <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">{t.takeProfit}</p>
+                    <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-take-profit">
                       {formatPrice(analysis.takeProfit)}
                     </p>
                     <div className="flex justify-center mt-2">
@@ -624,9 +620,9 @@ export default function Analyzer() {
                       />
                     </div>
                   </div>
-                  <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                    <p className="text-[#9eb7a8] text-sm font-normal">{t.stopLoss}</p>
-                    <p className="text-red-500 text-lg font-bold mt-1" data-testid="text-stop-loss">
+                  <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
+                    <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">{t.stopLoss}</p>
+                    <p className="text-red-500 text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-stop-loss">
                       {formatPrice(analysis.stopLoss)}
                     </p>
                     <div className="flex justify-center mt-2">
@@ -650,29 +646,29 @@ export default function Analyzer() {
                   <span className="material-symbols-outlined text-[#38e07b]">flag</span>
                   {t.multipleTakeProfitTargets}
                 </h2>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {analysis.tp1 && (
-                    <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                      <p className="text-[#9eb7a8] text-sm font-normal">TP1 (1:1)</p>
-                      <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp1">
+                    <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
+                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP1 (1:1)</p>
+                      <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-tp1">
                         {formatPrice(analysis.tp1)}
                       </p>
                       <p className="text-[#6a7f72] text-xs mt-1">{t.bookProfit}</p>
                     </div>
                   )}
                   {analysis.tp2 && (
-                    <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                      <p className="text-[#9eb7a8] text-sm font-normal">TP2 (1:2)</p>
-                      <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp2">
+                    <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
+                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP2 (1:2)</p>
+                      <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-tp2">
                         {formatPrice(analysis.tp2)}
                       </p>
                       <p className="text-[#6a7f72] text-xs mt-1">{t.trailToBreakeven}</p>
                     </div>
                   )}
                   {analysis.tp3 && (
-                    <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
-                      <p className="text-[#9eb7a8] text-sm font-normal">TP3 (1:3)</p>
-                      <p className="text-[#38e07b] text-lg font-bold mt-1" data-testid="text-tp3">
+                    <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
+                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP3 (1:3)</p>
+                      <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-tp3">
                         {formatPrice(analysis.tp3)}
                       </p>
                       <p className="text-[#6a7f72] text-xs mt-1">{t.maxTarget}</p>
@@ -688,7 +684,7 @@ export default function Analyzer() {
               <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
                 {(() => {
                   const entry = parseFloat(analysis.entry || "0");
-                  const tp3 = parseFloat(analysis.tp3 || "0");
+                  const tp3 = parseFloat(analysis.tp3 || analysis.takeProfit || "0");
                   const stopLoss = parseFloat(analysis.stopLoss || "0");
                   
                   let risk, reward;
@@ -836,40 +832,36 @@ export default function Analyzer() {
             )}
 
             {/* Trailing Stop Strategy */}
-            {analysis.trailingStopStrategy && (
+            {displayTrailing && (
               <div className="rounded-2xl bg-[#1c2620] p-4">
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">trending_up</span>
                   {t.trailingStopStrategy}
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-trailing-stop">
-                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
-                  {/* For other markets (crypto/stock/commodity), replace USD ($) symbols with user's preferred currency */}
-                  {isForexPair 
-                    ? (analysis.trailingStopStrategy || '').replace(/[₹$£¥€₽]/g, currencySymbol)
-                    : (analysis.trailingStopStrategy || '').replace(/\$/g, currencySymbol)
-                  }
+                  {displayTrailing}
                 </p>
               </div>
             )}
 
-            {/* Explanatory Notes / Disclaimers */}
-            {analysis.explanatoryNotes && (
-              <div className="rounded-2xl bg-[#1c2620] p-4 border-2 border-[#38e07b]/30">
-                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#38e07b]">info</span>
-                  {t.importantNotesDisclaimers}
-                </h2>
-                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-explanatory-notes">
-                  {/* For forex pairs, replace any wrong currency symbols in the text with the correct quote currency symbol */}
-                  {/* For other markets (crypto/stock/commodity), replace USD ($) symbols with user's preferred currency */}
-                  {isForexPair 
-                    ? (analysis.explanatoryNotes || '').replace(/[₹$£¥€₽]/g, currencySymbol)
-                    : (analysis.explanatoryNotes || '').replace(/\$/g, currencySymbol)
-                  }
+            {/* Explanatory Notes / Disclaimers — full legal text (translations) + optional technical / model notes */}
+            <div className="rounded-2xl bg-[#1c2620] p-4 border-2 border-[#38e07b]/30">
+              <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#38e07b]">info</span>
+                {t.importantNotesDisclaimers}
+              </h2>
+              <p className="text-[#9eb7a8] text-base font-normal leading-relaxed whitespace-pre-wrap" data-testid="text-disclaimer-full">
+                {t.disclaimerText}
+              </p>
+              {displayExplanatory ? (
+                <p
+                  className="text-[#9eb7a8] text-sm font-normal leading-relaxed mt-4 pt-4 border-t border-white/10"
+                  data-testid="text-explanatory-notes"
+                >
+                  {displayExplanatory}
                 </p>
-              </div>
-            )}
+              ) : null}
+            </div>
 
             {/* Action Buttons: Save, Share, Analyse More */}
             <div className="mt-8 space-y-3">
@@ -914,7 +906,7 @@ export default function Analyzer() {
                 </div>
               )}
               <button
-                onClick={() => setLocation("/dashboard")}
+                onClick={goDashboard}
                 className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors"
                 data-testid="button-analyse-more"
               >
@@ -931,85 +923,21 @@ export default function Analyzer() {
     );
   }
 
-  // Show analysis input form
   return (
     <div className="min-h-screen bg-[#111714] flex flex-col">
-      <div className="flex-grow">
-        <header className="flex items-center p-4 justify-between sticky top-0 bg-[#111714]/80 backdrop-blur-sm z-10">
-          <button
-            onClick={() => setLocation("/dashboard")}
-            className="text-white flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1c2620] hover-elevate active-elevate-2"
-            data-testid="button-back"
-          >
-            <span className="material-symbols-outlined">arrow_back_ios_new</span>
-          </button>
-          <h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10">
-            {t.analyzer}
-          </h1>
-        </header>
-
-        <main className="p-6 space-y-6 pb-24">
-          <div className="bg-[#1c2620] p-6 rounded-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-white text-lg font-bold">{t.availableTokens}</h2>
-              <span className="text-[#38e07b] text-2xl font-bold" data-testid="text-analyzer-tokens">
-                {user?.tokens || 0}
-              </span>
-            </div>
-            <p className="text-[#9eb7a8] text-sm">{t.analysisMessage}</p>
-          </div>
-
-          <form onSubmit={handleAnalyze} className="space-y-6">
-            <div>
-              <label className="text-white text-base font-medium mb-2 block">
-                {t.tradingSymbol}
-              </label>
-              <input
-                type="text"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                placeholder="e.g., BTC, AAPL, EURUSD, GOLD"
-                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent placeholder:text-[#6a7f72] px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
-                data-testid="input-symbol"
-              />
-            </div>
-
-            <div>
-              <label className="text-white text-base font-medium mb-2 block">
-                {t.duration}
-              </label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(e.target.value as any)}
-                className="w-full h-14 bg-[#29382f] text-white rounded-xl border border-transparent px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#38e07b]"
-                data-testid="select-duration"
-              >
-                <option value="long_term">{t.longTerm}</option>
-                <option value="short_term">{t.shortTerm}</option>
-                <option value="swing">{t.swingTrade || "Swing Trade (15min)"}</option>
-                <option value="scalping">{t.scalping}</option>
-              </select>
-            </div>
-
-
-            <button
-              type="submit"
-              disabled={analyzeMutation.isPending || !user || user.tokens < 2}
-              className="w-full bg-[#38e07b] text-[#111714] font-bold py-4 rounded-full text-center text-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              data-testid="button-analyze"
-            >
-              {analyzeMutation.isPending ? t.analyzing : t.analyzeMarket}
-            </button>
-
-            {user && user.tokens < 2 && (
-              <p className="text-red-500 text-sm text-center">
-                {t.insufficientTokens}
-              </p>
-            )}
-          </form>
-        </main>
+      <div className="flex-grow flex flex-col items-center justify-center px-6 pb-24">
+        <p className="text-[#9eb7a8] text-center mb-4">
+          {t.analysisFailed || "Unable to load this analysis."}
+        </p>
+        <button
+          type="button"
+          onClick={goDashboard}
+          className="bg-[#38e07b] text-[#111714] font-bold py-3 px-6 rounded-full"
+          data-testid="button-back-to-dashboard"
+        >
+          {t.home}
+        </button>
       </div>
-
       <BottomNav />
       <UpdateModal />
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import PWAInstallModal from "@/components/PWAInstallModal";
-import trendPilotLogo from "@assets/trendpilot-logo.png";
+import Analyzer from "@/pages/Analyzer";
+const trendPilotLogo = "/trendpilot-logo.png";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const wouterSearch = useSearch();
   const { t, language, setLanguage } = useLanguage();
   const { toast } = useToast();
   const [symbol, setSymbol] = useState("");
@@ -55,6 +57,10 @@ export default function Dashboard() {
   const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
 
   const userId = localStorage.getItem("userId");
+
+  // Must read query from wouter's useSearch(), not copied React state: after Enlighten Me,
+  // setLocation(`/dashboard?analysisId=…`) updates the URL while pathname stays `/dashboard`;
+  // a separate urlSearch state can lag one render so Analyzer never mounts.
 
   // Handle app sharing
   const handleShareApp = async () => {
@@ -153,10 +159,31 @@ export default function Dashboard() {
     }
   };
 
-  const { data: user, isLoading } = useQuery<User>({
+  const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/user", userId],
     enabled: !!userId,
   });
+
+  // Redirect to login if no userId found in localStorage
+  useEffect(() => {
+    if (!userId) {
+      console.log("No userId found, redirecting to login...");
+      setLocation("/login");
+    }
+  }, [userId, setLocation]);
+
+  // Handle 404/NotFound error by redirecting to login (session mismatch after restart)
+  useEffect(() => {
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("404") || msg.includes("Not Found")) {
+        console.log("User session invalid (404), redirecting to login...");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("loginCompleted");
+        setLocation("/login");
+      }
+    }
+  }, [error, setLocation]);
 
   // Load user's preferred currency and exchange from profile
   useEffect(() => {
@@ -250,18 +277,27 @@ export default function Dashboard() {
       }
       return await result.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Direct cache update for immediate feedback
+      queryClient.setQueryData(["/api/user", userId], (old: any) => ({
+        ...old,
+        tokens: data.newBalance
+      }));
+      // Also invalidate to be safe
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+
       setTokenAnimation(true);
       setTimeout(() => setTokenAnimation(false), 1000);
       toast({
-        title: t.tokensAdded,
-        description: t.earnedTokensFromAd,
+        title: t.tokensAdded || "Tokens Added",
+        description: t.earnedTokensFromAd || "You earned 2 tokens!",
       });
     },
     onError: (error: any) => {
+      // Better error feedback: show the actual error message
+      const isLimit = error.message.includes("limit") || error.message.includes("cap");
       toast({
-        title: t.dailyLimitReached,
+        title: isLimit ? (t.dailyLimitReached || "Token Limit Reached") : (t.error || "Error"),
         description: error.message || "Failed to add tokens",
         variant: "destructive",
       });
@@ -299,7 +335,17 @@ export default function Dashboard() {
     onSuccess: (data) => {
       localStorage.setItem("installBonusClaimed", "true");
       setBonusTokensClaimed(true);
-      queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+      
+      // Update token balance in cache immediately
+      if (data.newBalance !== undefined) {
+        queryClient.setQueryData(["/api/user", userId], (old: any) => ({
+          ...old,
+          tokens: data.newBalance,
+          maxTokens: data.maxTokens || old?.maxTokens
+        }));
+        queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+      }
+
       setTokenAnimation(true);
       setTimeout(() => setTokenAnimation(false), 1000);
       toast({
@@ -325,15 +371,16 @@ export default function Dashboard() {
       }
       return await result.json();
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
       setValidationResult(data);
       setShowValidationModal(true);
-      
+      const effectiveMarket = variables.market;
+
       if (data.isValid) {
         setValidatedData({
-          symbol: data.correctedSymbol || symbol,
+          symbol: data.correctedSymbol || variables.symbol,
           name: data.assetName,
-          market: market,
+          market: effectiveMarket,
         });
         setSymbolSuggestions([]);
         
@@ -342,10 +389,10 @@ export default function Dashboard() {
           // 🚨 FOREX PAIRS: NEVER convert forex pairs
           // Forex pairs like USD/GBP are exchange RATES, not prices to convert
           // The "price" IS the exchange rate itself (e.g., 0.75 means 1 USD = 0.75 GBP)
-          if (market === 'forex') {
+          if (effectiveMarket === 'forex') {
             setConvertedPrice(data.currentPrice);
             console.log(`💱 Forex pair detected - showing quote currency price without conversion`);
-            console.log(`   ${data.correctedSymbol || symbol}: ${data.currentPrice} ${data.sourceCurrency}`);
+            console.log(`   ${data.correctedSymbol || variables.symbol}: ${data.currentPrice} ${data.sourceCurrency}`);
           } else {
             // For non-forex assets: convert to user's preferred currency
             const { convertedPrice, rate } = await convertPrice(
@@ -395,6 +442,15 @@ export default function Dashboard() {
       const currentCount = parseInt(localStorage.getItem("analysisCount") || "0");
       localStorage.setItem("analysisCount", (currentCount + 1).toString());
       
+      // Update token balance in cache immediately
+      if (data.newBalance !== undefined) {
+        queryClient.setQueryData(["/api/user", userId], (old: any) => ({
+          ...old,
+          tokens: data.newBalance
+        }));
+        queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+      }
+
       // Mark that analysis just completed (for Phase 3 reminder timing)
       sessionStorage.setItem("analysisJustCompleted", "true");
       
@@ -404,12 +460,36 @@ export default function Dashboard() {
       triggerInstallPrompt("enlightenMe");
       
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
-      setLocation(`/analyzer?analysisId=${data.analysisId}`);
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", userId || ""] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses", userId] });
+
+      const id = data?.analysisId;
+      if (!id) {
+        toast({
+          title: t.error,
+          description: "Analysis completed but no result id was returned. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const qs = `?analysisId=${encodeURIComponent(id)}`;
+      setLocation(`/dashboard${qs}`);
     },
     onError: (error: any) => {
+      let message = error.message || t.failedToAnalyze;
+      try {
+        if (message.includes('{"error":')) {
+          const jsonMatch = message.match(/\{"error":.*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            message = parsed.error || message;
+          }
+        }
+      } catch (e) {}
+
       toast({
         title: t.error,
-        description: error.message || t.failedToAnalyze,
+        description: message,
         variant: "destructive",
       });
     },
@@ -500,10 +580,18 @@ export default function Dashboard() {
     }
   };
 
-  const handleLanguageChange = (lang: Language) => {
+  const handleLanguageChange = async (lang: Language) => {
     setLanguage(lang);
     setShowSettings(false);
-    // Language change is obvious from UI update, no toast needed
+    const uid = localStorage.getItem("userId");
+    if (uid) {
+      try {
+        await apiRequest("PATCH", `/api/user/${uid}`, { language: lang });
+        queryClient.invalidateQueries({ queryKey: ["/api/user", uid] });
+      } catch (e) {
+        console.error("Failed to sync language to account:", e);
+      }
+    }
   };
 
   const handleInstallApp = async (fromBonusCard = false) => {
@@ -548,6 +636,17 @@ export default function Dashboard() {
     { code: "ko" as Language, name: "한국어", flag: "🇰🇷" },
     { code: "it" as Language, name: "Italiano", flag: "🇮🇹" },
   ];
+
+  const analysisIdParam = new URLSearchParams(wouterSearch).get("analysisId");
+  if (analysisIdParam) {
+    return (
+      <Analyzer
+        onExitToDashboard={() => {
+          setLocation("/dashboard", { replace: true });
+        }}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -616,7 +715,9 @@ export default function Dashboard() {
               />
               <h1 className="text-[#38e07b] text-xl font-bold tracking-tight">TrendPilot</h1>
             </div>
-            <p className="text-[#9eb7a8] text-xs">{t.aiPoweredAnalyzer} • v{APP_VERSION}</p>
+            <p className="text-[#9eb7a8] text-xs">
+              {t.home} · {t.aiPoweredAnalyzer} · v{APP_VERSION}
+            </p>
           </div>
         </header>
 
@@ -929,7 +1030,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             <button
               onClick={handleEnlightenMe}
-              disabled={!isValidationConfirmed || analyzeMutation.isPending}
+              disabled={!isValidationConfirmed || analyzeMutation.isPending || (user?.tokens ?? 0) < 2}
               className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-6 bg-[#38e07b] text-[#111714] text-base font-bold leading-normal tracking-[0.015em] hover:bg-opacity-90 transition-opacity disabled:opacity-50"
               data-testid="button-enlighten"
             >

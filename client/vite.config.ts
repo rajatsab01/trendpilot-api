@@ -6,10 +6,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
-      "@assets": path.resolve(__dirname, "src", "assets"),
-      "@shared": path.resolve(__dirname, "..", "shared"),
-      "@server": path.resolve(__dirname, "..", "server"),
+      "@": path.resolve(__dirname, "./src"),
+      "@shared": path.resolve(__dirname, "../shared"),
+      // If you want to import images from src/assets later:
+      "@assets": path.resolve(__dirname, "./src/assets"),
     },
   },
   server: {

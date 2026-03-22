@@ -27,7 +27,7 @@
       "name": "Analyze Market",
       "short_name": "Analyze",
       "description": "Get AI market analysis",
-      "url": "/analyzer",
+      "url": "/dashboard",
       "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
     },
     {

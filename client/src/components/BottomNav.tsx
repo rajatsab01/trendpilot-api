@@ -1,9 +1,10 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
 
 export default function BottomNav() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const search = useSearch();
   const { t } = useLanguage();
   const userId = localStorage.getItem("userId");
 
@@ -21,11 +22,64 @@ export default function BottomNav() {
     { path: "/privacy", icon: "policy", label: t.policy || "Policy", testId: "nav-policy" },
   ];
 
+  const analysisIdInUrl = new URLSearchParams(search).get("analysisId");
+
   return (
     <div className="sticky bottom-0">
       <nav className="flex gap-2 border-t border-[#29382f] bg-[#1c2620] px-4 pb-3 pt-2">
         {navItems.map((item) => {
-          const isActive = location === item.path;
+          // Home = main dashboard only; Analyzer uses /dashboard?analysisId=… — don't highlight Home there
+          const isActive =
+            item.path === "/dashboard"
+              ? location === "/dashboard" && !analysisIdInUrl
+              : location === item.path;
+
+          if (item.path === "/dashboard") {
+            return (
+              <a
+                key={item.path}
+                href="/dashboard"
+                className="flex flex-1 flex-col items-center justify-end gap-1"
+                data-testid={item.testId}
+                onClick={(e) => {
+                  if (
+                    e.ctrlKey ||
+                    e.metaKey ||
+                    e.altKey ||
+                    e.shiftKey ||
+                    e.button !== 0
+                  ) {
+                    return;
+                  }
+                  e.preventDefault();
+                  setLocation("/dashboard", { replace: true });
+                }}
+              >
+                <div className="flex h-8 items-center justify-center relative">
+                  <span
+                    className={`material-symbols-outlined ${
+                      isActive ? "text-[#38e07b]" : "text-[#9eb7a8]"
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  {item.badge && item.badge > 0 && (
+                    <div className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center" data-testid="badge-unread-count">
+                      {item.badge > 9 ? "9+" : item.badge}
+                    </div>
+                  )}
+                </div>
+                <p
+                  className={`text-xs font-medium leading-normal tracking-[0.015em] ${
+                    isActive ? "text-[#38e07b]" : "text-[#9eb7a8]"
+                  }`}
+                >
+                  {item.label}
+                </p>
+              </a>
+            );
+          }
+
           return (
             <Link
               key={item.path}

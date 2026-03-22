@@ -34,7 +34,9 @@ import {
 import { randomUUID } from "crypto";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, sql, gte, and } from "drizzle-orm";
+import { eq, sql, gte, and, desc } from "drizzle-orm";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import path from "path";
 
 // ---------------------------------------------------------
 // Interface Definition
@@ -147,15 +149,67 @@ export async function findRecentAnalysis(
   return result[0];
 }
 
+/** Dev-only file path so MemStorage survives process restarts (same userId + saved analyses). */
+const MEM_STORAGE_FILE = path.join(process.cwd(), "data", "mem-storage.json");
+
+function memStorageJsonReviver(_key: string, value: unknown): unknown {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return value;
+}
+
+type MemStorageSnapshotV1 = {
+  version: 1;
+  users: [string, User][];
+  analyses: [string, Analysis][];
+  brokers: [string, Broker][];
+  follows: [string, Follow][];
+  blocks: [string, Block][];
+  notifications: [string, Notification][];
+  messages: [string, Message][];
+  reports: [string, Report][];
+  reactions: [string, Reaction][];
+  pinnedTraders: [string, PinnedTrader][];
+};
+
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private analyses: Map<string, Analysis>;
   private brokers: Map<string, Broker>;
+  private follows: Map<string, Follow>;
+  private blocks: Map<string, Block>;
+  private notifications: Map<string, Notification>;
+  private messages: Map<string, Message>;
+  private reports: Map<string, Report>;
+  private reactions: Map<string, Reaction>;
+  private pinnedTraders: Map<string, PinnedTrader>;
+  private devPersistTimer: ReturnType<typeof setInterval> | undefined;
 
   constructor() {
     this.users = new Map();
     this.analyses = new Map();
     this.brokers = new Map();
+    this.follows = new Map();
+    this.blocks = new Map();
+    this.notifications = new Map();
+    this.messages = new Map();
+    this.reports = new Map();
+    this.reactions = new Map();
+    this.pinnedTraders = new Map();
+    this.loadDevSnapshot();
+    this.devPersistTimer = setInterval(() => this.persistDevSnapshot(), 2000);
+    this.devPersistTimer.unref?.();
+    const flush = () => {
+      try {
+        this.persistDevSnapshot();
+      } catch {
+        /* ignore */
+      }
+    };
+    process.once("SIGINT", flush);
+    process.once("SIGTERM", flush);
   }
 
   // Users
@@ -164,7 +218,11 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByMobile(mobile: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find((user) => user.mobile === mobile);
+    const digits = mobile.replace(/\D/g, "");
+    if (!digits) return undefined;
+    return Array.from(this.users.values()).find(
+      (user) => (user.mobile || "").replace(/\D/g, "") === digits
+    );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -184,6 +242,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.users.set(id, user);
+    this.persistDevSnapshot();
     return user;
   }
 
@@ -276,6 +335,7 @@ export class MemStorage implements IStorage {
       timeframe: insertAnalysis.timeframe ?? null,
       nextCandleCloseTime: insertAnalysis.nextCandleCloseTime ?? null,
       marketSentiment: insertAnalysis.marketSentiment ?? null,
+      newsHighlights: insertAnalysis.newsHighlights ?? null,
       deepAnalysis: insertAnalysis.deepAnalysis ?? null,
       rsi: insertAnalysis.rsi ?? null,
       macd: insertAnalysis.macd ?? null,
@@ -306,6 +366,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.analyses.set(id, analysis);
+    this.persistDevSnapshot();
     return analysis;
   }
 
@@ -321,6 +382,7 @@ export class MemStorage implements IStorage {
 
     const updatedAnalysis = { ...analysis, isSaved: analysis.isSaved === 1 ? 0 : 1 };
     this.analyses.set(id, updatedAnalysis);
+    this.persistDevSnapshot();
     return updatedAnalysis;
   }
 
@@ -334,7 +396,9 @@ export class MemStorage implements IStorage {
   }
 
   async deleteAnalysis(id: string): Promise<boolean> {
-    return this.analyses.delete(id);
+    const ok = this.analyses.delete(id);
+    if (ok) this.persistDevSnapshot();
+    return ok;
   }
 
   // Brokers
@@ -381,173 +445,455 @@ export class MemStorage implements IStorage {
   }
 
   // Community user methods - Not implemented in MemStorage (PostgreSQL only)
-  async updateAlias(): Promise<User | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async updateAlias(id: string, alias: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, alias };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async acceptCommunityRules(): Promise<User | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async acceptCommunityRules(id: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, rulesAccepted: 1 };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async updateLastSeen(): Promise<User | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async updateLastSeen(id: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, lastSeen: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async banUser(): Promise<User | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async banUser(id: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, isBanned: 1 };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async unbanUser(): Promise<User | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async unbanUser(id: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, isBanned: 0 };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async searchUsersByAlias(): Promise<User[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async searchUsersByAlias(query: string): Promise<User[]> {
+    const lowerQuery = query.toLowerCase();
+    return Array.from(this.users.values()).filter(
+      (u) => u.alias?.toLowerCase().includes(lowerQuery)
+    );
   }
 
   // Community methods - Not implemented in MemStorage (PostgreSQL only)
-  async followUser(): Promise<Follow> {
-    throw new Error("Community features require PostgreSQL database");
+  async followUser(followerId: string, followingId: string): Promise<Follow> {
+    const id = randomUUID();
+    const follow: Follow = { id, followerId, followingId, createdAt: new Date() };
+    this.follows.set(id, follow);
+    return follow;
   }
 
-  async unfollowUser(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async unfollowUser(followerId: string, followingId: string): Promise<boolean> {
+    const follow = Array.from(this.follows.values()).find(
+      (f) => f.followerId === followerId && f.followingId === followingId
+    );
+    if (follow) {
+      return this.follows.delete(follow.id);
+    }
+    return false;
   }
 
-  async getFollowers(): Promise<User[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getFollowers(userId: string): Promise<User[]> {
+    const followerIds = Array.from(this.follows.values())
+      .filter((f) => f.followingId === userId)
+      .map((f) => f.followerId);
+    return followerIds
+      .map((id) => this.users.get(id))
+      .filter((u): u is User => !!u);
   }
 
-  async getFollowing(): Promise<User[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getFollowing(userId: string): Promise<User[]> {
+    const followingIds = Array.from(this.follows.values())
+      .filter((f) => f.followerId === userId)
+      .map((f) => f.followingId);
+    return followingIds
+      .map((id) => this.users.get(id))
+      .filter((u): u is User => !!u);
   }
 
-  async isFollowing(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    return Array.from(this.follows.values()).some(
+      (f) => f.followerId === followerId && f.followingId === followingId
+    );
   }
 
-  async blockUser(): Promise<Block> {
-    throw new Error("Community features require PostgreSQL database");
+  async blockUser(blockerId: string, blockedId: string): Promise<Block> {
+    const id = randomUUID();
+    const block: Block = { id, blockerId, blockedId, createdAt: new Date() };
+    this.blocks.set(id, block);
+    return block;
   }
 
-  async unblockUser(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async unblockUser(blockerId: string, blockedId: string): Promise<boolean> {
+    const block = Array.from(this.blocks.values()).find(
+      (b) => b.blockerId === blockerId && b.blockedId === blockedId
+    );
+    if (block) {
+      return this.blocks.delete(block.id);
+    }
+    return false;
   }
 
-  async getBlockedUsers(): Promise<User[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getBlockedUsers(userId: string): Promise<User[]> {
+    const blockedIds = Array.from(this.blocks.values())
+      .filter((b) => b.blockerId === userId)
+      .map((b) => b.blockedId);
+    return blockedIds
+      .map((id) => this.users.get(id))
+      .filter((u): u is User => !!u);
   }
 
-  async isBlocked(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async isBlocked(blockerId: string, blockedId: string): Promise<boolean> {
+    return Array.from(this.blocks.values()).some(
+      (b) => b.blockerId === blockerId && b.blockedId === blockedId
+    );
   }
 
-  async createNotification(): Promise<Notification> {
-    throw new Error("Community features require PostgreSQL database");
+  async createNotification(n: InsertNotification): Promise<Notification> {
+    const id = randomUUID();
+    const notification: Notification = {
+      ...n,
+      id,
+      isRead: 0,
+       // analysisId is already optional in InsertNotification and Notification
+      analysisId: n.analysisId ?? null,
+      createdAt: new Date(),
+    };
+    this.notifications.set(id, notification);
+    return notification;
   }
 
-  async getNotifications(): Promise<Notification[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getNotifications(userId: string): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter((n) => n.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async markNotificationAsRead(): Promise<Notification | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async markNotificationAsRead(id: string): Promise<Notification | undefined> {
+    const notification = this.notifications.get(id);
+    if (!notification) return undefined;
+    const updated = { ...notification, isRead: 1 };
+    this.notifications.set(id, updated);
+    return updated;
   }
 
-  async getUnreadNotificationCount(): Promise<number> {
-    throw new Error("Community features require PostgreSQL database");
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    return Array.from(this.notifications.values()).filter(
+      (n) => n.userId === userId && n.isRead === 0
+    ).length;
   }
 
-  async sendMessage(): Promise<Message> {
-    throw new Error("Community features require PostgreSQL database");
+  async sendMessage(m: InsertMessage): Promise<Message> {
+    const id = randomUUID();
+    const message: Message = {
+      ...m,
+      id,
+      isRead: 0,
+      createdAt: new Date(),
+    };
+    this.messages.set(id, message);
+    return message;
   }
 
-  async getConversation(): Promise<Message[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getConversation(userId1: string, userId2: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(
+        (m) =>
+          (m.senderId === userId1 && m.receiverId === userId2) ||
+          (m.senderId === userId2 && m.receiverId === userId1)
+      )
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
-  async getRecentConversations(): Promise<Array<Message & { otherUser: User }>> {
-    throw new Error("Community features require PostgreSQL database");
+  async getRecentConversations(userId: string): Promise<Array<Message & { otherUser: User }>> {
+    const userMessages = Array.from(this.messages.values()).filter(
+      (m) => m.senderId === userId || m.receiverId === userId
+    );
+
+    const conversationsMap = new Map<string, Message>();
+    for (const m of userMessages) {
+      const otherId = m.senderId === userId ? m.receiverId : m.senderId;
+      const existing = conversationsMap.get(otherId);
+      if (!existing || m.createdAt.getTime() > existing.createdAt.getTime()) {
+        conversationsMap.set(otherId, m);
+      }
+    }
+
+    return Array.from(conversationsMap.entries())
+      .map(([otherId, m]) => ({
+        ...m,
+        otherUser: this.users.get(otherId)!,
+      }))
+      .filter((c) => !!c.otherUser)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async markMessageAsRead(): Promise<Message | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async markMessageAsRead(id: string): Promise<Message | undefined> {
+    const message = this.messages.get(id);
+    if (!message) return undefined;
+    const updated = { ...message, isRead: 1 };
+    this.messages.set(id, updated);
+    return updated;
   }
 
-  async getUnreadMessageCount(): Promise<number> {
-    throw new Error("Community features require PostgreSQL database");
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    return Array.from(this.messages.values()).filter(
+      (m) => m.receiverId === userId && m.isRead === 0
+    ).length;
   }
 
-  async publishAnalysis(): Promise<Analysis | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async publishAnalysis(id: string): Promise<Analysis | undefined> {
+    const analysis = this.analyses.get(id);
+    if (!analysis) return undefined;
+    const updated = { ...analysis, isPublished: 1 };
+    this.analyses.set(id, updated);
+    return updated;
   }
 
-  async unpublishAnalysis(): Promise<Analysis | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async unpublishAnalysis(id: string): Promise<Analysis | undefined> {
+    const analysis = this.analyses.get(id);
+    if (!analysis) return undefined;
+    const updated = { ...analysis, isPublished: 0 };
+    this.analyses.set(id, updated);
+    return updated;
   }
 
-  async getPublishedAnalysesFeed(): Promise<Array<Analysis & { author: User }>> {
-    throw new Error("Community features require PostgreSQL database");
+  async getPublishedAnalysesFeed(userId: string): Promise<Array<Analysis & { author: User }>> {
+    const published = Array.from(this.analyses.values())
+      .filter((a) => a.isPublished === 1)
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+    return published.map((a) => ({
+      ...a,
+      author: this.users.get(a.userId)!,
+    })).filter(item => !!item.author);
   }
 
-  async createReport(): Promise<Report> {
-    throw new Error("Community features require PostgreSQL database");
+  async createReport(report: InsertReport): Promise<Report> {
+    const id = randomUUID();
+    const newReport: Report = {
+      ...report,
+      id,
+      status: "pending",
+      createdAt: new Date(),
+    };
+    this.reports.set(id, newReport);
+    return newReport;
   }
 
-  async getReports(): Promise<Report[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getReports(userId?: string): Promise<Report[]> {
+    return Array.from(this.reports.values()).filter(
+      (r) => !userId || r.userId === userId
+    );
   }
 
-  async updateReportStatus(): Promise<Report | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async updateReportStatus(id: string, status: string): Promise<Report | undefined> {
+    const report = this.reports.get(id);
+    if (!report) return undefined;
+    const updated = { ...report, status };
+    this.reports.set(id, updated);
+    return updated;
   }
 
-  async addReaction(): Promise<Reaction> {
-    throw new Error("Community features require PostgreSQL database");
+  async addReaction(insertReaction: InsertReaction): Promise<Reaction> {
+    const existing = await this.getUserReaction(insertReaction.userId, insertReaction.analysisId);
+    if (existing) {
+      if (existing.reactionType === insertReaction.reactionType) {
+        return existing;
+      }
+      const updated: Reaction = {
+        ...existing,
+        reactionType: insertReaction.reactionType,
+      };
+      this.reactions.set(existing.id, updated);
+      return updated;
+    }
+    const id = randomUUID();
+    const newReaction: Reaction = { ...insertReaction, id, createdAt: new Date() };
+    this.reactions.set(id, newReaction);
+    return newReaction;
   }
 
-  async removeReaction(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async removeReaction(userId: string, analysisId: string, reactionType: string): Promise<boolean> {
+    const reaction = Array.from(this.reactions.values()).find(
+      (r) => r.userId === userId && r.analysisId === analysisId && r.reactionType === reactionType
+    );
+    if (reaction) {
+      return this.reactions.delete(reaction.id);
+    }
+    return false;
   }
 
-  async getUserReaction(): Promise<Reaction | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async getUserReaction(userId: string, analysisId: string): Promise<Reaction | undefined> {
+    const list = Array.from(this.reactions.values()).filter(
+      (r) => r.userId === userId && r.analysisId === analysisId
+    );
+    if (list.length === 0) return undefined;
+    return list.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0];
   }
 
-  async getReactionCounts(): Promise<{ like: number; heart: number; dislike: number }> {
-    throw new Error("Community features require PostgreSQL database");
+  async getReactionCounts(analysisId: string): Promise<{ like: number; heart: number; dislike: number }> {
+    const reactionsList = Array.from(this.reactions.values()).filter(
+      (r) => r.analysisId === analysisId
+    ) as Reaction[];
+    const counts = { like: 0, heart: 0, dislike: 0 };
+    for (const r of reactionsList) {
+      if (r.reactionType === 'like') counts.like++;
+      else if (r.reactionType === 'heart') counts.heart++;
+      else if (r.reactionType === 'dislike') counts.dislike++;
+    }
+    return counts;
   }
 
-  async getAnalysisReactions(): Promise<Reaction[]> {
-    throw new Error("Community features require PostgreSQL database");
+  async getAnalysisReactions(analysisId: string): Promise<Reaction[]> {
+    return Array.from(this.reactions.values()).filter(
+      (r) => r.analysisId === analysisId
+    );
   }
 
-  async pinTrader(): Promise<PinnedTrader> {
-    throw new Error("Community features require PostgreSQL database");
+  async pinTrader(userId: string, pinnedUserId: string): Promise<PinnedTrader> {
+    const id = randomUUID();
+    const pinned: PinnedTrader = { id, userId, pinnedUserId, pinnedOrder: 0, createdAt: new Date() };
+    this.pinnedTraders.set(id, pinned);
+    return pinned;
   }
 
-  async unpinTrader(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async unpinTrader(userId: string, pinnedUserId: string): Promise<boolean> {
+    const pinned = Array.from(this.pinnedTraders.values()).find(
+      (p) => p.userId === userId && p.pinnedUserId === pinnedUserId
+    );
+    if (pinned) {
+      return this.pinnedTraders.delete(pinned.id);
+    }
+    return false;
   }
 
-  async reorderPinnedTrader(): Promise<PinnedTrader | undefined> {
-    throw new Error("Community features require PostgreSQL database");
+  async reorderPinnedTrader(userId: string, pinnedUserId: string, newOrder: number): Promise<PinnedTrader | undefined> {
+    const pinned = Array.from(this.pinnedTraders.values()).find(
+      (p) => p.userId === userId && p.pinnedUserId === pinnedUserId
+    );
+    if (!pinned) return undefined;
+    const updated = { ...pinned, pinnedOrder: newOrder };
+    this.pinnedTraders.set(pinned.id, updated);
+    return updated;
   }
 
-  async getPinnedTraders(): Promise<Array<PinnedTrader & { pinnedUser: User }>> {
-    throw new Error("Community features require PostgreSQL database");
+  async getPinnedTraders(userId: string): Promise<Array<PinnedTrader & { pinnedUser: User }>> {
+    return Array.from(this.pinnedTraders.values())
+      .filter((p) => p.userId === userId)
+      .map((p) => ({
+        ...p,
+        pinnedUser: this.users.get(p.pinnedUserId)!,
+      }))
+      .filter((p) => !!p.pinnedUser)
+      .sort((a, b) => a.pinnedOrder - b.pinnedOrder);
   }
 
-  async isPinned(): Promise<boolean> {
-    throw new Error("Community features require PostgreSQL database");
+  async isPinned(userId: string, pinnedUserId: string): Promise<boolean> {
+    return Array.from(this.pinnedTraders.values()).some(
+      (p) => p.userId === userId && p.pinnedUserId === pinnedUserId
+    );
   }
 
-  async getPinnedTradersWithNotifications(): Promise<Array<{ user: User; unreadCount: number }>> {
-    throw new Error("Community features require PostgreSQL database");
+  async getPinnedTradersWithNotifications(userId: string): Promise<Array<{ user: User; unreadCount: number }>> {
+    // In MemStorage, we'll just return the pinned users with unread message counts
+    const pinned = await this.getPinnedTraders(userId);
+    const results = [];
+    for (const p of pinned) {
+      const unreadCount = await this.getUnreadMessageCountFromUser(userId, p.pinnedUserId);
+      results.push({ user: p.pinnedUser, unreadCount });
+    }
+    return results;
   }
 
-  async markTraderNotificationsRead(): Promise<void> {
-    throw new Error("Community features require PostgreSQL database");
+  // Private helper for MemStorage
+  private async getUnreadMessageCountFromUser(receiverId: string, senderId: string): Promise<number> {
+    return Array.from(this.messages.values()).filter(
+      (m) => m.receiverId === receiverId && m.senderId === senderId && m.isRead === 0
+    ).length;
+  }
+
+  async markTraderNotificationsRead(userId: string, traderId: string): Promise<void> {
+    for (const [id, n] of this.notifications) {
+      if (
+        n.userId === userId &&
+        n.actorId === traderId &&
+        n.type === "new_analysis" &&
+        n.isRead === 0
+      ) {
+        this.notifications.set(id, { ...n, isRead: 1 });
+      }
+    }
+  }
+
+  private loadDevSnapshot(): void {
+    try {
+      if (!existsSync(MEM_STORAGE_FILE)) return;
+      const raw = readFileSync(MEM_STORAGE_FILE, "utf-8");
+      const data = JSON.parse(raw, memStorageJsonReviver) as MemStorageSnapshotV1;
+      if (data.version !== 1 || !Array.isArray(data.users)) return;
+      this.users = new Map(data.users);
+      this.analyses = new Map(data.analyses ?? []);
+      this.brokers = new Map(data.brokers ?? []);
+      this.follows = new Map(data.follows ?? []);
+      this.blocks = new Map(data.blocks ?? []);
+      this.notifications = new Map(data.notifications ?? []);
+      this.messages = new Map(data.messages ?? []);
+      this.reports = new Map(data.reports ?? []);
+      this.reactions = new Map(data.reactions ?? []);
+      this.pinnedTraders = new Map(data.pinnedTraders ?? []);
+      console.log(
+        `📁 Dev memory restored: ${this.users.size} users, ${this.analyses.size} analyses → ${MEM_STORAGE_FILE}`,
+      );
+    } catch (e) {
+      console.warn("⚠️ Could not load dev memory snapshot:", e);
+    }
+  }
+
+  private persistDevSnapshot(): void {
+    try {
+      const dir = path.dirname(MEM_STORAGE_FILE);
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+      const payload: MemStorageSnapshotV1 = {
+        version: 1,
+        users: Array.from(this.users.entries()),
+        analyses: Array.from(this.analyses.entries()),
+        brokers: Array.from(this.brokers.entries()),
+        follows: Array.from(this.follows.entries()),
+        blocks: Array.from(this.blocks.entries()),
+        notifications: Array.from(this.notifications.entries()),
+        messages: Array.from(this.messages.entries()),
+        reports: Array.from(this.reports.entries()),
+        reactions: Array.from(this.reactions.entries()),
+        pinnedTraders: Array.from(this.pinnedTraders.entries()),
+      };
+      writeFileSync(MEM_STORAGE_FILE, JSON.stringify(payload), "utf-8");
+    } catch (e) {
+      console.warn("⚠️ Could not persist dev memory snapshot:", e);
+    }
   }
 }
 
@@ -569,7 +915,13 @@ export class PgStorage implements IStorage {
   }
 
   async getUserByMobile(mobile: string): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.mobile, mobile));
+    const digits = mobile.replace(/\D/g, "");
+    if (!digits) return undefined;
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(sql`regexp_replace(${users.mobile}, '[^0-9]', '', 'g') = ${digits}`)
+      .limit(1);
     return result[0];
   }
 
@@ -1053,6 +1405,7 @@ export class PgStorage implements IStorage {
         confidence: analyses.confidence,
         sentiment: analyses.sentiment,
         marketSentiment: analyses.marketSentiment,
+        newsHighlights: analyses.newsHighlights,
         deepAnalysis: analyses.deepAnalysis,
         analysis: analyses.analysis,
         rsi: analyses.rsi,
@@ -1200,7 +1553,9 @@ export class PgStorage implements IStorage {
           eq(reactions.userId, userId),
           eq(reactions.analysisId, analysisId)
         )
-      );
+      )
+      .orderBy(desc(reactions.createdAt))
+      .limit(1);
     return result[0];
   }
 
@@ -1208,13 +1563,24 @@ export class PgStorage implements IStorage {
     const result = await this.db
       .select()
       .from(reactions)
-      .where(eq(reactions.analysisId, analysisId));
+      .where(eq(reactions.analysisId, analysisId))
+      .orderBy(desc(reactions.createdAt));
+
+    const byUser = new Map<string, Reaction>();
+    for (const r of result) {
+      if (!byUser.has(r.userId)) byUser.set(r.userId, r);
+    }
 
     const counts = {
-      like: result.filter(r => r.reactionType === 'like').length,
-      heart: result.filter(r => r.reactionType === 'heart').length,
-      dislike: result.filter(r => r.reactionType === 'dislike').length,
+      like: 0,
+      heart: 0,
+      dislike: 0,
     };
+    for (const r of byUser.values()) {
+      if (r.reactionType === "like") counts.like++;
+      else if (r.reactionType === "heart") counts.heart++;
+      else if (r.reactionType === "dislike") counts.dislike++;
+    }
 
     return counts;
   }
@@ -1412,3 +1778,9 @@ export class PgStorage implements IStorage {
 
 // Use PostgreSQL storage in production, in-memory for development
 export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();
+
+if (!process.env.DATABASE_URL) {
+  console.log(
+    "📌 DATABASE_URL not set — dev mode uses data/mem-storage.json so accounts and saved analyses survive server restarts. Use DATABASE_URL (e.g. Neon) in production.",
+  );
+}

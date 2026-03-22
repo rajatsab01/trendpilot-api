@@ -10,12 +10,42 @@ import ReportModal from "@/components/ReportModal";
 import ReactionButtons from "@/components/ReactionButtons";
 import type { Analysis, User, Report } from "@shared/schema";
 import { format, formatDistanceToNow } from "date-fns";
+import { communityDisplayName } from "@/lib/utils";
 
 type FeedItem = Analysis & { author: User };
 type PinnedTraderWithNotifications = {
   user: User;
   unreadCount: number;
 };
+
+function compactAlnum(s: string): string {
+  return s.replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+/** Strip common quote/pair suffixes so "btc" matches "BTCUSDT". */
+function stripPairSuffix(s: string): string {
+  return s.replace(/(usdt|usd|busd|perp|inr)$/i, "");
+}
+
+function analysisMatchesSearch(a: Analysis, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+
+  const haystack = [a.symbol, a.correctedSymbol, a.assetName, a.instrumentName, a.recommendation]
+    .filter(Boolean)
+    .map((x) => String(x).toLowerCase());
+  if (haystack.some((t) => t.includes(q))) return true;
+
+  const cq = compactAlnum(q);
+  if (cq.length < 1) return false;
+
+  for (const raw of [a.symbol, a.correctedSymbol]) {
+    if (!raw) continue;
+    const base = stripPairSuffix(compactAlnum(String(raw)));
+    if (base.includes(cq) || (cq.length >= 2 && base.startsWith(cq))) return true;
+  }
+  return false;
+}
 
 export default function Community() {
   const [, setLocation] = useLocation();
@@ -37,16 +67,19 @@ export default function Community() {
     enabled: !!userId,
   });
 
-  // Fetch saved analyses to check minimum requirement
-  const { data: analyses = [] } = useQuery<Analysis[]>({
-    queryKey: ["/api/analyses", userId],
+  // Saved analyses only — matches "minimum saved trades" requirement
+  const { data: savedAnalyses = [] } = useQuery<Analysis[]>({
+    queryKey: ["/api/analyses/saved", userId || ""],
     enabled: !!userId,
   });
+  const savedTradeCount = savedAnalyses.length;
 
-  // Fetch community feed
+  // Public feed: show published analyses for everyone logged in (joining rules only gate posting/alias, not reading)
   const { data: feed = [], isLoading } = useQuery<FeedItem[]>({
     queryKey: ["/api/community/feed", userId],
-    enabled: !!userId && user?.rulesAccepted === 1,
+    enabled: !!userId,
+    // Fresh author.alias after joining / updating handle (avoid 5m cache showing full name)
+    staleTime: 0,
   });
 
   // Fetch pinned traders with notification counts
@@ -67,19 +100,21 @@ export default function Community() {
     enabled: !!userId,
   });
 
-  // Check if user has accepted rules and has minimum saved analyses
   useEffect(() => {
-    if (user && user.rulesAccepted !== 1) {
-      setShowRulesModal(true);
-      setAlias(user.alias || "");
+    if (!user || user.rulesAccepted === 1) return;
+    try {
+      if (userId && sessionStorage.getItem(`communityRulesDismissed:${userId}`) === "1") return;
+    } catch {
+      /* ignore */
     }
-  }, [user]);
+    setShowRulesModal(true);
+    setAlias(user.alias || "");
+  }, [user, userId]);
 
   const handleAcceptRules = async () => {
     if (!userId) return;
 
-    // Check minimum saved analyses
-    if (analyses.length < 10) {
+    if (savedTradeCount < 5) {
       toast({
         title: t.minimumRequirement,
         description: t.need10Trades,
@@ -127,7 +162,13 @@ export default function Community() {
       });
 
       setShowRulesModal(false);
+      try {
+        sessionStorage.removeItem(`communityRulesDismissed:${userId}`);
+      } catch {
+        /* ignore */
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/community/feed", userId] });
     } catch (error: any) {
       toast({
         title: t.error,
@@ -140,7 +181,7 @@ export default function Community() {
   };
 
   const handleAnalysisClick = (analysisId: string) => {
-    setLocation(`/analyzer?analysisId=${analysisId}&fromCommunity=true`);
+    setLocation(`/dashboard?analysisId=${analysisId}&fromCommunity=true`);
   };
 
   const handleTraderClick = async (traderId: string) => {
@@ -193,67 +234,92 @@ export default function Community() {
     return acc;
   }, {} as Record<string, { user: User, analyses: FeedItem[] }>);
 
-  // Filter groups based on search query
-  const filteredTraderGroups = Object.values(traderGroups).filter(({ user, analyses }) => {
-    if (!searchQuery.trim()) return true;
-    
-    const query = searchQuery.toLowerCase().trim();
-    const usernameMatch = user.alias?.toLowerCase().includes(query) || false;
-    const symbolMatch = analyses.some(a => a.symbol.toLowerCase().includes(query));
-    
-    return usernameMatch || symbolMatch;
-  });
+  // Filter groups and, when searching by symbol/text, only show matching analyses per trader
+  const filteredTraderGroups = Object.values(traderGroups)
+    .map(({ user, analyses }) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return { user, analyses };
+
+      const usernameMatch = communityDisplayName(user).toLowerCase().includes(q);
+      if (usernameMatch) return { user, analyses };
+
+      const matchingAnalyses = analyses.filter((a) => analysisMatchesSearch(a, q));
+      if (matchingAnalyses.length === 0) return null;
+      return { user, analyses: matchingAnalyses };
+    })
+    .filter((g): g is { user: User; analyses: FeedItem[] } => g !== null);
 
   return (
     <div className="min-h-screen bg-[#111714] pb-20">
       {/* Rules Modal */}
       {showRulesModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1c2620] rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h2 className="text-white text-2xl font-bold">{t.joinCommunity}</h2>
-            
-            <div className="space-y-2">
-              <p className="text-[#9eb7a8] text-sm">
-                {t.toAccessCommunity}
-              </p>
-              <ul className="list-disc list-inside text-[#9eb7a8] text-sm space-y-1">
-                <li>{t.atLeast10Trades.replace('{count}', analyses.length.toString())}</li>
-                <li>{t.uniqueUsername}</li>
-                <li>{t.acceptRules}</li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-white text-sm font-medium">{t.chooseUsername}</label>
-              <input
-                type="text"
-                value={alias}
-                onChange={(e) => setAlias(e.target.value)}
-                placeholder={t.enterUsername}
-                maxLength={10}
-                className="w-full bg-[#111714] text-white rounded-xl px-4 py-3 border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none"
-                data-testid="input-alias"
-              />
-            </div>
-
-            <div className="bg-[#111714] rounded-xl p-4 space-y-2">
-              <h3 className="text-white font-semibold text-sm">{t.communityRules}</h3>
-              <ul className="list-disc list-inside text-[#9eb7a8] text-xs space-y-1">
-                <li>{t.rule1}</li>
-                <li>{t.rule2}</li>
-                <li>{t.rule3}</li>
-                <li>{t.rule4}</li>
-              </ul>
-            </div>
-
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-[#1c2620] rounded-2xl max-w-md w-full max-h-[min(92dvh,560px)] flex flex-col relative pr-10 sm:pr-12 shadow-xl">
             <button
-              onClick={handleAcceptRules}
-              disabled={isAcceptingRules || analyses.length < 10 || !alias.trim()}
-              className="w-full py-3 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              data-testid="button-accept-rules"
+              type="button"
+              aria-label={t.close}
+              onClick={() => {
+                try {
+                  if (userId) sessionStorage.setItem(`communityRulesDismissed:${userId}`, "1");
+                } catch {
+                  /* ignore */
+                }
+                setShowRulesModal(false);
+                setLocation("/dashboard");
+              }}
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 p-1.5 rounded-lg text-[#9eb7a8] hover:text-white hover:bg-white/10 transition-colors"
+              data-testid="button-close-rules-modal"
             >
-              {isAcceptingRules ? t.processing : t.iAgreeJoinCommunity}
+              <span className="material-symbols-outlined text-xl sm:text-2xl leading-none">close</span>
             </button>
+            <div className="overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3 min-h-0">
+              <h2 className="text-white text-lg sm:text-xl font-bold pr-2">{t.joinCommunity}</h2>
+
+              <div className="space-y-1.5">
+                <p className="text-[#9eb7a8] text-xs sm:text-sm leading-snug">
+                  {t.toAccessCommunity}
+                </p>
+                <ul className="list-disc list-inside text-[#9eb7a8] text-xs sm:text-sm space-y-0.5 leading-snug">
+                  <li>{t.atLeast10Trades.replace("{count}", savedTradeCount.toString())}</li>
+                  <li>{t.uniqueUsername}</li>
+                  <li>{t.acceptRules}</li>
+                </ul>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-white text-xs sm:text-sm font-medium">{t.chooseUsername}</label>
+                <input
+                  type="text"
+                  value={alias}
+                  onChange={(e) => setAlias(e.target.value)}
+                  placeholder={t.enterUsername}
+                  maxLength={10}
+                  className="w-full bg-[#111714] text-white rounded-xl px-3 py-2.5 text-sm border border-[#2a3c33] focus:ring-2 focus:ring-[#38e07b] outline-none"
+                  data-testid="input-alias"
+                />
+              </div>
+
+              <div className="bg-[#111714] rounded-xl p-3 space-y-1.5">
+                <h3 className="text-white font-semibold text-xs sm:text-sm">{t.communityRules}</h3>
+                <ul className="list-disc list-inside text-[#9eb7a8] text-[10px] sm:text-xs space-y-0.5 leading-snug">
+                  <li>{t.rule1}</li>
+                  <li>{t.rule2}</li>
+                  <li>{t.rule3}</li>
+                  <li>{t.rule4}</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 border-t border-[#2a3c33] p-3 sm:p-4 pt-3 bg-[#1c2620] rounded-b-2xl">
+              <button
+                onClick={handleAcceptRules}
+                disabled={isAcceptingRules || savedTradeCount < 5 || !alias.trim()}
+                className="w-full py-2.5 sm:py-3 text-sm sm:text-base bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                data-testid="button-accept-rules"
+              >
+                {isAcceptingRules ? t.processing : t.iAgreeJoinCommunity}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -288,14 +354,14 @@ export default function Community() {
                           </span>
                         ) : (
                           <span className="text-[#38e07b] text-sm font-bold">
-                            {trader.alias?.charAt(0).toUpperCase() || '?'}
+                            {communityDisplayName(trader).charAt(0).toUpperCase()}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="text-center w-full">
                       <p className="text-white font-semibold text-xs truncate">
-                        {trader.alias || 'Anonymous'}
+                        {communityDisplayName(trader)}
                       </p>
                       {unreadCount > 0 && (
                         <p className="text-[#38e07b] text-[10px] font-semibold">
@@ -349,7 +415,7 @@ export default function Community() {
                 {t.communityGrowing}
               </p>
               <button
-                onClick={() => setLocation("/analyzer")}
+                onClick={() => setLocation("/dashboard")}
                 className="px-6 py-2 bg-[#38e07b] text-[#111714] font-semibold rounded-lg hover:bg-[#2fc76a] transition-colors"
                 data-testid="button-start-analyzing"
               >
@@ -381,12 +447,12 @@ export default function Community() {
                   >
                     <div className="w-8 h-8 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
                       <span className="text-[#38e07b] text-xs font-bold">
-                        {trader.alias?.charAt(0).toUpperCase() || '?'}
+                        {communityDisplayName(trader).charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
                       <p className="text-white font-semibold text-sm">
-                        {trader.alias || 'Anonymous'}
+                        {communityDisplayName(trader)}
                       </p>
                       <p className="text-[#6a7f72] text-xs">
                         {analyses.length} {analyses.length === 1 ? 'trade' : 'trades'}

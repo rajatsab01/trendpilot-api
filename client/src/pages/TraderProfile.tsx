@@ -10,6 +10,7 @@ import ReportModal from "@/components/ReportModal";
 import type { Analysis, User } from "@shared/schema";
 import { APP_VERSION } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
+import { communityDisplayName } from "@/lib/utils";
 
 type FeedItem = Analysis & { author: User };
 
@@ -184,7 +185,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
     setLocation(`/messages/${traderId}`);
   };
 
-  const displayName = profile?.user.alias || "Anonymous";
+  const displayName = communityDisplayName(profile?.user);
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
   return (
@@ -347,7 +348,7 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                   {analyses.map((analysis) => (
                     <div
                       key={analysis.id}
-                      onClick={() => setLocation(`/analyzer?analysisId=${analysis.id}&fromCommunity=true`)}
+                      onClick={() => setLocation(`/dashboard?analysisId=${analysis.id}&fromCommunity=true`)}
                       className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33] cursor-pointer hover:border-[#38e07b]/50 transition-colors"
                       data-testid={`analysis-card-${analysis.id}`}
                     >

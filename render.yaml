@@ -9,7 +9,7 @@ services:
       npm install
       npm run build
 
-    startCommand: npx tsx server/index.ts
+    startCommand: node dist/index.cjs
 
     envVars:
       - key: NODE_ENV

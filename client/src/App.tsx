@@ -11,7 +11,6 @@ import LanguageSelection from "@/pages/LanguageSelection";
 import Login from "@/pages/Login";
 import Welcome from "@/pages/Welcome";
 import Dashboard from "@/pages/Dashboard";
-import Analyzer from "@/pages/Analyzer";
 import BuyTokens from "@/pages/BuyTokens";
 import Charity from "@/pages/Charity";
 import SavedAnalyses from "@/pages/SavedAnalyses";
@@ -23,6 +22,16 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import ContactUs from "@/pages/ContactUs";
 import NotFound from "@/pages/not-found";
+
+/** Old bookmarks/links used /analyzer — keep working by landing on Home with the same query string. */
+function LegacyAnalyzerRedirect() {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    const q = typeof window !== "undefined" ? window.location.search : "";
+    setLocation(`/dashboard${q}`, { replace: true });
+  }, [setLocation]);
+  return null;
+}
 
 function SmartRouter() {
   const [location, setLocation] = useLocation();
@@ -51,7 +60,7 @@ function SmartRouter() {
       <Route path="/login" component={Login} />
       <Route path="/welcome" component={Welcome} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/analyzer" component={Analyzer} />
+      <Route path="/analyzer" component={LegacyAnalyzerRedirect} />
       <Route path="/buy-tokens" component={BuyTokens} />
       <Route path="/charity" component={Charity} />
       <Route path="/saved" component={SavedAnalyses} />

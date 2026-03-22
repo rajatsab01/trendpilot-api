@@ -1,15 +1,33 @@
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Language } from "@/lib/translations";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+
 const trendPilotLogo = "/trendpilot-logo.png";
 
 export default function LanguageSelection() {
   const [, setLocation] = useLocation();
   const { setLanguage } = useLanguage();
 
-  const handleLanguageSelect = (lang: Language) => {
+  const handleLanguageSelect = async (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem("languageCompleted", "true");
+
+    const uid = localStorage.getItem("userId");
+    if (uid) {
+      try {
+        await apiRequest("PATCH", `/api/user/${uid}`, { language: lang });
+        queryClient.invalidateQueries({ queryKey: ["/api/user", uid] });
+        queryClient.invalidateQueries({ queryKey: ["/api/analyses/saved", uid] });
+        queryClient.invalidateQueries({ queryKey: ["/api/analyses", uid] });
+        queryClient.invalidateQueries({ queryKey: ["/api/community/feed", uid] });
+      } catch (e) {
+        console.error("Failed to sync language:", e);
+      }
+      setLocation("/dashboard", { replace: true });
+      return;
+    }
+
     setLocation("/login");
   };
 
@@ -33,7 +51,7 @@ export default function LanguageSelection() {
       <main className="flex flex-col items-center justify-center flex-grow text-center px-4 py-8">
         <div className="w-32 h-32 mb-4 flex items-center justify-center">
           <img 
-            src={logoImage} 
+            src={trendPilotLogo} 
             alt="Trend Pilot Logo" 
             className="w-full h-full object-contain"
           />

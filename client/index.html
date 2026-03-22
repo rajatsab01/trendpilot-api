@@ -49,7 +49,7 @@
     <!-- VERSION GUARD: Check before ANY cached code loads -->
     <script>
       (function() {
-        const CURRENT_VERSION = '1.2.4'; // Will be server-injected in production
+        const CURRENT_VERSION = '1.2.5'; // Must match APP_VERSION in shared/schema.ts
         const STORED_VERSION_KEY = 'app_version';
         
         async function checkVersion() {

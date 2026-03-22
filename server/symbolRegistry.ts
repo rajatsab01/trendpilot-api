@@ -417,8 +417,8 @@ export function initializeSymbolRegistry(): void {
     });
   });
 
-  // Indian stocks (NSE)
-  const indianStocks: Array<{ symbol: string; name: string; description: string }> = [
+  // Indian stocks (NSE). `apiSymbol` is the Yahoo chart ticker (may differ from display symbol).
+  const indianStocks: Array<{ symbol: string; name: string; description: string; apiSymbol?: string }> = [
     { symbol: "RELIANCE.NS", name: "Reliance Industries", description: "Indian conglomerate" },
     { symbol: "TCS.NS", name: "Tata Consultancy Services", description: "IT services" },
     { symbol: "INFY.NS", name: "Infosys Limited", description: "IT services" },
@@ -429,16 +429,24 @@ export function initializeSymbolRegistry(): void {
     { symbol: "ITC.NS", name: "ITC Limited", description: "Conglomerate" },
     { symbol: "KOTAKBANK.NS", name: "Kotak Mahindra Bank", description: "Banking" },
     { symbol: "WIPRO.NS", name: "Wipro Limited", description: "IT services" },
+    // Yahoo: legacy TATAMOTORS.NS is gone; NSE listing is TMCV.NS (same company).
+    { symbol: "TMCV.NS", name: "Tata Motors Limited", description: "NSE — Yahoo ticker TMCV.NS" },
+    {
+      symbol: "TATAMOTORS.NS",
+      name: "Tata Motors Limited",
+      description: "Former ticker; Yahoo data under TMCV.NS",
+      apiSymbol: "TMCV.NS",
+    },
   ];
 
-  indianStocks.forEach(({ symbol, name, description }) => {
+  indianStocks.forEach(({ symbol, name, description, apiSymbol: yahooSym }) => {
     symbolRegistry.register({
       symbol,
       name,
       market: 'stock',
       classification: 'stock',
       dataSource: 'yahoo',
-      apiSymbol: symbol,
+      apiSymbol: yahooSym ?? symbol,
       status: 'verified',
       description,
       exchange: 'India-NSE',
