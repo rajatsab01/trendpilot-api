@@ -525,11 +525,6 @@ export default function Dashboard() {
     setValidatedData(null);
     setIsValidationConfirmed(false);
     setShowValidationModal(false);
-    
-    toast({
-      title: "Form Reset",
-      description: "You can now enter a new symbol",
-    });
   };
 
   const handleSelectSuggestion = (suggestion: {symbol: string; name: string; price?: number}) => {
@@ -550,11 +545,6 @@ export default function Dashboard() {
     setValidatedData(null);
     setShowSearchDropdown(false);
     setSearchSuggestions([]);
-    
-    toast({
-      title: "Instrument Selected",
-      description: `${suggestion.name} selected. Please select market and click Enlighten Me.`,
-    });
   };
 
   // Search for instruments as user types
@@ -741,11 +731,6 @@ export default function Dashboard() {
                     try {
                       await apiRequest("PATCH", `/api/user/${userId}`, { currency: newCurrency });
                       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
-                      
-                      toast({
-                        title: "Currency Updated",
-                        description: `Your analyses will now be displayed in ${newCurrency}`,
-                      });
                     } catch (error) {
                       console.error("Failed to update currency:", error);
                     }
@@ -791,11 +776,6 @@ export default function Dashboard() {
                     try {
                       await apiRequest("PATCH", `/api/user/${userId}`, { exchange: newExchange });
                       queryClient.invalidateQueries({ queryKey: ["/api/user", userId] });
-                      
-                      toast({
-                        title: "Exchange Updated",
-                        description: newExchange ? `Symbol search will prioritize ${newExchange}` : "Exchange preference cleared",
-                      });
                     } catch (error) {
                       console.error("Failed to update exchange:", error);
                     }
@@ -905,10 +885,6 @@ export default function Dashboard() {
                       <button
                         onClick={() => {
                           setShowSearchDropdown(false);
-                          toast({
-                            title: "Manual Entry Mode",
-                            description: "Please select market and click Enlighten Me",
-                          });
                         }}
                         className="w-full px-3 py-2 mt-1 bg-[#38e07b]/10 border border-[#38e07b]/30 rounded-lg hover-elevate active-elevate-2 text-[#38e07b] text-sm font-medium"
                         data-testid="button-proceed-manual"
@@ -967,10 +943,6 @@ export default function Dashboard() {
                       setMarket("");
                       setIsValidationConfirmed(false);
                       setValidatedData(null);
-                      toast({
-                        title: "Market Reset",
-                        description: "Please select market type again",
-                      });
                     }}
                     className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#29382f] hover-elevate active-elevate-2 transition-all"
                     data-testid="button-reset-market"
