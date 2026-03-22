@@ -1783,4 +1783,9 @@ if (!process.env.DATABASE_URL) {
   console.log(
     "📌 DATABASE_URL not set — dev mode uses data/mem-storage.json so accounts and saved analyses survive server restarts. Use DATABASE_URL (e.g. Neon) in production.",
   );
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "⚠️ PRODUCTION: DATABASE_URL is missing — Render cannot persist user accounts/saved analyses. Add DATABASE_URL in Render → Environment (e.g. Neon Postgres).",
+    );
+  }
 }

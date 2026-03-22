@@ -5,6 +5,9 @@
 import type { OHLCVData } from "./perplexity";
 import { normalizeSymbolForAPI, type MarketType } from "./symbolRegistry.js";
 
+const PRICE_FETCH_UA =
+  "Mozilla/5.0 (compatible; TrendPilot/1.0; +https://trendpilot.in)";
+
 export type AnalysisDurationKey = "scalping" | "short_term" | "swing" | "long_term";
 
 /** Single source of truth: bar interval, depth, and labels (Binance + Yahoo aligned). */
@@ -72,7 +75,8 @@ function nextCloseFromLastBarMs(lastCloseMs: number, intervalMinutes: number): s
 }
 
 /**
- * Fetch OHLCV data for crypto from Binance klines API
+ * Fetch OHLCV data for crypto from Binance klines API, with Binance.US + Yahoo fallbacks.
+ * (Render / US cloud IPs often cannot reach api.binance.com — same as symbol validation.)
  */
 async function fetchCryptoOHLCV(symbol: string, duration: string): Promise<OHLCVData> {
   const sym = symbol.toUpperCase().trim();
@@ -80,25 +84,58 @@ async function fetchCryptoOHLCV(symbol: string, duration: string): Promise<OHLCV
   const spec = getSpec(duration);
   const { binanceInterval, binanceLimit, label, intervalMinutes, maxBars } = spec;
 
-  const klinesUrl = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${binanceInterval}&limit=${binanceLimit}`;
-  const klinesResp = await fetch(klinesUrl, { signal: AbortSignal.timeout(15000) });
-  if (!klinesResp.ok) throw new Error(`Binance klines error: ${klinesResp.status}`);
-  const klines = await klinesResp.json();
+  const klinesUrls = [
+    `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${binanceInterval}&limit=${binanceLimit}`,
+    `https://api1.binance.com/api/v3/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${binanceInterval}&limit=${binanceLimit}`,
+    `https://api.binance.us/api/v3/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${binanceInterval}&limit=${binanceLimit}`,
+  ];
 
-  if (!Array.isArray(klines) || klines.length === 0) {
-    throw new Error(`No kline data returned for ${binanceSymbol}`);
+  const fetchOpts: RequestInit = {
+    signal: AbortSignal.timeout(15000),
+    headers: { Accept: "application/json", "User-Agent": PRICE_FETCH_UA },
+  };
+
+  let klines: any[] | null = null;
+  for (const klinesUrl of klinesUrls) {
+    try {
+      const klinesResp = await fetch(klinesUrl, fetchOpts);
+      if (!klinesResp.ok) continue;
+      const parsed = await klinesResp.json();
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        klines = parsed;
+        break;
+      }
+    } catch {
+      /* try next */
+    }
   }
 
-  const tickerUrl = `https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(binanceSymbol)}`;
+  if (!klines) {
+    console.warn(
+      `[priceData] Binance klines unavailable for ${binanceSymbol}; using Yahoo chart (e.g. BASE-USD)`,
+    );
+    return await fetchCryptoOHLCVFromYahoo(binanceSymbol, duration);
+  }
+
+  const tickerUrls = [
+    `https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(binanceSymbol)}`,
+    `https://api.binance.us/api/v3/ticker/price?symbol=${encodeURIComponent(binanceSymbol)}`,
+  ];
   let livePrice = 0;
-  try {
-    const tickerResp = await fetch(tickerUrl, { signal: AbortSignal.timeout(5000) });
-    if (tickerResp.ok) {
-      const tickerData = await tickerResp.json();
-      livePrice = Number(tickerData?.price) || 0;
+  for (const tickerUrl of tickerUrls) {
+    try {
+      const tickerResp = await fetch(tickerUrl, {
+        signal: AbortSignal.timeout(5000),
+        headers: { Accept: "application/json", "User-Agent": PRICE_FETCH_UA },
+      });
+      if (tickerResp.ok) {
+        const tickerData = await tickerResp.json();
+        livePrice = Number(tickerData?.price) || 0;
+        if (livePrice > 0) break;
+      }
+    } catch {
+      /* use last close */
     }
-  } catch {
-    /* use last close */
   }
 
   if (livePrice === 0) {
@@ -236,6 +273,16 @@ async function fetchYahooOHLCV(symbol: string, duration: string, market: string)
     analysisBarCount: trimmed.length,
     nextCandleCloseTime: nextCloseFromLastBarMs(lastBarMs, intervalMinutes),
   };
+}
+
+/** When Binance klines are unreachable (e.g. US cloud IPs), use Yahoo chart for BASE-USD. */
+async function fetchCryptoOHLCVFromYahoo(binanceSymbol: string, duration: string): Promise<OHLCVData> {
+  const base = binanceSymbol.replace(/USDT$/i, "").replace(/BUSD$/i, "").replace(/USD$/i, "");
+  if (!/^[A-Z0-9]{1,14}$/i.test(base)) {
+    throw new Error(`Cannot map ${binanceSymbol} to Yahoo USD pair`);
+  }
+  const yahooPair = `${base}-USD`;
+  return await fetchYahooOHLCV(yahooPair, duration, "stock");
 }
 
 /**
