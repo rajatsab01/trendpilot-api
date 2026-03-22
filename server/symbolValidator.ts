@@ -85,6 +85,35 @@ function setCachedPrice(id: string, price: number): void {
   priceCache.set(id, { data: price, timestamp: Date.now() });
 }
 
+const FETCH_UA =
+  "Mozilla/5.0 (compatible; TrendPilot/1.0; +https://trendpilot.in)";
+
+/** Last-resort spot price when Binance + CoinGecko fail from cloud IPs (e.g. Render US). */
+async function tryCoinbaseSpotUsd(baseTicker: string): Promise<number | null> {
+  const b = baseTicker.toUpperCase().replace(/[^A-Z]/g, "");
+  if (b.length < 2 || b.length > 12) return null;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const r = await fetch(
+      `https://api.coinbase.com/v2/prices/${encodeURIComponent(b)}-USD/spot`,
+      {
+        signal: controller.signal,
+        headers: { Accept: "application/json", "User-Agent": FETCH_UA },
+      },
+    );
+    clearTimeout(timeoutId);
+    if (!r.ok) return null;
+    const j = (await r.json()) as { data?: { amount?: string } };
+    const amt = j?.data?.amount;
+    if (!amt) return null;
+    const p = parseFloat(amt);
+    return Number.isFinite(p) && p > 0 ? p : null;
+  } catch {
+    return null;
+  }
+}
+
 //------------------------------------------------------
 // ✅ Crypto Validation
 //------------------------------------------------------
@@ -98,13 +127,18 @@ async function validateCryptoSymbol(symbol: string): Promise<SymbolValidationRes
     `https://api1.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
     `https://api2.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
     `https://api3.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+    // US-regulated endpoint — often works when .com is blocked from US datacenter IPs (e.g. Render)
+    `https://api.binance.us/api/v3/ticker/price?symbol=${binanceSymbol}`,
   ];
 
   for (const url of urls) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const resp = await fetch(url, { signal: controller.signal });
+      const resp = await fetch(url, {
+        signal: controller.signal,
+        headers: { Accept: "application/json", "User-Agent": FETCH_UA },
+      });
       clearTimeout(timeoutId);
       if (!resp.ok) continue;
       const data = await resp.json();
@@ -141,16 +175,38 @@ async function validateCryptoAlternative(clean: string, binanceSymbol: string): 
     const cached = getCachedPrice(id);
     if (cached)
       return { isValid: true, correctedSymbol: binanceSymbol, assetName: base, currentPrice: cached, sourceCurrency: "USD", exchange: "CoinGecko", source: "CoinGecko" };
-    const resp = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
-    if (resp.ok) {
-      const data = await resp.json();
-      const price = data?.[id]?.usd;
-      if (price) {
-        setCachedPrice(id, price);
-        return { isValid: true, correctedSymbol: binanceSymbol, assetName: base, currentPrice: price, sourceCurrency: "USD", exchange: "CoinGecko", source: "CoinGecko" };
+    try {
+      const cg = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`,
+        { headers: { Accept: "application/json", "User-Agent": FETCH_UA } },
+      );
+      if (cg.ok) {
+        const data = await cg.json();
+        const price = data?.[id]?.usd;
+        if (price) {
+          setCachedPrice(id, price);
+          return { isValid: true, correctedSymbol: binanceSymbol, assetName: base, currentPrice: price, sourceCurrency: "USD", exchange: "CoinGecko", source: "CoinGecko" };
+        }
       }
+    } catch (e) {
+      console.warn(`[symbolValidator] CoinGecko failed for ${base}:`, e);
     }
   }
+
+  const coinbaseUsd = await tryCoinbaseSpotUsd(base);
+  if (coinbaseUsd != null) {
+    if (id) setCachedPrice(id, coinbaseUsd);
+    return {
+      isValid: true,
+      correctedSymbol: binanceSymbol,
+      assetName: base,
+      currentPrice: coinbaseUsd,
+      sourceCurrency: "USD",
+      exchange: "Coinbase",
+      source: "Coinbase",
+    };
+  }
+
   return { isValid: false, error: `Symbol "${clean}" not found in Binance/CoinGecko.` };
 }
 

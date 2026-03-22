@@ -40,10 +40,7 @@ export default function Login() {
     onSuccess: (data) => {
       setIsVerified(true);
       setVerifiedPhone(data.phoneNumber);
-      toast({
-        title: t.success || "Success",
-        description: t.phoneVerified || "Phone number verified successfully!",
-      });
+      // UI already shows "Phone Verified" — avoid duplicate bottom-right toast
     },
     onError: () => {
       toast({
