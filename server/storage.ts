@@ -901,25 +901,9 @@ export class PgStorage implements IStorage {
   private db: NeonHttpDatabase;
 
   constructor() {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL environment variable is not set");
-    }
-
-    // Neon connection strings often require `sslmode=require`.
-    // If your pasted URL doesn't include it, add it automatically.
-    const rawUrl = process.env.DATABASE_URL;
-    let normalizedUrl = rawUrl;
-    try {
-      const u = new URL(rawUrl);
-      if (!u.searchParams.has("sslmode")) {
-        u.searchParams.set("sslmode", "require");
-      }
-      normalizedUrl = u.toString();
-    } catch {
-      // Fallback: best-effort query string append.
-      if (!rawUrl.includes("sslmode=")) {
-        normalizedUrl = rawUrl + (rawUrl.includes("?") ? "&sslmode=require" : "?sslmode=require");
-      }
+    const normalizedUrl = getNormalizedDatabaseUrl(process.env.DATABASE_URL);
+    if (!normalizedUrl) {
+      throw new Error("DATABASE_URL is missing or invalid");
     }
 
     const sqlClient = neon(normalizedUrl);
@@ -1794,13 +1778,40 @@ export class PgStorage implements IStorage {
   }
 }
 
-// Use PostgreSQL storage in production, in-memory for development
-export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();
+function getNormalizedDatabaseUrl(rawValue: string | undefined): string | null {
+  const raw = String(rawValue || "").trim();
+  if (!raw) return null;
 
-if (!process.env.DATABASE_URL) {
+  // Common mistake: users paste a psql CLI snippet instead of a real URL.
+  // Example bad value: "psql -h pg.neon.tech"
+  if (/^psql\b/i.test(raw)) return null;
+
+  try {
+    const u = new URL(raw);
+    if (!/^postgres(ql)?:$/i.test(u.protocol)) return null;
+    if (!u.searchParams.has("sslmode")) {
+      u.searchParams.set("sslmode", "require");
+    }
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+const normalizedDatabaseUrl = getNormalizedDatabaseUrl(process.env.DATABASE_URL);
+
+// Use PostgreSQL storage when URL is valid, otherwise in-memory fallback
+export const storage = normalizedDatabaseUrl ? new PgStorage() : new MemStorage();
+
+if (!normalizedDatabaseUrl) {
   console.log(
     "📌 DATABASE_URL not set — dev mode uses data/mem-storage.json so accounts and saved analyses survive server restarts. Use DATABASE_URL (e.g. Neon) in production.",
   );
+  if (process.env.DATABASE_URL) {
+    console.error(
+      "❌ DATABASE_URL is invalid. Use the full Neon connection string (postgresql://...), not a psql command.",
+    );
+  }
   if (process.env.NODE_ENV === "production") {
     console.error(
       "⚠️ PRODUCTION: DATABASE_URL is missing — Render cannot persist user accounts/saved analyses. Add DATABASE_URL in Render → Environment (e.g. Neon Postgres).",
