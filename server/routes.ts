@@ -823,6 +823,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /** Trader profile (Community → tap trader) — was missing; client always showed "Trader Not Found". */
+  app.get("/api/community/user/:traderId", async (req: Request, res: Response) => {
+    try {
+      const { traderId } = req.params;
+      const currentUserId =
+        typeof req.query.currentUserId === "string" ? req.query.currentUserId.trim() : undefined;
+
+      const user = await storage.getUser(traderId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const [followers, following, analyses] = await Promise.all([
+        storage.getFollowers(traderId),
+        storage.getFollowing(traderId),
+        storage.getAnalysesByUser(traderId),
+      ]);
+      const publishedCount = analyses.filter((a) => a.isPublished === 1).length;
+
+      let isFollowing = false;
+      let isBlocked = false;
+      if (currentUserId) {
+        [isFollowing, isBlocked] = await Promise.all([
+          storage.isFollowing(currentUserId, traderId),
+          storage.isBlocked(currentUserId, traderId),
+        ]);
+      }
+
+      res.json({
+        user: {
+          id: user.id,
+          name: user.name,
+          alias: user.alias,
+          isBanned: user.isBanned,
+          lastSeen: user.lastSeen,
+        },
+        stats: {
+          followers: followers.length,
+          following: following.length,
+          publishedAnalyses: publishedCount,
+        },
+        relationship: {
+          isFollowing,
+          isBlocked,
+        },
+      });
+    } catch (error) {
+      console.error("Get community user profile error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  /** Published analyses for one trader (profile grid). */
+  app.get("/api/community/user/:traderId/analyses", async (req: Request, res: Response) => {
+    try {
+      const { traderId } = req.params;
+      const user = await storage.getUser(traderId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const all = await storage.getAnalysesByUser(traderId);
+      const published = all
+        .filter((a) => a.isPublished === 1)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+        );
+
+      const author = {
+        id: user.id,
+        name: user.name,
+        mobile: user.mobile,
+        language: user.language,
+        currency: user.currency,
+        exchange: user.exchange,
+        tokens: user.tokens,
+        maxTokens: user.maxTokens,
+        pwaInstallBonusClaimed: user.pwaInstallBonusClaimed,
+        isAdmin: user.isAdmin,
+        alias: user.alias,
+        rulesAccepted: user.rulesAccepted,
+        lastSeen: user.lastSeen,
+        isBanned: user.isBanned,
+        createdAt: user.createdAt,
+      };
+
+      const withAuthor = published.map((a) => ({ ...a, author }));
+      res.json(withAuthor);
+    } catch (error) {
+      console.error("Get trader published analyses error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/community/rules/accept", async (req: Request, res: Response) => {
     try {
       const { userId, alias } = req.body as any;

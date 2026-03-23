@@ -904,7 +904,25 @@ export class PgStorage implements IStorage {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    const sqlClient = neon(process.env.DATABASE_URL);
+
+    // Neon connection strings often require `sslmode=require`.
+    // If your pasted URL doesn't include it, add it automatically.
+    const rawUrl = process.env.DATABASE_URL;
+    let normalizedUrl = rawUrl;
+    try {
+      const u = new URL(rawUrl);
+      if (!u.searchParams.has("sslmode")) {
+        u.searchParams.set("sslmode", "require");
+      }
+      normalizedUrl = u.toString();
+    } catch {
+      // Fallback: best-effort query string append.
+      if (!rawUrl.includes("sslmode=")) {
+        normalizedUrl = rawUrl + (rawUrl.includes("?") ? "&sslmode=require" : "?sslmode=require");
+      }
+    }
+
+    const sqlClient = neon(normalizedUrl);
     this.db = drizzle(sqlClient);
   }
 

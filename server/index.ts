@@ -32,10 +32,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
+// Render (and some dashboards) show deploy output first; runtime logs stream separately.
+// Explicit /api lines make API traffic obvious even if morgan lines are easy to miss.
+app.use((req, _res, next) => {
+  const path = req.originalUrl.split("?")[0] || req.path;
+  if (path.startsWith("/api")) {
+    console.log(`[api] ${req.method} ${req.originalUrl}`);
+  }
+  next();
+});
+
 // ----------------------------
 // Health
 // ----------------------------
 app.get("/health", (_req: Request, res: Response) => {
+  res.json({ ok: true, env: NODE_ENV });
+});
+
+// Render's default health checks are commonly configured to `/healthz`.
+// Keep this as a JSON endpoint so probes reflect the real API availability.
+app.get("/healthz", (_req: Request, res: Response) => {
   res.json({ ok: true, env: NODE_ENV });
 });
 

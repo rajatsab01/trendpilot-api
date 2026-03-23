@@ -16,3 +16,7 @@ services:
         value: production
       - key: PORT
         value: 10000
+
+    # Required for production persistence (accounts + saved analyses).
+    # Add it in Render -> Web Service -> Environment as `DATABASE_URL`.
+    # Example (Neon): postgresql://USER:PASS@HOST/DB?sslmode=require

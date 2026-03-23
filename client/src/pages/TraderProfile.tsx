@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -33,16 +33,16 @@ type TraderProfile = {
   };
 };
 
-export default function TraderProfile({ params }: { params: { traderId: string } }) {
+export default function TraderProfile({ params }: { params?: { traderId?: string } }) {
   const [, setLocation] = useLocation();
+  const [, routeParams] = useRoute("/trader/:traderId");
   const { toast } = useToast();
   const { guardAction, UpdateModal } = useVersionGuard();
   const { t } = useLanguage();
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
   const userId = localStorage.getItem("userId");
-  const traderId = params.traderId;
+  const traderId = params?.traderId ?? routeParams?.traderId ?? "";
 
   // Fetch trader profile
   const { data: profile, isLoading: profileLoading } = useQuery<TraderProfile>({
@@ -237,100 +237,110 @@ export default function TraderProfile({ params }: { params: { traderId: string }
             </button>
           </div>
         ) : (
-          <div className="p-4 space-y-4">
-            {/* Profile Header */}
-            <div className="bg-[#1a241f] rounded-xl p-6 border border-[#2a3c33]">
-              {/* Avatar and Name */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-[#38e07b]/20 flex items-center justify-center">
-                    <span className="text-[#38e07b] text-2xl font-bold">{avatarLetter}</span>
+          <div className="pb-4">
+            {/* Instagram-style: cover strip + overlapping avatar + stats + actions */}
+            <div className="relative">
+              <div className="h-28 bg-gradient-to-br from-[#1c3028] via-[#111714] to-[#0d1512] border-b border-[#2a3c33]" />
+              <div className="px-4 -mt-10 flex flex-col items-stretch">
+                <div className="flex items-end justify-between gap-3">
+                  <div className="w-[88px] h-[88px] rounded-full bg-[#111714] p-1 ring-2 ring-[#38e07b]/40 shadow-lg shrink-0">
+                    <div className="w-full h-full rounded-full bg-[#38e07b]/20 flex items-center justify-center">
+                      <span className="text-[#38e07b] text-3xl font-bold">{avatarLetter}</span>
+                    </div>
                   </div>
+                  {userId !== traderId && (
+                    <div className="flex flex-wrap gap-2 justify-end pb-1">
+                      <button
+                        type="button"
+                        onClick={handleFollow}
+                        disabled={followMutation.isPending || profile.relationship.isBlocked}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold disabled:opacity-50 ${
+                          profile.relationship.isFollowing
+                            ? "bg-[#2a3c33] text-white border border-[#3d5248]"
+                            : "bg-[#38e07b] text-[#111714]"
+                        }`}
+                        data-testid="button-follow"
+                      >
+                        {profile.relationship.isFollowing ? t.unfollow : t.follow}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleMessage}
+                        disabled={profile.relationship.isBlocked}
+                        className="px-4 py-2 rounded-full text-sm font-semibold bg-[#2a3c33] text-white border border-[#3d5248] disabled:opacity-50"
+                        data-testid="button-message"
+                      >
+                        {t.message}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 space-y-1">
+                  <h2 className="text-white font-bold text-xl tracking-tight">{displayName}</h2>
+                  {profile.user.alias ? (
+                    <p className="text-[#9eb7a8] text-sm">@{profile.user.alias}</p>
+                  ) : null}
+                  {profile.user.isBanned === 1 && (
+                    <span className="inline-block px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-md">
+                      {t.banned}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex justify-around py-4 mt-2 border-y border-[#2a3c33] text-center">
                   <div>
-                    <h2 className="text-white font-semibold text-xl">{displayName}</h2>
-                    {profile.user.isBanned === 1 && (
-                      <span className="inline-block mt-1 px-2 py-1 bg-red-500/20 text-red-500 text-xs rounded-md">
-                        {t.banned}
-                      </span>
-                    )}
+                    <div className="text-white font-bold text-lg leading-tight">{profile.stats.publishedAnalyses}</div>
+                    <div className="text-[#9eb7a8] text-xs uppercase tracking-wide">{t.analyses}</div>
+                  </div>
+                  <div className="w-px bg-[#2a3c33] self-stretch my-1" />
+                  <div>
+                    <div className="text-white font-bold text-lg leading-tight">{profile.stats.followers}</div>
+                    <div className="text-[#9eb7a8] text-xs uppercase tracking-wide">{t.followers}</div>
+                  </div>
+                  <div className="w-px bg-[#2a3c33] self-stretch my-1" />
+                  <div>
+                    <div className="text-white font-bold text-lg leading-tight">{profile.stats.following}</div>
+                    <div className="text-[#9eb7a8] text-xs uppercase tracking-wide">{t.following}</div>
                   </div>
                 </div>
-              </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center">
-                  <div className="text-white font-bold text-2xl">{profile.stats.publishedAnalyses}</div>
-                  <div className="text-[#9eb7a8] text-sm">{t.analyses}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white font-bold text-2xl">{profile.stats.followers}</div>
-                  <div className="text-[#9eb7a8] text-sm">{t.followers}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white font-bold text-2xl">{profile.stats.following}</div>
-                  <div className="text-[#9eb7a8] text-sm">{t.following}</div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              {userId !== traderId && (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                {userId !== traderId && (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
                     <button
-                      onClick={handleFollow}
-                      disabled={followMutation.isPending || profile.relationship.isBlocked}
-                      className={`px-4 py-2 rounded-xl font-semibold disabled:opacity-50 ${
-                        profile.relationship.isFollowing
-                          ? "bg-[#2a3c33] text-white"
-                          : "bg-[#38e07b] text-[#111714]"
-                      }`}
-                      data-testid="button-follow"
-                    >
-                      {profile.relationship.isFollowing ? t.unfollow : t.follow}
-                    </button>
-                    <button
+                      type="button"
                       onClick={handlePin}
                       disabled={pinMutation.isPending || profile.relationship.isBlocked}
-                      className={`px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-1 disabled:opacity-50 ${
+                      className={`py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1 disabled:opacity-50 ${
                         isPinned
-                          ? "bg-[#38e07b]/20 text-[#38e07b] border border-[#38e07b]"
-                          : "bg-[#2a3c33] text-white"
+                          ? "bg-[#38e07b]/15 text-[#38e07b] border border-[#38e07b]/50"
+                          : "bg-[#1a241f] text-white border border-[#2a3c33]"
                       }`}
                       data-testid="button-pin"
                     >
-                      <span className="material-symbols-outlined text-lg">
-                        {isPinned ? "push_pin" : "push_pin"}
-                      </span>
+                      <span className="material-symbols-outlined text-lg">push_pin</span>
                       {isPinned ? t.pinned : t.pin}
                     </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={handleMessage}
-                      disabled={profile.relationship.isBlocked}
-                      className="bg-[#2a3c33] text-white px-4 py-2 rounded-xl font-semibold disabled:opacity-50"
-                      data-testid="button-message"
-                    >
-                      {t.message}
-                    </button>
-                    <button
+                      type="button"
                       onClick={handleBlock}
                       disabled={blockMutation.isPending}
-                      className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl font-semibold"
+                      className="py-2.5 rounded-xl text-sm font-semibold bg-red-500/10 text-red-400 border border-red-500/30"
                       data-testid="button-block"
                     >
                       {profile.relationship.isBlocked ? t.unblock : t.block}
                     </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Published Analyses */}
-            <div>
-              <h3 className="text-white font-semibold text-lg mb-3">{t.publishedAnalyses}</h3>
-              
+            <div className="px-4 mt-6">
+              <div className="flex items-center gap-2 mb-3 border-b border-[#2a3c33] pb-2">
+                <span className="material-symbols-outlined text-[#38e07b] text-xl">grid_view</span>
+                <h3 className="text-white font-semibold">{t.publishedAnalyses}</h3>
+              </div>
+
               {analysesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-[#9eb7a8]">{t.loadingAnalyses}</div>
@@ -339,44 +349,39 @@ export default function TraderProfile({ params }: { params: { traderId: string }
                 <div className="bg-[#1a241f] rounded-xl p-8 text-center border border-[#2a3c33]">
                   <span className="material-symbols-outlined text-[#6a7f72] text-5xl mb-3 block">analytics</span>
                   <h3 className="text-white font-semibold mb-2">{t.noPublishedAnalyses}</h3>
-                  <p className="text-[#9eb7a8] text-sm">
-                    {t.noPublishedAnalysesDesc}
-                  </p>
+                  <p className="text-[#9eb7a8] text-sm">{t.noPublishedAnalysesDesc}</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {analyses.map((analysis) => (
-                    <div
+                    <button
+                      type="button"
                       key={analysis.id}
                       onClick={() => setLocation(`/dashboard?analysisId=${analysis.id}&fromCommunity=true`)}
-                      className="bg-[#1a241f] rounded-xl p-4 border border-[#2a3c33] cursor-pointer hover:border-[#38e07b]/50 transition-colors"
+                      className="bg-[#1a241f] rounded-xl p-3 border border-[#2a3c33] text-left hover:border-[#38e07b]/45 hover:bg-[#1f2a24] transition-colors min-h-[120px] flex flex-col"
                       data-testid={`analysis-card-${analysis.id}`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="text-white font-semibold text-lg">{analysis.symbol}</h4>
-                          <p className="text-[#9eb7a8] text-sm">
-                            {analysis.assetName || analysis.instrumentName}
-                          </p>
-                        </div>
+                      <div className="flex items-start justify-between gap-1 mb-2">
+                        <span className="text-white font-bold text-sm truncate">{analysis.correctedSymbol || analysis.symbol}</span>
                         <span
-                          className={`px-3 py-1 rounded-md text-sm font-semibold ${
+                          className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${
                             analysis.recommendation === "BUY"
                               ? "bg-[#38e07b]/20 text-[#38e07b]"
-                              : "bg-red-500/20 text-red-500"
+                              : "bg-red-500/20 text-red-400"
                           }`}
                         >
                           {analysis.recommendation}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-[#9eb7a8]">
-                        <span className="capitalize">{analysis.duration.replace("_", " ")}</span>
-                        <span>•</span>
-                        <span>{analysis.confidence}% Confidence</span>
-                        <span>•</span>
-                        <span>{analysis.createdAt ? formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true }) : "N/A"}</span>
-                      </div>
-                    </div>
+                      <p className="text-[#9eb7a8] text-xs line-clamp-2 flex-1">
+                        {analysis.assetName || analysis.instrumentName || analysis.market}
+                      </p>
+                      <p className="text-[#6a7f72] text-[10px] mt-2">
+                        {analysis.createdAt
+                          ? formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })
+                          : ""}
+                      </p>
+                    </button>
                   ))}
                 </div>
               )}

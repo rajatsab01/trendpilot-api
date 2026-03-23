@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import { z } from "zod";
 import { getPromptLang } from "./translations";
 import { getOfflineExplanatoryNotes } from "./standardDisclaimer";
 import { getOfflineNarratives } from "./offlineNarratives";
@@ -121,6 +122,80 @@ function syncTakeProfitLevelsWithPrimaryTakeProfit(
     data.tp3 = e - (e - t3) * ratio;
   }
 }
+
+function recomputeSupportResistanceLevelsFromBrackets(data: any) {
+  const e = Number(data.entry);
+  const sl = Number(data.stopLoss);
+  const tp = Number(data.takeProfit);
+  if (!Number.isFinite(e) || !Number.isFinite(sl) || !Number.isFinite(tp)) return;
+  if (data.recommendation !== "BUY" && data.recommendation !== "SELL") return;
+
+  const isBuy = data.recommendation === "BUY";
+  const riskDist = isBuy ? e - sl : sl - e; // positive
+  const rewardDist = isBuy ? tp - e : e - tp; // positive
+
+  if (riskDist <= 0 || rewardDist <= 0) return;
+
+  if (isBuy) {
+    // s1..s3 bracket the risk distance; r1..r3 bracket the reward distance.
+    data.s1 = e - riskDist * 0.5;
+    data.s2 = e - riskDist * 1.0;
+    data.s3 = e - riskDist * 1.5;
+    data.r1 = e + rewardDist * (1 / 6);
+    data.r2 = e + rewardDist * (1 / 3);
+    data.r3 = e + rewardDist * (1 / 2);
+  } else {
+    // For SELL, levels invert around the entry.
+    data.s1 = e + riskDist * 0.5;
+    data.s2 = e + riskDist * 1.0;
+    data.s3 = e + riskDist * 1.5;
+    data.r1 = e - rewardDist * (1 / 6);
+    data.r2 = e - rewardDist * (1 / 3);
+    data.r3 = e - rewardDist * (1 / 2);
+  }
+}
+
+const aiNumber = z.preprocess(
+  (v) => (typeof v === "string" ? Number(v) : v),
+  z.number().finite(),
+);
+
+const aiResponseSchema = z.object({
+  correctedSymbol: z.string().min(1),
+  assetName: z.string().min(1),
+  marketType: z.string().min(1),
+  livePrice: aiNumber,
+  candleClosePrice: aiNumber,
+  recommendation: z.enum(["BUY", "SELL"]),
+  confidence: aiNumber,
+  sentiment: z.enum(["Bullish", "Bearish"]),
+  marketSentiment: z.string(),
+  newsHighlights: z.string(),
+  deepAnalysis: z.string(),
+  analysis: z.string(),
+  rsi: aiNumber,
+  macd: aiNumber,
+  stochastic: aiNumber,
+  bollingerBands: aiNumber,
+  entry: aiNumber,
+  takeProfit: aiNumber,
+  stopLoss: aiNumber,
+  tp1: aiNumber,
+  tp2: aiNumber,
+  tp3: aiNumber,
+  s1: aiNumber,
+  s2: aiNumber,
+  s3: aiNumber,
+  r1: aiNumber,
+  r2: aiNumber,
+  r3: aiNumber,
+  trailingStopStrategy: z.string(),
+  probabilityScore: z.preprocess(
+    (v) => (typeof v === "string" ? Number(v) : v),
+    z.number().min(0).max(100),
+  ),
+  explanatoryNotes: z.string(),
+});
 
 export interface CandleData {
   timestamp: string;
@@ -274,6 +349,8 @@ ${indicatorBlock ? `\n${indicatorBlock}\n` : ""}
 
 VOICE & STRUCTURE (critical):
 - Target style: professional desk note — concrete prices in ${currency}, no essay filler, no markdown, no raw URLs.
+- Ban vague one-liners (e.g. "structure favors buyers" with no level). Every paragraph must name specific prices, zones, or indicator readings from the snapshot.
+- Open "analysis" with one crisp thesis sentence, then evidence; end with what would prove the thesis wrong (invalidation), using exact bracket levels.
 - In deepAnalysis and analysis you MUST weave in the PRECOMPUTED rsi / macd / stochastic / bollingerBands numbers exactly as given above (same decimals); explain what they imply for bias and invalidation in ${promptLanguageName}.
 - marketSentiment: 3–5 sentences on structure, positioning, nearby levels (use DATA SNAPSHOT prices). Avoid repeated "caution" or disclaimer-style warnings — the app shows a disclaimer block separately.
 - newsHighlights: 3–6 sentences or short line breaks; themes, flows, catalysts. No lecturing users to verify news elsewhere.
@@ -452,14 +529,106 @@ RESPONSE RULES:
 
   let data: any;
   try {
-    let txt = (raw?.choices?.[0]?.message?.content ?? "").trim();
-    const s = txt.indexOf("{"), e = txt.lastIndexOf("}");
+    const txt = String(raw?.choices?.[0]?.message?.content ?? "").trim();
+
+    // Extract the first JSON object from the response.
+    const s = txt.indexOf("{"),
+      e = txt.lastIndexOf("}");
     if (s === -1 || e === -1) throw new Error("JSON_NOT_FOUND");
-    
-    data = JSON.parse(txt.slice(s, e + 1));
+
+    const jsonText = txt.slice(s, e + 1);
+    const parsed = JSON.parse(jsonText);
+    data = aiResponseSchema.parse(parsed);
   } catch (parseErr: any) {
-    console.error("❌ [Perplexity] JSON Parse Error:", parseErr.message, raw?.choices?.[0]?.message?.content);
-    throw new Error(`AI returned invalid format. Please try again in a few moments.`);
+    console.error(
+      "❌ [Perplexity] JSON Parse/Schema Error:",
+      parseErr?.message,
+      raw?.choices?.[0]?.message?.content,
+    );
+
+    // Fallback: build a valid analysis JSON using our offline logic.
+    const ci = computeIndicatorsFromCandles(priceData.historicalCandles);
+    const rsiN = ci?.rsi ? parseFloat(ci.rsi) : 50;
+    const macdN = ci?.macd ? parseFloat(ci.macd) : 0;
+    const stochN = ci?.stochastic ? parseFloat(ci.stochastic) : 50;
+    const bbPct = ci?.bollingerBands.match(/^%B ([\d.-]+)/)?.[1];
+    const bbN = bbPct ? parseFloat(bbPct) : 50;
+
+    let recommendation: "BUY" | "SELL" = "BUY";
+    let sentiment: "Bullish" | "Bearish" = "Bullish";
+    if (rsiN > 58 && macdN <= 0 && stochN > 55) {
+      recommendation = "SELL";
+      sentiment = "Bearish";
+    } else if (rsiN < 42 && macdN >= 0 && stochN < 45) {
+      recommendation = "BUY";
+      sentiment = "Bullish";
+    } else if (rsiN > 55 && macdN < 0) {
+      recommendation = "SELL";
+      sentiment = "Bearish";
+    } else if (rsiN < 48 && macdN > 0) {
+      recommendation = "BUY";
+      sentiment = "Bullish";
+    }
+
+    const lp = priceData.livePrice;
+    const mult = recommendation === "BUY" ? 1 : -1;
+
+    const prob = Math.round(
+      Math.min(
+        88,
+        Math.max(
+          42,
+          52 +
+            (recommendation === "BUY" ? (50 - rsiN) * 0.45 + macdN * 80 : (rsiN - 50) * 0.45 - macdN * 80) +
+            (recommendation === "BUY" ? (50 - bbN) * 0.08 : (bbN - 50) * 0.08),
+        ),
+      ),
+    );
+    const conf = Math.min(90, Math.max(50, prob + Math.round(Math.sin((rsiN + stochN) * 0.1) * 4)));
+
+    const offline = getOfflineNarratives(langCode, {
+      timeframe: priceData.timeframe,
+      symbol,
+      recommendation,
+      sentiment,
+      bbN,
+      macdN,
+      mult,
+    } as any);
+
+    data = {
+      correctedSymbol: symbol,
+      assetName: symbol,
+      marketType: market,
+      livePrice: priceData.livePrice,
+      candleClosePrice: priceData.candleClosePrice,
+      recommendation,
+      confidence: conf,
+      sentiment,
+      marketSentiment: offline.marketSentiment,
+      newsHighlights: offline.newsHighlights,
+      deepAnalysis: offline.deepAnalysis,
+      analysis: offline.analysis,
+      rsi: rsiN,
+      macd: macdN,
+      stochastic: stochN,
+      bollingerBands: bbN,
+      entry: lp * (1 + mult * 0.005),
+      takeProfit: lp * (1 + mult * 0.12),
+      stopLoss: lp * (1 - mult * 0.04),
+      tp1: lp * (1 + mult * 0.04),
+      tp2: lp * (1 + mult * 0.08),
+      tp3: lp * (1 + mult * 0.12),
+      s1: lp * (1 - mult * 0.02),
+      s2: lp * (1 - mult * 0.04),
+      s3: lp * (1 - mult * 0.06),
+      r1: lp * (1 + mult * 0.02),
+      r2: lp * (1 + mult * 0.04),
+      r3: lp * (1 + mult * 0.06),
+      trailingStopStrategy: offline.trailingStopStrategy,
+      probabilityScore: prob,
+      explanatoryNotes: getOfflineExplanatoryNotes(langCode),
+    };
   }
 
   const narrativeKeys = [
@@ -506,6 +675,10 @@ RESPONSE RULES:
       syncTakeProfitLevelsWithPrimaryTakeProfit(data, tpBeforeRrBoost, data.recommendation);
     }
   }
+
+  // Ensure support/resistance levels follow the same final duration-adjusted brackets.
+  // This prevents mismatches where s/r look inconsistent for scalping vs long-term.
+  recomputeSupportResistanceLevelsFromBrackets(data);
 
   // currency conversion
   const detected = data.marketType;

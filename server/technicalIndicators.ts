@@ -108,24 +108,13 @@ export function computeIndicatorsFromCandles(candles: OHLCBar[]): ComputedIndica
 
   if (rsi === null && macd === null && stoch === null && pctB === null) return null;
 
-  const bandWidth =
-    closes.length >= 20
-      ? (() => {
-          const slice = closes.slice(-20);
-          const mean = slice.reduce((a, b) => a + b, 0) / 20;
-          const variance = slice.reduce((s, x) => s + (x - mean) ** 2, 0) / 20;
-          const std = Math.sqrt(variance);
-          return mean !== 0 ? ((4 * std) / mean) * 100 : null;
-        })()
-      : null;
-
   return {
     rsi: rsi !== null ? rsi.toFixed(1) : "",
     macd: macd !== null ? macd.toFixed(4) : "",
     stochastic: stoch !== null ? stoch.toFixed(1) : "",
     bollingerBands:
       pctB !== null
-        ? `%B ${pctB.toFixed(1)}${bandWidth !== null ? `, width ${bandWidth.toFixed(2)}%` : ""}`
+        ? `%B ${pctB.toFixed(1)}`
         : "",
   };
 }
