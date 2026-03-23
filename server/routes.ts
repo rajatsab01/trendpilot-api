@@ -197,6 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mobile: canonicalMobile,
           language,
           tokens: 20, // Give new users 20 tokens instead of 0
+          maxTokens: 20, // Highest-ever cap for UI (DB column defaults to 0 if omitted)
         } as any);
 
         return res.json({ userId: user.id, tokens: user.tokens });
