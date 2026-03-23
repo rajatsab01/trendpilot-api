@@ -253,7 +253,6 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
     };
 
     const displayMarketSentiment = fmtNarrative(analysis.marketSentiment);
-    const displayNewsHighlights = fmtNarrative(analysis.newsHighlights);
     const displayDeepAnalysis = fmtNarrative(analysis.deepAnalysis);
     const displayAiVerdict = fmtNarrative(analysis.analysis);
     const displayTrailing = fmtNarrative(analysis.trailingStopStrategy, true);
@@ -501,18 +500,6 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                 </h2>
                 <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-market-sentiment">
                   {displayMarketSentiment}
-                </p>
-              </div>
-            )}
-
-            {displayNewsHighlights && (
-              <div className="rounded-2xl bg-[#1c2620] p-4 border border-[#38e07b]/25">
-                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#38e07b]">newspaper</span>
-                  {t.recentNewsAndSentiment}
-                </h2>
-                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed whitespace-pre-wrap" data-testid="text-news-highlights">
-                  {displayNewsHighlights}
                 </p>
               </div>
             )}
