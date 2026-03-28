@@ -6,7 +6,7 @@ import { getOfflineNarratives } from "./offlineNarratives";
 import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
 import { getExchangeCurrency, isForexPair } from "./symbolValidator";
 import { computeIndicatorsFromCandles } from "./technicalIndicators";
-import { AnalysisUnavailableError } from "./analysisErrors";
+import { AnalysisUnavailableError, type AnalysisUnavailableReason } from "./analysisErrors";
 
 /** Deterministic small spread per symbol (not security-sensitive). */
 function hashSeed(s: string): number {
@@ -547,9 +547,9 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
     duration === "scalping" || duration === "short_term" ? "day" : "week";
 
   let raw: any;
-  if (!process.env.PERPLEXITY_API_KEY) {
+  if (!process.env.PERPLEXITY_API_KEY?.trim()) {
     if (!allowOffline) {
-      throw new AnalysisUnavailableError();
+      throw new AnalysisUnavailableError(undefined, "MISSING_PERPLEXITY_API_KEY");
     }
     console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: missing API key — dev offline payload");
     const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
@@ -605,7 +605,10 @@ RESPONSE RULES:
           const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
           raw = wrapOfflineRawChoiceJson(payload);
         } else {
-          throw new AnalysisUnavailableError();
+          throw new AnalysisUnavailableError(
+            undefined,
+            `PERPLEXITY_HTTP_${response.status}` as AnalysisUnavailableReason,
+          );
         }
       } else {
         raw = await response.json();
@@ -618,7 +621,7 @@ RESPONSE RULES:
         const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
         raw = wrapOfflineRawChoiceJson(payload);
       } else {
-        throw new AnalysisUnavailableError();
+        throw new AnalysisUnavailableError(undefined, "PERPLEXITY_NETWORK");
       }
     }
   }
@@ -642,7 +645,7 @@ RESPONSE RULES:
       raw?.choices?.[0]?.message?.content,
     );
     if (!allowOffline) {
-      throw new AnalysisUnavailableError();
+      throw new AnalysisUnavailableError(undefined, "PERPLEXITY_PARSE_OR_SCHEMA");
     }
     console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: parse/schema — dev offline payload");
     data = buildOfflineAiPayload(symbol, market, priceData, langCode);

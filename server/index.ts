@@ -24,6 +24,13 @@ const app = express();
 const PORT = Number(process.env.PORT || 10000);
 const NODE_ENV = process.env.NODE_ENV || "development";
 
+const perplexityKeyConfigured = Boolean(process.env.PERPLEXITY_API_KEY?.trim());
+if (NODE_ENV === "production" && !perplexityKeyConfigured) {
+  console.error(
+    "⚠️ CRITICAL: PERPLEXITY_API_KEY is missing or empty. POST /api/analyze will return 503 until you set it in your host (Render → Environment → add PERPLEXITY_API_KEY). Repo .env is not used on Render unless you add a secret file.",
+  );
+}
+
 // ----------------------------
 // Middlewares
 // ----------------------------
@@ -46,13 +53,18 @@ app.use((req, _res, next) => {
 // Health
 // ----------------------------
 app.get("/health", (_req: Request, res: Response) => {
-  res.json({ ok: true, env: NODE_ENV });
+  res.json({ ok: true, env: NODE_ENV, analysisEngineConfigured: perplexityKeyConfigured });
 });
 
 // Render's default health checks are commonly configured to `/healthz`.
 // Keep this as a JSON endpoint so probes reflect the real API availability.
 app.get("/healthz", (_req: Request, res: Response) => {
-  res.json({ ok: true, env: NODE_ENV });
+  res.json({
+    ok: true,
+    env: NODE_ENV,
+    /** False means analyze will 503 (no fake offline AI in production). */
+    analysisEngineConfigured: perplexityKeyConfigured,
+  });
 });
 
 // ----------------------------

@@ -726,6 +726,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (err: unknown) {
       if (isAnalysisUnavailableError(err)) {
+        if (err.reasonCode) {
+          console.error(`[503 /api/analyze] reason=${err.reasonCode}`);
+        }
         return res.status(503).json({
           error: err.message,
           retryable: true,
