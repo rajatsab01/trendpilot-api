@@ -7,6 +7,83 @@ import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter
 import { getExchangeCurrency, isForexPair } from "./symbolValidator";
 import { computeIndicatorsFromCandles } from "./technicalIndicators";
 
+/** Deterministic small spread per symbol (not security-sensitive). */
+function hashSeed(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+}
+
+/**
+ * Probability/confidence for offline / quota-exhausted analysis.
+ * The previous formula used `macd * 80`, which dominated and often forced
+ * `Math.max(42, raw)` — so many instruments showed the same ~42% "success" bar.
+ */
+function inferOfflineRecommendation(
+  rsiN: number,
+  macdN: number,
+  stochN: number,
+): { recommendation: "BUY" | "SELL"; sentiment: "Bullish" | "Bearish" } {
+  if (rsiN > 58 && macdN <= 0 && stochN > 55) {
+    return { recommendation: "SELL", sentiment: "Bearish" };
+  }
+  if (rsiN < 42 && macdN >= 0 && stochN < 45) {
+    return { recommendation: "BUY", sentiment: "Bullish" };
+  }
+  if (rsiN > 55 && macdN < 0) {
+    return { recommendation: "SELL", sentiment: "Bearish" };
+  }
+  if (rsiN < 48 && macdN > 0) {
+    return { recommendation: "BUY", sentiment: "Bullish" };
+  }
+  // Avoid defaulting everything to BUY when indicators are neutral
+  if (macdN < 0 && rsiN >= 50) {
+    return { recommendation: "SELL", sentiment: "Bearish" };
+  }
+  if (macdN > 0 && rsiN <= 50) {
+    return { recommendation: "BUY", sentiment: "Bullish" };
+  }
+  return rsiN >= 50
+    ? { recommendation: "SELL", sentiment: "Bearish" }
+    : { recommendation: "BUY", sentiment: "Bullish" };
+}
+
+function offlineProbabilityAndConfidence(
+  recommendation: "BUY" | "SELL",
+  rsiN: number,
+  macdN: number,
+  stochN: number,
+  bbN: number,
+  livePrice: number,
+  symbol: string,
+): { probabilityScore: number; confidence: number } {
+  const lp = Math.abs(livePrice) > 0 ? Math.abs(livePrice) : 1;
+  const macdDenom = lp * 0.0002 + Math.abs(macdN) * 0.15 + 1e-9;
+  const macdScaled = Math.tanh(macdN / macdDenom);
+
+  const rsiEdge = recommendation === "BUY" ? 50 - rsiN : rsiN - 50;
+  const bbEdge = recommendation === "BUY" ? 50 - bbN : bbN - 50;
+  const stochEdge = recommendation === "BUY" ? 50 - stochN : stochN - 50;
+
+  const macdEdge = recommendation === "BUY" ? macdScaled : -macdScaled;
+
+  const raw =
+    52 +
+    rsiEdge * 0.32 +
+    bbEdge * 0.14 +
+    stochEdge * 0.12 +
+    macdEdge * 16 +
+    ((hashSeed(symbol.toUpperCase()) % 11) - 5);
+
+  const probabilityScore = Math.round(Math.min(88, Math.max(36, raw)));
+  const jitter = (hashSeed(`${symbol}:conf`) % 9) - 4;
+  const confidence = Math.min(90, Math.max(48, probabilityScore + jitter));
+  return { probabilityScore, confidence };
+}
+
 /** Remove legacy "(Analysis in English)" / "(Analysis in …)" prefixes models or fallbacks may emit */
 function stripAnalysisMetaPrefix(s: unknown): string {
   if (s == null || typeof s !== "string") return "";
@@ -445,34 +522,17 @@ RESPONSE RULES:
       const stochN = ci?.stochastic ? parseFloat(ci.stochastic) : 50;
       const bbPct = ci?.bollingerBands.match(/^%B ([\d.-]+)/)?.[1];
       const bbN = bbPct ? parseFloat(bbPct) : 50;
-      let recommendation: "BUY" | "SELL" = "BUY";
-      let sentiment: "Bullish" | "Bearish" = "Bullish";
-      if (rsiN > 58 && macdN <= 0 && stochN > 55) {
-        recommendation = "SELL";
-        sentiment = "Bearish";
-      } else if (rsiN < 42 && macdN >= 0 && stochN < 45) {
-        recommendation = "BUY";
-        sentiment = "Bullish";
-      } else if (rsiN > 55 && macdN < 0) {
-        recommendation = "SELL";
-        sentiment = "Bearish";
-      } else if (rsiN < 48 && macdN > 0) {
-        recommendation = "BUY";
-        sentiment = "Bullish";
-      }
+      const { recommendation, sentiment } = inferOfflineRecommendation(rsiN, macdN, stochN);
       const lp = priceData.livePrice;
-      const prob = Math.round(
-        Math.min(
-          88,
-          Math.max(
-            42,
-            52 +
-              (recommendation === "BUY" ? (50 - rsiN) * 0.45 + macdN * 80 : (rsiN - 50) * 0.45 - macdN * 80) +
-              (recommendation === "BUY" ? (50 - bbN) * 0.08 : (bbN - 50) * 0.08)
-          )
-        )
+      const { probabilityScore: prob, confidence: conf } = offlineProbabilityAndConfidence(
+        recommendation,
+        rsiN,
+        macdN,
+        stochN,
+        bbN,
+        lp,
+        symbol,
       );
-      const conf = Math.min(90, Math.max(50, prob + Math.round(Math.sin((rsiN + stochN) * 0.1) * 4)));
       const mult = recommendation === "BUY" ? 1 : -1;
       const offline = getOfflineNarratives(langCode, {
         timeframe: priceData.timeframe,
@@ -554,37 +614,20 @@ RESPONSE RULES:
     const bbPct = ci?.bollingerBands.match(/^%B ([\d.-]+)/)?.[1];
     const bbN = bbPct ? parseFloat(bbPct) : 50;
 
-    let recommendation: "BUY" | "SELL" = "BUY";
-    let sentiment: "Bullish" | "Bearish" = "Bullish";
-    if (rsiN > 58 && macdN <= 0 && stochN > 55) {
-      recommendation = "SELL";
-      sentiment = "Bearish";
-    } else if (rsiN < 42 && macdN >= 0 && stochN < 45) {
-      recommendation = "BUY";
-      sentiment = "Bullish";
-    } else if (rsiN > 55 && macdN < 0) {
-      recommendation = "SELL";
-      sentiment = "Bearish";
-    } else if (rsiN < 48 && macdN > 0) {
-      recommendation = "BUY";
-      sentiment = "Bullish";
-    }
+    const { recommendation, sentiment } = inferOfflineRecommendation(rsiN, macdN, stochN);
 
     const lp = priceData.livePrice;
     const mult = recommendation === "BUY" ? 1 : -1;
 
-    const prob = Math.round(
-      Math.min(
-        88,
-        Math.max(
-          42,
-          52 +
-            (recommendation === "BUY" ? (50 - rsiN) * 0.45 + macdN * 80 : (rsiN - 50) * 0.45 - macdN * 80) +
-            (recommendation === "BUY" ? (50 - bbN) * 0.08 : (bbN - 50) * 0.08),
-        ),
-      ),
+    const { probabilityScore: prob, confidence: conf } = offlineProbabilityAndConfidence(
+      recommendation,
+      rsiN,
+      macdN,
+      stochN,
+      bbN,
+      lp,
+      symbol,
     );
-    const conf = Math.min(90, Math.max(50, prob + Math.round(Math.sin((rsiN + stochN) * 0.1) * 4)));
 
     const offline = getOfflineNarratives(langCode, {
       timeframe: priceData.timeframe,
