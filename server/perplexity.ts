@@ -543,8 +543,13 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
 }
 `.trim();
 
-  const searchRecency =
+  const searchRecency: "day" | "week" =
     duration === "scalping" || duration === "short_term" ? "day" : "week";
+
+  /** Must match Render env `PERPLEXITY_MODEL`; defaults to sonar-pro when unset. */
+  const perplexityModel = process.env.PERPLEXITY_MODEL?.trim() || "sonar-pro";
+  const useSearchRecency =
+    process.env.PERPLEXITY_DISABLE_SEARCH_RECENCY !== "true" && /sonar/i.test(perplexityModel);
 
   let raw: any;
   if (!process.env.PERPLEXITY_API_KEY?.trim()) {
@@ -556,18 +561,11 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
     raw = wrapOfflineRawChoiceJson(payload);
   } else {
     try {
-      const response = await fetch("https://api.perplexity.ai/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "sonar-pro",
-          temperature: 0.25,
-          top_p: 0.9,
-          search_recency_filter: searchRecency,
-          messages: [
+      const chatPayload: Record<string, unknown> = {
+        model: perplexityModel,
+        temperature: 0.25,
+        top_p: 0.9,
+        messages: [
             {
               role: "system",
               content: `
@@ -589,7 +587,22 @@ RESPONSE RULES:
             },
             { role: "user", content: prompt },
           ],
-        }),
+      };
+      if (useSearchRecency) {
+        chatPayload.search_recency_filter = searchRecency;
+      }
+
+      console.log(
+        `🤖 [Perplexity] request model=${perplexityModel} searchRecency=${useSearchRecency ? searchRecency : "off"} symbol=${symbol}`,
+      );
+
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chatPayload),
       });
 
       if (!response.ok) {
@@ -639,10 +652,11 @@ RESPONSE RULES:
     const parsed = JSON.parse(jsonText);
     data = aiResponseSchema.parse(parsed);
   } catch (parseErr: any) {
+    const contentSnippet = String(raw?.choices?.[0]?.message?.content ?? "").slice(0, 1500);
     console.error(
       "❌ [Perplexity] JSON Parse/Schema Error:",
       parseErr?.message,
-      raw?.choices?.[0]?.message?.content,
+      contentSnippet ? `(content prefix, ${contentSnippet.length} chars) ${contentSnippet}` : "(empty content)",
     );
     if (!allowOffline) {
       throw new AnalysisUnavailableError(undefined, "PERPLEXITY_PARSE_OR_SCHEMA");

@@ -53,7 +53,12 @@ app.use((req, _res, next) => {
 // Health
 // ----------------------------
 app.get("/health", (_req: Request, res: Response) => {
-  res.json({ ok: true, env: NODE_ENV, analysisEngineConfigured: perplexityKeyConfigured });
+  res.json({
+    ok: true,
+    env: NODE_ENV,
+    analysisEngineConfigured: perplexityKeyConfigured,
+    perplexityModel: process.env.PERPLEXITY_MODEL?.trim() || "sonar-pro",
+  });
 });
 
 // Render's default health checks are commonly configured to `/healthz`.
@@ -64,6 +69,8 @@ app.get("/healthz", (_req: Request, res: Response) => {
     env: NODE_ENV,
     /** False means analyze will 503 (no fake offline AI in production). */
     analysisEngineConfigured: perplexityKeyConfigured,
+    /** Effective chat model for /api/analyze (env PERPLEXITY_MODEL or sonar-pro). */
+    perplexityModel: process.env.PERPLEXITY_MODEL?.trim() || "sonar-pro",
   });
 });
 
