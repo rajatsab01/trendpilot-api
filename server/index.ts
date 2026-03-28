@@ -27,7 +27,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const perplexityKeyConfigured = Boolean(process.env.PERPLEXITY_API_KEY?.trim());
 if (NODE_ENV === "production" && !perplexityKeyConfigured) {
   console.error(
-    "⚠️ CRITICAL: PERPLEXITY_API_KEY is missing or empty. POST /api/analyze will return 503 until you set it in your host (Render → Environment → add PERPLEXITY_API_KEY). Repo .env is not used on Render unless you add a secret file.",
+    "⚠️ CRITICAL: PERPLEXITY_API_KEY is missing or empty. Analyze will use indicator-only fallback (no charge). Set the key for live AI. To force 503 instead, set PERPLEXITY_STRICT_NO_FALLBACK=true.",
   );
 }
 

@@ -9,7 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import ReactionButtons from "@/components/ReactionButtons";
 import { Bookmark, BookmarkCheck, Download } from "lucide-react";
 import type { Analysis, User } from "@shared/schema";
-import { APP_VERSION } from "@shared/schema";
+import { APP_VERSION, DEGRADED_ANALYSIS_MARKER } from "@shared/schema";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { resolveChartSymbol, stripAnalysisMetaPrefix } from "@/lib/utils";
@@ -278,11 +278,17 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
       return s;
     };
 
+    const rawNotes = analysis.explanatoryNotes ?? "";
+    const isDegradedPlan = rawNotes.startsWith(DEGRADED_ANALYSIS_MARKER);
+    const notesWithoutMarker = isDegradedPlan
+      ? rawNotes.slice(DEGRADED_ANALYSIS_MARKER.length)
+      : rawNotes;
+
     const displayMarketSentiment = fmtNarrative(analysis.marketSentiment);
     const displayDeepAnalysis = fmtNarrative(analysis.deepAnalysis);
     const displayAiVerdict = fmtNarrative(analysis.analysis);
     const displayTrailing = fmtNarrative(analysis.trailingStopStrategy, true);
-    const displayExplanatory = fmtNarrative(analysis.explanatoryNotes, true);
+    const displayExplanatory = fmtNarrative(notesWithoutMarker, true);
 
     // Format price with correct currency symbol and decimal places
     // Forex: 4 decimals (e.g., £0.7500) - precision matters in forex
@@ -332,6 +338,12 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
               {t.analyzer}
             </h1>
           </header>
+
+          {isDegradedPlan && (
+            <div className="mx-4 mt-4 rounded-2xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-amber-100 text-sm leading-relaxed">
+              {t.degradedAnalyzerBanner}
+            </div>
+          )}
 
           {/* Price Chart - TradingView for ALL markets */}
           <div className="px-4 pt-6 pb-2">

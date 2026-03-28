@@ -306,6 +306,9 @@ export type TradeDuration = typeof tradeDurations[number];
 export const languages = ["en", "hi", "es", "zh", "de", "fr", "ar", "pt", "ru", "ja", "ko", "it"] as const;
 export type Language = typeof languages[number];
 
+/** If present at start of stored explanatory_notes, live Perplexity was skipped (indicator-only plan; no token charge). */
+export const DEGRADED_ANALYSIS_MARKER = "__TRENDPILOT_DEGRADED__\n";
+
 // App version - increment this when releasing new versions
 // Format: MAJOR.MINOR.PATCH (e.g., "1.0.0")
 // v1.1.0 - Added profanity filter for community content + fixed currency conversion in analysis text
@@ -314,4 +317,5 @@ export type Language = typeof languages[number];
 // v1.2.3 - SERVER-SIDE VERSION GUARD: Blocks API calls from outdated clients (fail-closed security)
 // v1.2.4 - PRE-BOOT VERSION CHECK: Forces cache clear BEFORE React loads (fixes PWA update issues)
 // v1.2.5 - FIXED DASHBOARD: Added missing swing option + blocking update modal for cached users
-export const APP_VERSION = "1.2.5";
+// v1.2.6 - Analyze: indicator fallback when Perplexity fails (no token charge) + degraded UI disclosure
+export const APP_VERSION = "1.2.6";

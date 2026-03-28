@@ -58,6 +58,11 @@ export const translations = {
     failedToClaimBonus: 'Failed to claim bonus',
     failedToAnalyze: 'Failed to analyze symbol. Please try again.',
     analysisServiceBusyTitle: 'Service busy — try again',
+    degradedAnalysisToastTitle: 'Indicator plan — no charge',
+    degradedAnalysisToastDesc:
+      'Live AI was unavailable. You received an indicator-based bracket plan and no tokens were deducted. See the banner on the report.',
+    degradedAnalyzerBanner:
+      'This run uses your price data and built-in indicators only. Live AI and web search were not used. No tokens were charged.',
     enterSymbolError: 'Please enter a financial symbol',
     failedToVerifyPhone: 'Failed to verify phone number. Please try again.',
     failedToLogin: 'Failed to login. Please try again.',
@@ -541,6 +546,11 @@ export const translations = {
     failedToClaimBonus: 'बोनस का दावा करने में विफल',
     failedToAnalyze: 'प्रतीक विश्लेषण करने में विफल। कृपया पुनः प्रयास करें।',
     analysisServiceBusyTitle: 'सर्वर व्यस्त — कृपया पुनः प्रयास करें',
+    degradedAnalysisToastTitle: 'इंडिकेटर प्लान — कोई शुल्क नहीं',
+    degradedAnalysisToastDesc:
+      'लाइव AI उपलब्ध नहीं था। आपको इंडिकेटर आधारित प्लान मिला; कोई टोकन नहीं काटे गए। रिपोर्ट पर बैनर देखें।',
+    degradedAnalyzerBanner:
+      'यह रन केवल आपके मूल्य डेटा और बिल्ट-इन इंडिकेटर का उपयोग करता है। लाइव AI/वेब खोज उपयोग नहीं हुई। कोई टोकन शुल्क नहीं।',
     enterSymbolError: 'कृपया एक वित्तीय प्रतीक दर्ज करें',
     failedToVerifyPhone: 'फ़ोन नंबर सत्यापित करने में विफल। कृपया पुनः प्रयास करें।',
     failedToLogin: 'लॉगिन करने में विफल। कृपया पुनः प्रयास करें।',
@@ -1020,6 +1030,11 @@ export const translations = {
     failedToClaimBonus: 'No se pudo reclamar la bonificación',
     failedToAnalyze: 'No se pudo analizar el símbolo. Por favor, inténtalo de nuevo.',
     analysisServiceBusyTitle: 'Servicio ocupado — inténtelo de nuevo',
+    degradedAnalysisToastTitle: 'Plan por indicadores — sin cargo',
+    degradedAnalysisToastDesc:
+      'La IA en vivo no estuvo disponible. Recibió un plan basado en indicadores; no se descontaron tokens. Vea el aviso en el informe.',
+    degradedAnalyzerBanner:
+      'Esta ejecución usa solo sus precios e indicadores integrados. No se usó IA en vivo ni búsqueda web. No se cobraron tokens.',
     enterSymbolError: 'Por favor, ingresa un símbolo financiero',
     failedToVerifyPhone: 'No se pudo verificar el número de teléfono. Por favor, inténtalo de nuevo.',
     failedToLogin: 'No se pudo iniciar sesión. Por favor, inténtalo de nuevo.',
@@ -1460,6 +1475,9 @@ export const translations = {
     failedToClaimBonus: '领取奖励失败',
     failedToAnalyze: '分析符号失败。请重试。',
     analysisServiceBusyTitle: '服务繁忙，请稍后重试',
+    degradedAnalysisToastTitle: '指标方案 — 未扣费',
+    degradedAnalysisToastDesc: '实时 AI 不可用。您获得基于指标的方案，未扣除代币。请查看报告顶部提示。',
+    degradedAnalyzerBanner: '本次仅使用您的价格数据与内置指标，未使用实时 AI 或网络搜索。未扣除代币。',
     enterSymbolError: '请输入金融符号',
     failedToVerifyPhone: '验证电话号码失败。请重试。',
     failedToLogin: '登录失败。请重试。',
@@ -1929,6 +1947,11 @@ export const translations = {
     failedToClaimBonus: 'Bonus konnte nicht eingelöst werden',
     failedToAnalyze: 'Symbol konnte nicht analysiert werden. Bitte versuchen Sie es erneut.',
     analysisServiceBusyTitle: 'Dienst überlastet — bitte erneut versuchen',
+    degradedAnalysisToastTitle: 'Indikator-Plan — keine Gebühr',
+    degradedAnalysisToastDesc:
+      'Live-KI war nicht verfügbar. Sie erhielten einen indikatorbasierten Plan; keine Tokens abgezogen. Siehe Hinweis im Bericht.',
+    degradedAnalyzerBanner:
+      'Dieser Lauf nutzt nur Ihre Kursdaten und eingebaute Indikatoren. Live-KI/Web-Suche nicht genutzt. Keine Tokens belastet.',
     enterSymbolError: 'Bitte geben Sie ein Finanzsymbol ein',
     failedToVerifyPhone: 'Telefonnummer konnte nicht verifiziert werden. Bitte versuchen Sie es erneut.',
     failedToLogin: 'Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.',
@@ -2398,6 +2421,11 @@ export const translations = {
     failedToClaimBonus: 'Échec de la réclamation du bonus',
     failedToAnalyze: "Échec de l'analyse du symbole. Veuillez réessayer.",
     analysisServiceBusyTitle: 'Service occupé — réessayez',
+    degradedAnalysisToastTitle: 'Plan indicateurs — sans frais',
+    degradedAnalysisToastDesc:
+      "L'IA en direct était indisponible. Plan basé sur indicateurs ; aucun jeton débité. Voir la bannière du rapport.",
+    degradedAnalyzerBanner:
+      "Cette analyse n'utilise que vos prix et indicateurs intégrés. Pas d'IA live ni de recherche web. Aucun jeton débité.",
     enterSymbolError: 'Veuillez entrer un symbole financier',
     failedToVerifyPhone: 'Échec de la vérification du numéro de téléphone. Veuillez réessayer.',
     failedToLogin: 'Échec de la connexion. Veuillez réessayer.',
@@ -2867,6 +2895,11 @@ export const translations = {
     failedToClaimBonus: 'فشل المطالبة بالمكافأة',
     failedToAnalyze: 'فشل تحليل الرمز. يرجى المحاولة مرة أخرى.',
     analysisServiceBusyTitle: 'الخدمة مشغولة — حاول مرة أخرى',
+    degradedAnalysisToastTitle: 'خطة مؤشرات — بدون خصم',
+    degradedAnalysisToastDesc:
+      'الذكاء الاصطناعي المباشر غير متاح. حصلت على خطة بالمؤشرات دون خصم رموز. راجع الشريط في التقرير.',
+    degradedAnalyzerBanner:
+      'هذا التشغيل يستخدم أسعارك والمؤشرات المدمجة فقط. لم يُستخدم ذكاء مباشر أو بحث ويب. لم تُخصم رموز.',
     enterSymbolError: 'يرجى إدخال رمز مالي',
     failedToVerifyPhone: 'فشل التحقق من رقم الهاتف. يرجى المحاولة مرة أخرى.',
     failedToLogin: 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.',
@@ -3336,6 +3369,11 @@ export const translations = {
     failedToClaimBonus: 'Falha ao reivindicar bônus',
     failedToAnalyze: 'Falha ao analisar símbolo. Por favor, tente novamente.',
     analysisServiceBusyTitle: 'Serviço ocupado — tente novamente',
+    degradedAnalysisToastTitle: 'Plano por indicadores — sem cobrança',
+    degradedAnalysisToastDesc:
+      'IA ao vivo indisponível. Você recebeu um plano por indicadores; nenhum token foi debitado. Veja o aviso no relatório.',
+    degradedAnalyzerBanner:
+      'Esta execução usa apenas seus preços e indicadores integrados. IA ao vivo/busca web não foram usados. Nenhum token cobrado.',
     enterSymbolError: 'Por favor, insira um símbolo financeiro',
     failedToVerifyPhone: 'Falha ao verificar número de telefone. Por favor, tente novamente.',
     failedToLogin: 'Falha ao fazer login. Por favor, tente novamente.',
@@ -3805,6 +3843,11 @@ export const translations = {
     failedToClaimBonus: 'Не удалось получить бонус',
     failedToAnalyze: 'Не удалось проанализировать символ. Пожалуйста, попробуйте снова.',
     analysisServiceBusyTitle: 'Сервис занят — попробуйте снова',
+    degradedAnalysisToastTitle: 'План по индикаторам — без списания',
+    degradedAnalysisToastDesc:
+      'Живой ИИ недоступен. Вы получили план по индикаторам; токены не списаны. См. баннер в отчёте.',
+    degradedAnalyzerBanner:
+      'Этот запуск использует только ваши цены и встроенные индикаторы. Живой ИИ и веб-поиск не использовались. Токены не списаны.',
     enterSymbolError: 'Пожалуйста, введите финансовый символ',
     failedToVerifyPhone: 'Не удалось подтвердить номер телефона. Пожалуйста, попробуйте снова.',
     failedToLogin: 'Не удалось войти. Пожалуйста, попробуйте снова.',
@@ -4274,6 +4317,11 @@ export const translations = {
     failedToClaimBonus: 'ボーナスの獲得に失敗しました',
     failedToAnalyze: 'シンボルの分析に失敗しました。もう一度お試しください。',
     analysisServiceBusyTitle: 'サーバーが混雑しています。しばらくしてからお試しください',
+    degradedAnalysisToastTitle: 'インジケータープラン — 課金なし',
+    degradedAnalysisToastDesc:
+      'ライブAIが利用できませんでした。インジケーター基準のプランを表示し、トークンは減りません。レポートのバナーをご確認ください。',
+    degradedAnalyzerBanner:
+      'この実行は価格データと組み込み指標のみを使用しています。ライブAI・ウェブ検索は未使用です。トークンは課金されていません。',
     enterSymbolError: '金融シンボルを入力してください',
     failedToVerifyPhone: '電話番号の確認に失敗しました。もう一度お試しください。',
     failedToLogin: 'ログインに失敗しました。もう一度お試しください。',
@@ -4743,6 +4791,11 @@ export const translations = {
     failedToClaimBonus: '보너스 받기 실패',
     failedToAnalyze: '심볼 분석 실패. 다시 시도해주세요.',
     analysisServiceBusyTitle: '서버가 바쁩니다. 잠시 후 다시 시도하세요',
+    degradedAnalysisToastTitle: '지표 플랜 — 차감 없음',
+    degradedAnalysisToastDesc:
+      '라이브 AI를 사용할 수 없었습니다. 지표 기반 플랜이 제공되었고 토큰은 차감되지 않았습니다. 보고서 배너를 확인하세요.',
+    degradedAnalyzerBanner:
+      '이 실행은 가격 데이터와 내장 지표만 사용합니다. 라이브 AI/웹 검색은 사용하지 않았습니다. 토큰이 부과되지 않았습니다.',
     enterSymbolError: '금융 심볼을 입력하세요',
     failedToVerifyPhone: '전화번호 확인 실패. 다시 시도해주세요.',
     failedToLogin: '로그인 실패. 다시 시도해주세요.',
@@ -5212,6 +5265,11 @@ export const translations = {
     failedToClaimBonus: 'Impossibile richiedere il bonus',
     failedToAnalyze: 'Impossibile analizzare il simbolo. Per favore riprova.',
     analysisServiceBusyTitle: 'Servizio occupato — riprova',
+    degradedAnalysisToastTitle: 'Piano indicatori — nessun addebito',
+    degradedAnalysisToastDesc:
+      'IA live non disponibile. Hai ricevuto un piano basato su indicatori; nessun token scalato. Vedi il banner nel report.',
+    degradedAnalyzerBanner:
+      'Questa esecuzione usa solo i tuoi prezzi e indicatori integrati. IA live e ricerca web non usate. Nessun token addebitato.',
     enterSymbolError: 'Per favore inserisci un simbolo finanziario',
     failedToVerifyPhone: 'Impossibile verificare il numero di telefono. Per favore riprova.',
     failedToLogin: 'Accesso non riuscito. Per favore riprova.',

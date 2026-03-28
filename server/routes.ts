@@ -654,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       */
 
-      const analysisResult = await analyzeMarketWithPerplexity(
+      const { result: analysisResult, degraded } = await analyzeMarketWithPerplexity(
         symbol,
         duration,
         market,
@@ -713,6 +713,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isSaved: 1,
       } as any);
 
+      if (degraded) {
+        console.log(
+          `📉 [ANALYSIS] Degraded indicator-only plan saved id=${newAnalysis.id} user=${userId} — no tokens charged`,
+        );
+        return res.json({
+          analysisId: newAnalysis.id,
+          newBalance: user.tokens,
+          degraded: true,
+        });
+      }
+
       const updatedUser = await storage.decrementUserTokens(userId, 2);
       if (!updatedUser) {
         console.warn(`⚠️ [DEDUCTION FAILED] User ${userId} has insufficient tokens`);
@@ -720,9 +731,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.log(`✅ [DEDUCTION SUCCESS] User ${userId}: 2 tokens deducted. New balance: ${updatedUser.tokens}`);
 
-      res.json({ 
-        analysisId: newAnalysis.id, 
-        newBalance: updatedUser.tokens 
+      res.json({
+        analysisId: newAnalysis.id,
+        newBalance: updatedUser.tokens,
+        degraded: false,
       });
     } catch (err: unknown) {
       if (isAnalysisUnavailableError(err)) {

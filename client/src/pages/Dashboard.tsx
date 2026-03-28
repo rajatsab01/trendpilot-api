@@ -472,6 +472,12 @@ export default function Dashboard() {
         });
         return;
       }
+      if (data.degraded) {
+        toast({
+          title: t.degradedAnalysisToastTitle,
+          description: t.degradedAnalysisToastDesc,
+        });
+      }
       const qs = `?analysisId=${encodeURIComponent(id)}`;
       setLocation(`/dashboard${qs}`);
     },

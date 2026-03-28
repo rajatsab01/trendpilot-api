@@ -7,6 +7,7 @@ import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter
 import { getExchangeCurrency, isForexPair } from "./symbolValidator";
 import { computeIndicatorsFromCandles } from "./technicalIndicators";
 import { AnalysisUnavailableError, type AnalysisUnavailableReason } from "./analysisErrors";
+import { DEGRADED_ANALYSIS_MARKER } from "../shared/schema";
 
 /** Deterministic small spread per symbol (not security-sensitive). */
 function hashSeed(s: string): number {
@@ -344,16 +345,15 @@ function buildOfflineAiPayload(
   });
 }
 
-function wrapOfflineRawChoiceJson(payload: z.infer<typeof aiResponseSchema>) {
-  return {
-    choices: [
-      {
-        message: {
-          content: JSON.stringify(payload),
-        },
-      },
-    ],
-  };
+/** Handles ```json fences and prose before/after the object (common LLM failure vs naive first `{`…`}` slice). */
+function extractJsonObjectStringFromAssistantContent(raw: string): string | null {
+  let t = raw.trim();
+  const fence = /^```(?:json)?\s*([\s\S]*?)```/im.exec(t);
+  if (fence) t = fence[1].trim();
+  const s = t.indexOf("{");
+  const e = t.lastIndexOf("}");
+  if (s === -1 || e === -1 || e <= s) return null;
+  return t.slice(s, e + 1);
 }
 
 export interface CandleData {
@@ -418,6 +418,12 @@ export interface MarketAnalysisResult {
   newsHighlights: string;
 }
 
+export type MarketAnalysisOutcome = {
+  result: MarketAnalysisResult;
+  /** True when live Perplexity was not used (API/key/parse failure). Caller must not charge tokens. */
+  degraded: boolean;
+};
+
 export async function analyzeMarketWithPerplexity(
   symbol: string,
   duration: "scalping" | "swing" | "short_term" | "long_term",
@@ -426,8 +432,10 @@ export async function analyzeMarketWithPerplexity(
   priceData: OHLCVData,
   currency = "USD",
   exchange?: string
-): Promise<MarketAnalysisResult> {
-  const allowOffline = process.env.PERPLEXITY_ALLOW_OFFLINE_FALLBACK === "true";
+): Promise<MarketAnalysisOutcome> {
+  /** When true, failed API/parse returns 503 instead of indicator fallback (previous “strict” product behavior). */
+  const strictNoFallback = process.env.PERPLEXITY_STRICT_NO_FALLBACK === "true";
+  const indicatorFallback = !strictNoFallback;
 
   const { code: langCode, name: langName } = getPromptLang(language);
   const promptLanguageName = langName || "English";
@@ -551,14 +559,16 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
   const useSearchRecency =
     process.env.PERPLEXITY_DISABLE_SEARCH_RECENCY !== "true" && /sonar/i.test(perplexityModel);
 
-  let raw: any;
+  let data: z.infer<typeof aiResponseSchema>;
+  let degraded = false;
+
   if (!process.env.PERPLEXITY_API_KEY?.trim()) {
-    if (!allowOffline) {
+    if (!indicatorFallback) {
       throw new AnalysisUnavailableError(undefined, "MISSING_PERPLEXITY_API_KEY");
     }
-    console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: missing API key — dev offline payload");
-    const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
-    raw = wrapOfflineRawChoiceJson(payload);
+    console.warn("📉 [Perplexity] No API key — indicator-only plan (degraded, no web AI)");
+    data = buildOfflineAiPayload(symbol, market, priceData, langCode);
+    degraded = true;
   } else {
     try {
       const chatPayload: Record<string, unknown> = {
@@ -608,61 +618,53 @@ RESPONSE RULES:
       if (!response.ok) {
         const errorText = await response.text();
         console.warn(`❌ [Perplexity] API Error ${response.status}: ${errorText}`);
-        if (
-          allowOffline &&
-          (response.status === 401 || response.status === 403 || response.status === 429)
-        ) {
-          console.log(
-            `⚠️ [Perplexity] Quota/Auth (${response.status}) — PERPLEXITY_ALLOW_OFFLINE_FALLBACK dev offline payload`,
-          );
-          const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
-          raw = wrapOfflineRawChoiceJson(payload);
-        } else {
+        if (!indicatorFallback) {
           throw new AnalysisUnavailableError(
             undefined,
             `PERPLEXITY_HTTP_${response.status}` as AnalysisUnavailableReason,
           );
         }
+        console.warn(`📉 [Perplexity] HTTP ${response.status} — indicator-only fallback`);
+        data = buildOfflineAiPayload(symbol, market, priceData, langCode);
+        degraded = true;
       } else {
-        raw = await response.json();
+        const raw = await response.json();
+        try {
+          const txt = String(raw?.choices?.[0]?.message?.content ?? "").trim();
+          const extracted = extractJsonObjectStringFromAssistantContent(txt);
+          let jsonText = extracted;
+          if (!jsonText) {
+            const s = txt.indexOf("{"),
+              e = txt.lastIndexOf("}");
+            if (s === -1 || e === -1 || e <= s) throw new Error("JSON_NOT_FOUND");
+            jsonText = txt.slice(s, e + 1);
+          }
+          data = aiResponseSchema.parse(JSON.parse(jsonText));
+        } catch (parseErr: any) {
+          const contentSnippet = String(raw?.choices?.[0]?.message?.content ?? "").slice(0, 1500);
+          console.error(
+            "❌ [Perplexity] JSON Parse/Schema Error:",
+            parseErr?.message,
+            contentSnippet ? `(prefix) ${contentSnippet}` : "(empty content)",
+          );
+          if (!indicatorFallback) {
+            throw new AnalysisUnavailableError(undefined, "PERPLEXITY_PARSE_OR_SCHEMA");
+          }
+          console.warn("📉 [Perplexity] Parse/schema failed — indicator-only fallback");
+          data = buildOfflineAiPayload(symbol, market, priceData, langCode);
+          degraded = true;
+        }
       }
     } catch (err: unknown) {
       if (err instanceof AnalysisUnavailableError) throw err;
       console.error("❌ [Perplexity] Request failed:", err);
-      if (allowOffline) {
-        console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: network/error — dev offline payload");
-        const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
-        raw = wrapOfflineRawChoiceJson(payload);
-      } else {
+      if (!indicatorFallback) {
         throw new AnalysisUnavailableError(undefined, "PERPLEXITY_NETWORK");
       }
+      console.warn("📉 [Perplexity] Network/request error — indicator-only fallback");
+      data = buildOfflineAiPayload(symbol, market, priceData, langCode);
+      degraded = true;
     }
-  }
-
-  let data: any;
-  try {
-    const txt = String(raw?.choices?.[0]?.message?.content ?? "").trim();
-
-    // Extract the first JSON object from the response.
-    const s = txt.indexOf("{"),
-      e = txt.lastIndexOf("}");
-    if (s === -1 || e === -1) throw new Error("JSON_NOT_FOUND");
-
-    const jsonText = txt.slice(s, e + 1);
-    const parsed = JSON.parse(jsonText);
-    data = aiResponseSchema.parse(parsed);
-  } catch (parseErr: any) {
-    const contentSnippet = String(raw?.choices?.[0]?.message?.content ?? "").slice(0, 1500);
-    console.error(
-      "❌ [Perplexity] JSON Parse/Schema Error:",
-      parseErr?.message,
-      contentSnippet ? `(content prefix, ${contentSnippet.length} chars) ${contentSnippet}` : "(empty content)",
-    );
-    if (!allowOffline) {
-      throw new AnalysisUnavailableError(undefined, "PERPLEXITY_PARSE_OR_SCHEMA");
-    }
-    console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: parse/schema — dev offline payload");
-    data = buildOfflineAiPayload(symbol, market, priceData, langCode);
   }
 
   const narrativeKeys = [
@@ -736,7 +738,9 @@ RESPONSE RULES:
 
   const fmt = (v: any) => (isFx ? fx(v) : conv(v));
 
-  return {
+  const explanatoryBase = stripAnalysisMetaPrefix(data.explanatoryNotes);
+
+  const result: MarketAnalysisResult = {
     recommendation: data.recommendation,
     confidence: Number(data.confidence) || 0,
     sentiment: data.sentiment,
@@ -785,6 +789,8 @@ RESPONSE RULES:
     },
     trailingStopStrategy: stripAnalysisMetaPrefix(data.trailingStopStrategy),
     probabilityScore: Number(data.probabilityScore) || 0,
-    explanatoryNotes: stripAnalysisMetaPrefix(data.explanatoryNotes),
+    explanatoryNotes: degraded ? DEGRADED_ANALYSIS_MARKER + explanatoryBase : explanatoryBase,
   };
+
+  return { result, degraded };
 }
