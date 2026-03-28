@@ -10,7 +10,26 @@ const API_BASE =
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || res.statusText);
+    let message = text || res.statusText;
+    const err = new Error(message) as Error & {
+      retryable?: boolean;
+      code?: string;
+      status?: number;
+    };
+    err.status = res.status;
+    try {
+      const parsed = text ? JSON.parse(text) : null;
+      if (parsed && typeof parsed === "object" && typeof (parsed as { error?: unknown }).error === "string") {
+        message = (parsed as { error: string }).error;
+        err.message = message;
+        if ((parsed as { retryable?: boolean }).retryable === true) err.retryable = true;
+        const c = (parsed as { code?: unknown }).code;
+        if (typeof c === "string") err.code = c;
+      }
+    } catch {
+      /* not JSON */
+    }
+    throw err;
   }
 }
 

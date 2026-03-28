@@ -6,6 +6,7 @@ import { getOfflineNarratives } from "./offlineNarratives";
 import { fetchExchangeRates, convertCurrencyWithRate } from "./currencyConverter";
 import { getExchangeCurrency, isForexPair } from "./symbolValidator";
 import { computeIndicatorsFromCandles } from "./technicalIndicators";
+import { AnalysisUnavailableError } from "./analysisErrors";
 
 /** Deterministic small spread per symbol (not security-sensitive). */
 function hashSeed(s: string): number {
@@ -274,6 +275,87 @@ const aiResponseSchema = z.object({
   explanatoryNotes: z.string(),
 });
 
+function buildOfflineAiPayload(
+  symbol: string,
+  market: "stock" | "commodity" | "forex" | "cryptocurrency",
+  priceData: OHLCVData,
+  langCode: string,
+) {
+  const ci = computeIndicatorsFromCandles(priceData.historicalCandles);
+  const rsiN = ci?.rsi ? parseFloat(ci.rsi) : 50;
+  const macdN = ci?.macd ? parseFloat(ci.macd) : 0;
+  const stochN = ci?.stochastic ? parseFloat(ci.stochastic) : 50;
+  const bbPct = ci?.bollingerBands?.match(/^%B ([\d.-]+)/)?.[1];
+  const bbN = bbPct ? parseFloat(bbPct) : 50;
+  const { recommendation, sentiment } = inferOfflineRecommendation(rsiN, macdN, stochN);
+  const lp = priceData.livePrice;
+  const mult = recommendation === "BUY" ? 1 : -1;
+  const { probabilityScore: prob, confidence: conf } = offlineProbabilityAndConfidence(
+    recommendation,
+    rsiN,
+    macdN,
+    stochN,
+    bbN,
+    lp,
+    symbol,
+  );
+  const offline = getOfflineNarratives(langCode, {
+    timeframe: priceData.timeframe,
+    symbol,
+    recommendation,
+    sentiment,
+    bbN,
+    macdN,
+    mult,
+  } as any);
+
+  return aiResponseSchema.parse({
+    correctedSymbol: symbol,
+    assetName: symbol,
+    marketType: market,
+    livePrice: priceData.livePrice,
+    candleClosePrice: priceData.candleClosePrice,
+    recommendation,
+    confidence: conf,
+    sentiment,
+    marketSentiment: offline.marketSentiment,
+    newsHighlights: offline.newsHighlights,
+    deepAnalysis: offline.deepAnalysis,
+    analysis: offline.analysis,
+    rsi: rsiN,
+    macd: macdN,
+    stochastic: stochN,
+    bollingerBands: bbN,
+    entry: lp * (1 + mult * 0.005),
+    takeProfit: lp * (1 + mult * 0.12),
+    stopLoss: lp * (1 - mult * 0.04),
+    tp1: lp * (1 + mult * 0.04),
+    tp2: lp * (1 + mult * 0.08),
+    tp3: lp * (1 + mult * 0.12),
+    s1: lp * (1 - mult * 0.02),
+    s2: lp * (1 - mult * 0.04),
+    s3: lp * (1 - mult * 0.06),
+    r1: lp * (1 + mult * 0.02),
+    r2: lp * (1 + mult * 0.04),
+    r3: lp * (1 + mult * 0.06),
+    trailingStopStrategy: offline.trailingStopStrategy,
+    probabilityScore: prob,
+    explanatoryNotes: getOfflineExplanatoryNotes(langCode),
+  });
+}
+
+function wrapOfflineRawChoiceJson(payload: z.infer<typeof aiResponseSchema>) {
+  return {
+    choices: [
+      {
+        message: {
+          content: JSON.stringify(payload),
+        },
+      },
+    ],
+  };
+}
+
 export interface CandleData {
   timestamp: string;
   open: number;
@@ -345,8 +427,7 @@ export async function analyzeMarketWithPerplexity(
   currency = "USD",
   exchange?: string
 ): Promise<MarketAnalysisResult> {
-  if (!process.env.PERPLEXITY_API_KEY)
-    throw new Error("Perplexity API key not configured");
+  const allowOffline = process.env.PERPLEXITY_ALLOW_OFFLINE_FALLBACK === "true";
 
   const { code: langCode, name: langName } = getPromptLang(language);
   const promptLanguageName = langName || "English";
@@ -413,10 +494,11 @@ All prices in ${currency}. Express every output field in ${promptLanguageName} l
 
 NEWS & SENTIMENT: Use web search for recent headlines, flows, or events affecting this symbol or issuer (last day to week). Summarize in "newsHighlights". Keep tone factual and concise. Do not tell users to leave the app or use other websites for news — the product already shows a legal disclaimer elsewhere.
 
-REWARD-TO-RISK GOAL:
-Aim for high Reward-to-Risk trades. Base requirement RR ≥ 1:3. 
-For ${duration}, you should ${duration === "scalping" ? "be very tight with stops" : "allow more room for volatility"}.
-If momentum justifies, expand target RR up to 1:50+ and describe trailing strategy.
+REWARD-TO-RISK (BRACKET MATH):
+- Set entry, stopLoss, takeProfit, tp1, tp2, tp3 so the plan is coherent for ${duration}.
+- Prefer reward:risk to the primary target (takeProfit / tp3) of at least 1:3 when structure allows.
+- If momentum, volatility, or levels justify a larger extension, use a higher RR (e.g. 1:4 to 1:10+); do not artificially cap at 1:3 when the chart clearly supports a wider target — the app only widens targets that fall below 1:3, never shrinks a stronger plan.
+For ${duration}, ${duration === "scalping" ? "keep stops tight; partials at tp1/tp2 should match realistic micro swings." : "allow room for volatility; partials should ladder toward the main thesis."}
 
 DATA SNAPSHOT:
 Live: ${curSymbol}${priceData.livePrice.toFixed(dec)} | Close: ${curSymbol}${priceData.candleClosePrice.toFixed(dec)}
@@ -425,15 +507,15 @@ Close Time: ${priceData.candleCloseTime}  |  Next bar closes: ${nextClose}
 ${indicatorBlock ? `\n${indicatorBlock}\n` : ""}
 
 VOICE & STRUCTURE (critical):
-- Target style: professional desk note — concrete prices in ${currency}, no essay filler, no markdown, no raw URLs.
-- Ban vague one-liners (e.g. "structure favors buyers" with no level). Every paragraph must name specific prices, zones, or indicator readings from the snapshot.
-- Open "analysis" with one crisp thesis sentence, then evidence; end with what would prove the thesis wrong (invalidation), using exact bracket levels.
-- In deepAnalysis and analysis you MUST weave in the PRECOMPUTED rsi / macd / stochastic / bollingerBands numbers exactly as given above (same decimals); explain what they imply for bias and invalidation in ${promptLanguageName}.
-- marketSentiment: 3–5 sentences on structure, positioning, nearby levels (use DATA SNAPSHOT prices). Avoid repeated "caution" or disclaimer-style warnings — the app shows a disclaimer block separately.
-- newsHighlights: 3–6 sentences or short line breaks; themes, flows, catalysts. No lecturing users to verify news elsewhere.
-- analysis: 2–4 sentences — base case vs invalidation, tied to bracket levels.
-- trailingStopStrategy: practical steps after TP1 (breakeven, trail logic, when to tighten).
-- explanatoryNotes: 1–3 short sentences on execution only (liquidity, gaps, events). No legal boilerplate, no repeated product disclaimer.
+- Style: professional desk research note — concrete prices in ${currency}, no markdown, no raw URLs, no filler clichés.
+- Ban vague one-liners (e.g. "structure favors buyers" with no level). Every paragraph must cite specific prices, zones, or indicator readings from the snapshot or precomputed values.
+- FORMAT: In marketSentiment, newsHighlights, deepAnalysis, and analysis, use two newline characters between paragraphs (blank line) so the UI can show readable blocks. Each field should contain multiple paragraphs, not a single wall of text.
+- marketSentiment: 5–8 sentences in 2–3 paragraphs — trend vs range, where price sits vs snapshot high/low/close, what would shift bias; use DATA SNAPSHOT numbers. No generic disclaimer tone.
+- newsHighlights: 5–9 sentences in 2–3 paragraphs — recent drivers, flows, scheduled events, what traders are watching; factual. No "check other websites" language.
+- deepAnalysis: 8–14 sentences in 3–4 paragraphs — (1) structure & key levels from OHLC, (2) momentum & indicator story: quote PRECOMPUTED rsi, macd, stochastic, bollingerBands exactly and tie to bias + failure modes, (3) how tp1/tp2/tp3 ladder relates to partial profit-taking, (4) invalidation vs entry/stop in ${promptLanguageName}.
+- analysis: 6–10 sentences in 3–4 paragraphs — (1) clear thesis and time horizon, (2) evidence chain linking price + indicators + news context, (3) bull vs bear scenario with triggers, (4) explicit invalidation: which level breaks the trade and why, referencing entry/stop/tp3. Must be substantive, not a summary of deepAnalysis.
+- trailingStopStrategy: 4–7 sentences — after TP1 (breakeven rule), how to trail (structure-based), when to tighten vs when to hold, optional partial at TP2.
+- explanatoryNotes: 3–5 sentences — execution realism only (spreads, gaps, session liquidity, event risk). No legal boilerplate.
 - NEVER start any string with "(Analysis in …)", "(English)", language names in parentheses, or JSON schema hints — only trader-facing prose in ${promptLanguageName}.
 
 Return strictly JSON (no markdown, no explanation). All narrative strings must be fully in ${promptLanguageName}:
@@ -446,41 +528,49 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
  "recommendation": "BUY" | "SELL",
  "confidence": 1-100,
  "sentiment": "Bullish" | "Bearish",
- "marketSentiment": "string: 3–5 sentences — context, positioning, nearby levels from snapshot; no stray invented indicator values",
- "newsHighlights": "string: 3–6 sentences/lines — recent drivers, sentiment, risks; no URLs",
- "deepAnalysis": "string: 4–6 sentences — structure + momentum; MUST quote precomputed RSI, MACD, stochastic, %B and tie them to the stated bias",
- "analysis": "string: 2–4 sentences — clear thesis, confirmation vs invalidation vs bracket; numbers consistent with JSON levels",
+ "marketSentiment": "string: 5–8 sentences, 2–3 paragraphs (use \\n\\n between paragraphs)",
+ "newsHighlights": "string: 5–9 sentences, 2–3 paragraphs; drivers, flows, catalysts; no URLs",
+ "deepAnalysis": "string: 8–14 sentences, 3–4 paragraphs; structure, indicators (exact precomputed rsi/macd/stochastic/%B), laddering, invalidation",
+ "analysis": "string: 6–10 sentences, 3–4 paragraphs; thesis, evidence, scenarios, explicit invalidation vs brackets",
  "rsi": number, "macd": number, "stochastic": number, "bollingerBands": number,
  "entry": number, "takeProfit": number, "stopLoss": number,
  "tp1": number, "tp2": number, "tp3": number,
  "s1": number, "s2": number, "s3": number,
  "r1": number, "r2": number, "r3": number,
- "trailingStopStrategy": "string: after partials — breakeven, trail rules, when to tighten",
+ "trailingStopStrategy": "string: 4–7 sentences — breakeven after TP1, trail logic, when to tighten",
  "probabilityScore": 1-100,
- "explanatoryNotes": "string: 1–3 short execution notes only — liquidity, gaps, events; no legal boilerplate"
+ "explanatoryNotes": "string: 3–5 sentences — execution only (liquidity, gaps, events); no legal boilerplate"
 }
 `.trim();
 
   const searchRecency =
     duration === "scalping" || duration === "short_term" ? "day" : "week";
 
-  let raw;
-  try {
-    const response = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar-pro",
-        temperature: 0.25,
-        top_p: 0.9,
-        search_recency_filter: searchRecency,
-        messages: [
-          {
-            role: "system",
-            content: `
+  let raw: any;
+  if (!process.env.PERPLEXITY_API_KEY) {
+    if (!allowOffline) {
+      throw new AnalysisUnavailableError();
+    }
+    console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: missing API key — dev offline payload");
+    const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
+    raw = wrapOfflineRawChoiceJson(payload);
+  } else {
+    try {
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar-pro",
+          temperature: 0.25,
+          top_p: 0.9,
+          search_recency_filter: searchRecency,
+          messages: [
+            {
+              role: "system",
+              content: `
 You are TrendPilot Analyzer.
 
 LANGUAGE RULES:
@@ -494,96 +584,42 @@ RESPONSE RULES:
 - Return ONLY one valid JSON object.
 - Do not include markdown, explanations, or code fences.
 - Numeric fields (rsi, macd, stochastic, bollingerBands, entry, stops, targets) must match the precomputed + snapshot data; narratives must not contradict those numbers.
+- In narrative fields, use literal newline pairs between paragraphs (encode as \\n in JSON if needed) so multi-paragraph text displays clearly.
           `.trim(),
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn(`❌ [Perplexity] API Error ${response.status}: ${errorText}`);
-      
-      // If quota exhausted or unauthorized, use fallback in Dev/Test mode
-      if (response.status === 401 || response.status === 403 || response.status === 429) {
-        console.log(`⚠️ [Perplexity] Quota/Auth issue detected (${response.status}). Triggering fallback...`);
-        throw new Error("QUOTA_EXHAUSTED");
-      }
-      throw new Error(`Perplexity API error ${response.status}: ${errorText}`);
-    }
-    raw = await response.json();
-  } catch (err: any) {
-    if (err.message === "QUOTA_EXHAUSTED" || !process.env.PERPLEXITY_API_KEY) {
-      console.log(`🛠️ [Perplexity] Using sandbox fallback analysis due to: ${err.message === "QUOTA_EXHAUSTED" ? "Quota Exhausted" : "Missing API Key"}`);
-      const ci = computeIndicatorsFromCandles(priceData.historicalCandles);
-      const rsiN = ci?.rsi ? parseFloat(ci.rsi) : 50;
-      const macdN = ci?.macd ? parseFloat(ci.macd) : 0;
-      const stochN = ci?.stochastic ? parseFloat(ci.stochastic) : 50;
-      const bbPct = ci?.bollingerBands.match(/^%B ([\d.-]+)/)?.[1];
-      const bbN = bbPct ? parseFloat(bbPct) : 50;
-      const { recommendation, sentiment } = inferOfflineRecommendation(rsiN, macdN, stochN);
-      const lp = priceData.livePrice;
-      const { probabilityScore: prob, confidence: conf } = offlineProbabilityAndConfidence(
-        recommendation,
-        rsiN,
-        macdN,
-        stochN,
-        bbN,
-        lp,
-        symbol,
-      );
-      const mult = recommendation === "BUY" ? 1 : -1;
-      const offline = getOfflineNarratives(langCode, {
-        timeframe: priceData.timeframe,
-        symbol,
-        recommendation,
-        sentiment,
-        bbN,
-        macdN,
-        mult,
+            },
+            { role: "user", content: prompt },
+          ],
+        }),
       });
-      raw = {
-        choices: [{
-          message: {
-            content: JSON.stringify({
-              correctedSymbol: symbol,
-              assetName: symbol,
-              marketType: market,
-              livePrice: priceData.livePrice.toFixed(dec),
-              candleClosePrice: priceData.candleClosePrice.toFixed(dec),
-              recommendation,
-              confidence: conf,
-              sentiment,
-              marketSentiment: offline.marketSentiment,
-              newsHighlights: offline.newsHighlights,
-              deepAnalysis: offline.deepAnalysis,
-              analysis: offline.analysis,
-              rsi: rsiN,
-              macd: macdN,
-              stochastic: stochN,
-              bollingerBands: bbN,
-              entry: lp * (1 + mult * 0.005),
-              takeProfit: lp * (1 + mult * 0.12),
-              stopLoss: lp * (1 - mult * 0.04),
-              tp1: lp * (1 + mult * 0.04),
-              tp2: lp * (1 + mult * 0.08),
-              tp3: lp * (1 + mult * 0.12),
-              s1: lp * (1 - mult * 0.02),
-              s2: lp * (1 - mult * 0.04),
-              s3: lp * (1 - mult * 0.06),
-              r1: lp * (1 + mult * 0.02),
-              r2: lp * (1 + mult * 0.04),
-              r3: lp * (1 + mult * 0.06),
-              trailingStopStrategy: offline.trailingStopStrategy,
-              probabilityScore: prob,
-              explanatoryNotes: getOfflineExplanatoryNotes(langCode)
-            })
-          }
-        }]
-      };
-    } else {
-      throw err;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`❌ [Perplexity] API Error ${response.status}: ${errorText}`);
+        if (
+          allowOffline &&
+          (response.status === 401 || response.status === 403 || response.status === 429)
+        ) {
+          console.log(
+            `⚠️ [Perplexity] Quota/Auth (${response.status}) — PERPLEXITY_ALLOW_OFFLINE_FALLBACK dev offline payload`,
+          );
+          const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
+          raw = wrapOfflineRawChoiceJson(payload);
+        } else {
+          throw new AnalysisUnavailableError();
+        }
+      } else {
+        raw = await response.json();
+      }
+    } catch (err: unknown) {
+      if (err instanceof AnalysisUnavailableError) throw err;
+      console.error("❌ [Perplexity] Request failed:", err);
+      if (allowOffline) {
+        console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: network/error — dev offline payload");
+        const payload = buildOfflineAiPayload(symbol, market, priceData, langCode);
+        raw = wrapOfflineRawChoiceJson(payload);
+      } else {
+        throw new AnalysisUnavailableError();
+      }
     }
   }
 
@@ -605,73 +641,11 @@ RESPONSE RULES:
       parseErr?.message,
       raw?.choices?.[0]?.message?.content,
     );
-
-    // Fallback: build a valid analysis JSON using our offline logic.
-    const ci = computeIndicatorsFromCandles(priceData.historicalCandles);
-    const rsiN = ci?.rsi ? parseFloat(ci.rsi) : 50;
-    const macdN = ci?.macd ? parseFloat(ci.macd) : 0;
-    const stochN = ci?.stochastic ? parseFloat(ci.stochastic) : 50;
-    const bbPct = ci?.bollingerBands.match(/^%B ([\d.-]+)/)?.[1];
-    const bbN = bbPct ? parseFloat(bbPct) : 50;
-
-    const { recommendation, sentiment } = inferOfflineRecommendation(rsiN, macdN, stochN);
-
-    const lp = priceData.livePrice;
-    const mult = recommendation === "BUY" ? 1 : -1;
-
-    const { probabilityScore: prob, confidence: conf } = offlineProbabilityAndConfidence(
-      recommendation,
-      rsiN,
-      macdN,
-      stochN,
-      bbN,
-      lp,
-      symbol,
-    );
-
-    const offline = getOfflineNarratives(langCode, {
-      timeframe: priceData.timeframe,
-      symbol,
-      recommendation,
-      sentiment,
-      bbN,
-      macdN,
-      mult,
-    } as any);
-
-    data = {
-      correctedSymbol: symbol,
-      assetName: symbol,
-      marketType: market,
-      livePrice: priceData.livePrice,
-      candleClosePrice: priceData.candleClosePrice,
-      recommendation,
-      confidence: conf,
-      sentiment,
-      marketSentiment: offline.marketSentiment,
-      newsHighlights: offline.newsHighlights,
-      deepAnalysis: offline.deepAnalysis,
-      analysis: offline.analysis,
-      rsi: rsiN,
-      macd: macdN,
-      stochastic: stochN,
-      bollingerBands: bbN,
-      entry: lp * (1 + mult * 0.005),
-      takeProfit: lp * (1 + mult * 0.12),
-      stopLoss: lp * (1 - mult * 0.04),
-      tp1: lp * (1 + mult * 0.04),
-      tp2: lp * (1 + mult * 0.08),
-      tp3: lp * (1 + mult * 0.12),
-      s1: lp * (1 - mult * 0.02),
-      s2: lp * (1 - mult * 0.04),
-      s3: lp * (1 - mult * 0.06),
-      r1: lp * (1 + mult * 0.02),
-      r2: lp * (1 + mult * 0.04),
-      r3: lp * (1 + mult * 0.06),
-      trailingStopStrategy: offline.trailingStopStrategy,
-      probabilityScore: prob,
-      explanatoryNotes: getOfflineExplanatoryNotes(langCode),
-    };
+    if (!allowOffline) {
+      throw new AnalysisUnavailableError();
+    }
+    console.log("🛠️ [Perplexity] PERPLEXITY_ALLOW_OFFLINE_FALLBACK: parse/schema — dev offline payload");
+    data = buildOfflineAiPayload(symbol, market, priceData, langCode);
   }
 
   const narrativeKeys = [
@@ -700,7 +674,8 @@ RESPONSE RULES:
     if (bollingerPctForModel) data.bollingerBands = parseFloat(bollingerPctForModel);
   }
 
-  // RR computation + auto boost
+  // RR: enforce minimum 1:3 reward:risk to primary TP only when the model proposed weaker math.
+  // If the model already targets ≥1:3, levels are left as-is so the UI shows the actual (often higher) ratio.
   const rr = (entry: number, tp: number, sl: number, side: "BUY" | "SELL") => {
     const risk = side === "BUY" ? entry - sl : sl - entry;
     const reward = side === "BUY" ? tp - entry : entry - tp;

@@ -476,6 +476,7 @@ export default function Dashboard() {
       setLocation(`/dashboard${qs}`);
     },
     onError: (error: any) => {
+      const retryable = error?.retryable === true || error?.code === "AI_UNAVAILABLE";
       let message = error.message || t.failedToAnalyze;
       try {
         if (message.includes('{"error":')) {
@@ -488,7 +489,7 @@ export default function Dashboard() {
       } catch (e) {}
 
       toast({
-        title: t.error,
+        title: retryable ? t.analysisServiceBusyTitle : t.error,
         description: message,
         variant: "destructive",
       });

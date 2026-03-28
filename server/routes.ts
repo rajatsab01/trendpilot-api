@@ -6,6 +6,7 @@ import crypto from "crypto";
 
 import { storage } from "./storage";
 import { analyzeMarketWithPerplexity } from "./perplexity";
+import { isAnalysisUnavailableError } from "./analysisErrors";
 import { searchCryptoSymbols } from "./marketData";
 import { fetchMarketPrice } from "./priceData";
 import { validateSymbol } from "./symbolValidator";
@@ -723,10 +724,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         analysisId: newAnalysis.id, 
         newBalance: updatedUser.tokens 
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      if (isAnalysisUnavailableError(err)) {
+        return res.status(503).json({
+          error: err.message,
+          retryable: true,
+          code: "AI_UNAVAILABLE",
+        });
+      }
       console.error("❌ [ANALYSIS ERROR]:", err);
-      // Give user a more helpful message
-      const errorMsg = err.message || "An unexpected error occurred during analysis.";
+      const errorMsg =
+        err instanceof Error ? err.message : "An unexpected error occurred during analysis.";
       res.status(500).json({ error: errorMsg });
     }
   });

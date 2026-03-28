@@ -15,6 +15,32 @@ import jsPDF from "jspdf";
 import { resolveChartSymbol, stripAnalysisMetaPrefix } from "@/lib/utils";
 const trendPilotLogo = "/trendpilot-logo.png";
 
+/** Reward:risk from entry → tp vs risk entry → stop. Null if levels are incoherent. */
+function rewardRiskRatio(
+  entryStr: string | null | undefined,
+  stopStr: string | null | undefined,
+  tpStr: string | null | undefined,
+  recommendation: string | null | undefined,
+): number | null {
+  const entry = parseFloat(String(entryStr ?? ""));
+  const sl = parseFloat(String(stopStr ?? ""));
+  const tp = parseFloat(String(tpStr ?? ""));
+  if (!Number.isFinite(entry) || !Number.isFinite(sl) || !Number.isFinite(tp)) return null;
+  let risk: number;
+  let reward: number;
+  if (recommendation === "BUY") {
+    risk = entry - sl;
+    reward = tp - entry;
+  } else if (recommendation === "SELL") {
+    risk = sl - entry;
+    reward = entry - tp;
+  } else {
+    return null;
+  }
+  if (risk <= 0 || reward <= 0) return null;
+  return reward / risk;
+}
+
 type AnalyzerProps = {
   /** When embedded in Dashboard, parent must clear `?analysisId=` from its own state (wouter path alone does not update). */
   onExitToDashboard?: () => void;
@@ -498,7 +524,7 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                   <span className="material-symbols-outlined text-[#38e07b]">sentiment_satisfied</span>
                   {t.marketSentiments}
                 </h2>
-                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-market-sentiment">
+                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed whitespace-pre-line" data-testid="text-market-sentiment">
                   {displayMarketSentiment}
                 </p>
               </div>
@@ -510,7 +536,7 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                   <span className="material-symbols-outlined text-[#38e07b]">analytics</span>
                   {t.deepAnalysis}
                 </h2>
-                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-deep-analysis">
+                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed whitespace-pre-line" data-testid="text-deep-analysis">
                   {displayDeepAnalysis}
                 </p>
               </div>
@@ -567,7 +593,7 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                   </p>
                 </div>
               </div>
-              <p className="text-[#9eb7a8] text-base font-normal leading-relaxed text-center" data-testid="text-ai-analysis">
+              <p className="text-[#9eb7a8] text-base font-normal leading-relaxed text-center whitespace-pre-line" data-testid="text-ai-analysis">
                 {displayAiVerdict}
               </p>
             </div>
@@ -636,7 +662,13 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {analysis.tp1 && (
                     <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
-                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP1 (1:1)</p>
+                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP1</p>
+                      <p className="text-[#6a7f72] text-[10px] sm:text-xs mt-0.5 font-normal tabular-nums">
+                        {(() => {
+                          const r = rewardRiskRatio(analysis.entry, analysis.stopLoss, analysis.tp1, analysis.recommendation);
+                          return r != null ? t.tpApproxRiskReward.replace("{ratio}", r.toFixed(2)) : "—";
+                        })()}
+                      </p>
                       <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-tp1">
                         {formatPrice(analysis.tp1)}
                       </p>
@@ -645,7 +677,13 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                   )}
                   {analysis.tp2 && (
                     <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
-                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP2 (1:2)</p>
+                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP2</p>
+                      <p className="text-[#6a7f72] text-[10px] sm:text-xs mt-0.5 font-normal tabular-nums">
+                        {(() => {
+                          const r = rewardRiskRatio(analysis.entry, analysis.stopLoss, analysis.tp2, analysis.recommendation);
+                          return r != null ? t.tpApproxRiskReward.replace("{ratio}", r.toFixed(2)) : "—";
+                        })()}
+                      </p>
                       <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-tp2">
                         {formatPrice(analysis.tp2)}
                       </p>
@@ -654,7 +692,13 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                   )}
                   {analysis.tp3 && (
                     <div className="bg-[#1c2620] p-2 sm:p-4 rounded-2xl text-center min-w-0">
-                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP3 (1:3)</p>
+                      <p className="text-[#9eb7a8] text-xs sm:text-sm font-normal">TP3</p>
+                      <p className="text-[#6a7f72] text-[10px] sm:text-xs mt-0.5 font-normal tabular-nums">
+                        {(() => {
+                          const r = rewardRiskRatio(analysis.entry, analysis.stopLoss, analysis.tp3, analysis.recommendation);
+                          return r != null ? t.tpApproxRiskReward.replace("{ratio}", r.toFixed(2)) : "—";
+                        })()}
+                      </p>
                       <p className="text-[#38e07b] text-xs sm:text-lg font-bold mt-1 break-all leading-tight" data-testid="text-tp3">
                         {formatPrice(analysis.tp3)}
                       </p>
@@ -665,29 +709,23 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
               </div>
             )}
 
-            {/* Risk-Reward Ratio */}
+            {/* Risk-Reward Ratio — actual math from displayed entry, stop, TP3 (not a fixed 1:3 label) */}
             <div className="bg-[#1c2620] p-4 rounded-2xl text-center">
               <p className="text-[#9eb7a8] text-sm font-normal mb-2">{t.riskRewardRatio}</p>
-              <p className="text-[#38e07b] text-2xl font-bold" data-testid="text-risk-reward">
+              <p className="text-[#9eb7a8] text-xs font-normal mb-1 opacity-90">{t.riskRewardToTp3Label}</p>
+              <p className="text-[#38e07b] text-2xl font-bold tabular-nums" data-testid="text-risk-reward">
                 {(() => {
-                  const entry = parseFloat(analysis.entry || "0");
-                  const tp3 = parseFloat(analysis.tp3 || analysis.takeProfit || "0");
-                  const stopLoss = parseFloat(analysis.stopLoss || "0");
-                  
-                  let risk, reward;
-                  if (analysis.recommendation === "BUY") {
-                    risk = entry - stopLoss;
-                    reward = tp3 - entry;
-                  } else {
-                    risk = stopLoss - entry;
-                    reward = entry - tp3;
-                  }
-                  
-                  if (risk <= 0 || reward <= 0 || isNaN(risk) || isNaN(reward)) return "N/A";
-                  
-                  const ratio = reward / risk;
-                  return `1:${ratio.toFixed(2)}`;
+                  const r = rewardRiskRatio(
+                    analysis.entry,
+                    analysis.stopLoss,
+                    analysis.tp3 || analysis.takeProfit,
+                    analysis.recommendation,
+                  );
+                  return r != null ? `1:${r.toFixed(2)}` : "N/A";
                 })()}
+              </p>
+              <p className="text-[#6a7f72] text-xs font-normal mt-3 leading-relaxed text-left whitespace-pre-line">
+                {t.riskRewardFootnote}
               </p>
             </div>
 
@@ -825,7 +863,7 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
                   <span className="material-symbols-outlined text-[#38e07b]">trending_up</span>
                   {t.trailingStopStrategy}
                 </h2>
-                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed" data-testid="text-trailing-stop">
+                <p className="text-[#9eb7a8] text-base font-normal leading-relaxed whitespace-pre-line" data-testid="text-trailing-stop">
                   {displayTrailing}
                 </p>
               </div>
@@ -842,7 +880,7 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
               </p>
               {displayExplanatory ? (
                 <p
-                  className="text-[#9eb7a8] text-sm font-normal leading-relaxed mt-4 pt-4 border-t border-white/10"
+                  className="text-[#9eb7a8] text-sm font-normal leading-relaxed mt-4 pt-4 border-t border-white/10 whitespace-pre-line"
                   data-testid="text-explanatory-notes"
                 >
                   {displayExplanatory}
