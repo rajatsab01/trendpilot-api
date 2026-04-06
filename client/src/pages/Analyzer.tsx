@@ -63,6 +63,13 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
   const [includeTakeProfit, setIncludeTakeProfit] = useState(false);
   const [includeStopLoss, setIncludeStopLoss] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [hideDegradedBanner, setHideDegradedBanner] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem("hideDegradedBanner") === "true";
+    } catch {
+      return false;
+    }
+  });
 
   const userId = localStorage.getItem("userId");
 
@@ -364,9 +371,27 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
             </h1>
           </header>
 
-          {isDegradedPlan && (
-            <div className="mx-4 mt-4 rounded-2xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-amber-100 text-sm leading-relaxed">
-              {t.degradedAnalyzerBanner}
+          {isDegradedPlan && !hideDegradedBanner && (
+            <div className="mx-4 mt-4 rounded-2xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-amber-100 text-sm leading-relaxed flex items-start gap-3">
+              <span className="material-symbols-outlined text-amber-200 mt-0.5">info</span>
+              <div className="flex-1">
+                {t.degradedAnalyzerBanner}
+              </div>
+              <button
+                type="button"
+                className="text-amber-200/80 hover:text-amber-100 transition-colors"
+                aria-label="Dismiss"
+                onClick={() => {
+                  setHideDegradedBanner(true);
+                  try {
+                    sessionStorage.setItem("hideDegradedBanner", "true");
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
           )}
 
