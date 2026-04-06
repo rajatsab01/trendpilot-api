@@ -437,6 +437,26 @@ export async function analyzeMarketWithPerplexity(
   const strictNoFallback = process.env.PERPLEXITY_STRICT_NO_FALLBACK === "true";
   const indicatorFallback = !strictNoFallback;
 
+  const tpdbg = (event: string, data: Record<string, unknown>) => {
+    try {
+      console.log(
+        "TPDBG",
+        JSON.stringify({
+          event,
+          ts: Date.now(),
+          symbol,
+          duration,
+          market,
+          indicatorFallback,
+          strictNoFallback,
+          ...data,
+        }),
+      );
+    } catch {
+      /* ignore */
+    }
+  };
+
   // #region agent log
   fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
     method: "POST",
@@ -492,6 +512,10 @@ export async function analyzeMarketWithPerplexity(
   }[duration] || "";
 
   const computedInd = computeIndicatorsFromCandles(priceData.historicalCandles);
+  tpdbg("computed_indicators", {
+    candleCount: priceData?.historicalCandles?.length ?? null,
+    computedInd: computedInd ?? null,
+  });
 
   // #region agent log
   fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -591,6 +615,7 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
   const perplexityModel = process.env.PERPLEXITY_MODEL?.trim() || "sonar-pro";
   const useSearchRecency =
     process.env.PERPLEXITY_DISABLE_SEARCH_RECENCY !== "true" && /sonar/i.test(perplexityModel);
+  tpdbg("request_config", { perplexityModel, useSearchRecency, searchRecency });
 
   // #region agent log
   fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -618,6 +643,11 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
     console.warn("📉 [Perplexity] No API key — indicator-only plan (degraded, no web AI)");
     data = buildOfflineAiPayload(symbol, market, priceData, langCode);
     degraded = true;
+    tpdbg("degraded_missing_key", {
+      recommendation: data.recommendation,
+      sentiment: data.sentiment,
+      probabilityScore: data.probabilityScore,
+    });
 
     // #region agent log
     fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -692,6 +722,11 @@ RESPONSE RULES:
         console.warn(`📉 [Perplexity] HTTP ${response.status} — indicator-only fallback`);
         data = buildOfflineAiPayload(symbol, market, priceData, langCode);
         degraded = true;
+        tpdbg("degraded_http", {
+          status: response.status,
+          recommendation: data.recommendation,
+          probabilityScore: data.probabilityScore,
+        });
 
         // #region agent log
         fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -721,6 +756,11 @@ RESPONSE RULES:
             jsonText = txt.slice(s, e + 1);
           }
           data = aiResponseSchema.parse(JSON.parse(jsonText));
+          tpdbg("live_parsed", {
+            recommendation: data.recommendation,
+            sentiment: data.sentiment,
+            probabilityScore: data.probabilityScore,
+          });
 
           // #region agent log
           fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -750,6 +790,10 @@ RESPONSE RULES:
           console.warn("📉 [Perplexity] Parse/schema failed — indicator-only fallback");
           data = buildOfflineAiPayload(symbol, market, priceData, langCode);
           degraded = true;
+          tpdbg("degraded_parse", {
+            recommendation: data.recommendation,
+            probabilityScore: data.probabilityScore,
+          });
 
           // #region agent log
           fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -777,6 +821,10 @@ RESPONSE RULES:
       console.warn("📉 [Perplexity] Network/request error — indicator-only fallback");
       data = buildOfflineAiPayload(symbol, market, priceData, langCode);
       degraded = true;
+      tpdbg("degraded_network", {
+        recommendation: data.recommendation,
+        probabilityScore: data.probabilityScore,
+      });
 
       // #region agent log
       fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
@@ -846,6 +894,15 @@ RESPONSE RULES:
     }),
   }).catch(() => {});
   // #endregion
+  tpdbg("final_after_override", {
+    degraded,
+    recommendation: data.recommendation,
+    probabilityScore: data.probabilityScore,
+    rsi: data.rsi,
+    macd: data.macd,
+    stochastic: data.stochastic,
+    bollingerBands: data.bollingerBands,
+  });
 
   // RR: enforce minimum 1:3 reward:risk to primary TP only when the model proposed weaker math.
   // If the model already targets ≥1:3, levels are left as-is so the UI shows the actual (often higher) ratio.
