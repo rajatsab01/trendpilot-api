@@ -99,6 +99,31 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
     enabled: !!analysisId,
   });
 
+  // #region agent log
+  useEffect(() => {
+    if (!analysis) return;
+    fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+      body: JSON.stringify({
+        sessionId: "4683df",
+        runId: "pre-fix",
+        hypothesisId: "H9",
+        location: "client/pages/Analyzer.tsx:analysis-loaded",
+        message: "analysis loaded in Analyzer",
+        data: {
+          analysisId,
+          symbol: analysis.symbol,
+          recommendation: analysis.recommendation,
+          probabilityScore: analysis.probabilityScore,
+          explanatoryNotesPrefix: String(analysis.explanatoryNotes || "").slice(0, 40),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [analysis, analysisId]);
+  // #endregion
+
   const saveMutation = useMutation({
     mutationFn: async (id: string) => {
       const result = await apiRequest("POST", `/api/analysis/${id}/save`, {

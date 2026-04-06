@@ -437,6 +437,22 @@ export async function analyzeMarketWithPerplexity(
   const strictNoFallback = process.env.PERPLEXITY_STRICT_NO_FALLBACK === "true";
   const indicatorFallback = !strictNoFallback;
 
+  // #region agent log
+  fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+    body: JSON.stringify({
+      sessionId: "4683df",
+      runId: "pre-fix",
+      hypothesisId: "H1",
+      location: "server/perplexity.ts:analyzeMarketWithPerplexity:entry",
+      message: "analyzeMarketWithPerplexity entry",
+      data: { symbol, duration, market, language, indicatorFallback, strictNoFallback, currency, exchange: exchange ?? null },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   const { code: langCode, name: langName } = getPromptLang(language);
   const promptLanguageName = langName || "English";
 
@@ -476,6 +492,23 @@ export async function analyzeMarketWithPerplexity(
   }[duration] || "";
 
   const computedInd = computeIndicatorsFromCandles(priceData.historicalCandles);
+
+  // #region agent log
+  fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+    body: JSON.stringify({
+      sessionId: "4683df",
+      runId: "pre-fix",
+      hypothesisId: "H2",
+      location: "server/perplexity.ts:computedInd",
+      message: "computed indicators from candles",
+      data: { symbol, computedInd: computedInd ?? null, candleCount: priceData?.historicalCandles?.length ?? null },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   const bollingerPctForModel =
     computedInd?.bollingerBands.match(/^%B ([\d.-]+)/)?.[1] ?? "";
   const indicatorBlock =
@@ -559,6 +592,22 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
   const useSearchRecency =
     process.env.PERPLEXITY_DISABLE_SEARCH_RECENCY !== "true" && /sonar/i.test(perplexityModel);
 
+  // #region agent log
+  fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+    body: JSON.stringify({
+      sessionId: "4683df",
+      runId: "pre-fix",
+      hypothesisId: "H3",
+      location: "server/perplexity.ts:request-config",
+      message: "perplexity request config",
+      data: { symbol, perplexityModel, useSearchRecency, searchRecency },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   let data: z.infer<typeof aiResponseSchema>;
   let degraded = false;
 
@@ -569,6 +618,22 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
     console.warn("📉 [Perplexity] No API key — indicator-only plan (degraded, no web AI)");
     data = buildOfflineAiPayload(symbol, market, priceData, langCode);
     degraded = true;
+
+    // #region agent log
+    fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+      body: JSON.stringify({
+        sessionId: "4683df",
+        runId: "pre-fix",
+        hypothesisId: "H4",
+        location: "server/perplexity.ts:degraded:missing-key",
+        message: "degraded fallback used: missing api key",
+        data: { symbol, recommendation: data.recommendation, sentiment: data.sentiment, probabilityScore: data.probabilityScore },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
   } else {
     try {
       const chatPayload: Record<string, unknown> = {
@@ -627,6 +692,22 @@ RESPONSE RULES:
         console.warn(`📉 [Perplexity] HTTP ${response.status} — indicator-only fallback`);
         data = buildOfflineAiPayload(symbol, market, priceData, langCode);
         degraded = true;
+
+        // #region agent log
+        fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+          body: JSON.stringify({
+            sessionId: "4683df",
+            runId: "pre-fix",
+            hypothesisId: "H5",
+            location: "server/perplexity.ts:degraded:http",
+            message: "degraded fallback used: perplexity http error",
+            data: { symbol, status: response.status, recommendation: data.recommendation, probabilityScore: data.probabilityScore },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
       } else {
         const raw = await response.json();
         try {
@@ -640,6 +721,22 @@ RESPONSE RULES:
             jsonText = txt.slice(s, e + 1);
           }
           data = aiResponseSchema.parse(JSON.parse(jsonText));
+
+          // #region agent log
+          fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+            body: JSON.stringify({
+              sessionId: "4683df",
+              runId: "pre-fix",
+              hypothesisId: "H6",
+              location: "server/perplexity.ts:parsed",
+              message: "perplexity parsed aiResponseSchema",
+              data: { symbol, recommendation: data.recommendation, sentiment: data.sentiment, probabilityScore: data.probabilityScore },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
         } catch (parseErr: any) {
           const contentSnippet = String(raw?.choices?.[0]?.message?.content ?? "").slice(0, 1500);
           console.error(
@@ -653,6 +750,22 @@ RESPONSE RULES:
           console.warn("📉 [Perplexity] Parse/schema failed — indicator-only fallback");
           data = buildOfflineAiPayload(symbol, market, priceData, langCode);
           degraded = true;
+
+          // #region agent log
+          fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+            body: JSON.stringify({
+              sessionId: "4683df",
+              runId: "pre-fix",
+              hypothesisId: "H7",
+              location: "server/perplexity.ts:degraded:parse",
+              message: "degraded fallback used: parse/schema failure",
+              data: { symbol, recommendation: data.recommendation, probabilityScore: data.probabilityScore },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
         }
       }
     } catch (err: unknown) {
@@ -664,6 +777,22 @@ RESPONSE RULES:
       console.warn("📉 [Perplexity] Network/request error — indicator-only fallback");
       data = buildOfflineAiPayload(symbol, market, priceData, langCode);
       degraded = true;
+
+      // #region agent log
+      fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+        body: JSON.stringify({
+          sessionId: "4683df",
+          runId: "pre-fix",
+          hypothesisId: "H8",
+          location: "server/perplexity.ts:degraded:network",
+          message: "degraded fallback used: network/request error",
+          data: { symbol, recommendation: data.recommendation, probabilityScore: data.probabilityScore },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
     }
   }
 
