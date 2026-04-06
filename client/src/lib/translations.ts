@@ -141,6 +141,10 @@ export const translations = {
     tpApproxRiskReward: '~1:{ratio} R:R',
     riskRewardFootnote:
       'This number uses your displayed entry, stop loss, and TP3 (not a fixed label). If the AI proposed less than 1:3, we extend targets to meet that minimum; if it proposed more, the higher ratio is kept—so you may see values above 1:3 when the plan warrants it.',
+    tradeConfidence: 'Trade Confidence',
+    signalConfidence: 'Signal confidence',
+    confidenceMeaning:
+      'This is a single confidence score for the overall BUY/SELL thesis.\nIt is not a guaranteed probability of hitting TP1/TP2/TP3.',
     tradeProbability: 'Trade Probability',
     successProbability: 'Success Probability',
     low: 'Low',

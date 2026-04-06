@@ -766,33 +766,23 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
               </p>
             </div>
 
-            {/* Probability Score Meter */}
+            {/* Probability Score Meter (signal confidence, not TP-hit probability) */}
             {analysis.probabilityScore !== null && analysis.probabilityScore !== undefined && (
               <div className="rounded-2xl bg-[#1c2620] p-6">
                 <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#38e07b]">percent</span>
-                  {t.tradeProbability}
+                  {t.tradeConfidence}
                 </h2>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-[#9eb7a8] text-base">{t.successProbability}</span>
+                    <span className="text-[#9eb7a8] text-base">{t.signalConfidence}</span>
                     <span className="text-white text-2xl font-bold" data-testid="text-probability-score">
                       {analysis.probabilityScore}%
                     </span>
                   </div>
-                  {/* Probability bar */}
-                  <div className="w-full bg-[#29382f] rounded-full h-4 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#38e07b] to-[#2ab865] rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(Math.max(analysis.probabilityScore, 0), 100)}%` }}
-                      data-testid="bar-probability"
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#9eb7a8] mt-1">
-                    <span>{t.low}</span>
-                    <span>{t.moderate}</span>
-                    <span>{t.high}</span>
-                  </div>
+                  <p className="text-[#6a7f72] text-xs leading-relaxed whitespace-pre-line">
+                    {t.confidenceMeaning}
+                  </p>
                 </div>
               </div>
             )}
