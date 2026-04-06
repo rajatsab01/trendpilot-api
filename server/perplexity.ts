@@ -822,6 +822,31 @@ RESPONSE RULES:
     if (bollingerPctForModel) data.bollingerBands = parseFloat(bollingerPctForModel);
   }
 
+  // #region agent log
+  fetch("http://127.0.0.1:7488/ingest/e93706f7-1198-47c5-b616-5c4e0f8abc3e", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4683df" },
+    body: JSON.stringify({
+      sessionId: "4683df",
+      runId: "pre-fix",
+      hypothesisId: "H10",
+      location: "server/perplexity.ts:final-data-after-indicators",
+      message: "final data after indicators override (pre-format)",
+      data: {
+        symbol,
+        degraded,
+        recommendation: data.recommendation,
+        probabilityScore: data.probabilityScore,
+        rsi: data.rsi,
+        macd: data.macd,
+        stochastic: data.stochastic,
+        bollingerBands: data.bollingerBands,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   // RR: enforce minimum 1:3 reward:risk to primary TP only when the model proposed weaker math.
   // If the model already targets ≥1:3, levels are left as-is so the UI shows the actual (often higher) ratio.
   const rr = (entry: number, tp: number, sl: number, side: "BUY" | "SELL") => {
