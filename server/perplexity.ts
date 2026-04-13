@@ -422,6 +422,11 @@ export type MarketAnalysisOutcome = {
   result: MarketAnalysisResult;
   /** True when live Perplexity was not used (API/key/parse failure). Caller must not charge tokens. */
   degraded: boolean;
+  /**
+   * Present only when `degraded === true`.
+   * Safe reason code for diagnosing live-AI failures.
+   */
+  degradedReason?: AnalysisUnavailableReason;
 };
 
 export async function analyzeMarketWithPerplexity(
@@ -635,6 +640,7 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
 
   let data: z.infer<typeof aiResponseSchema>;
   let degraded = false;
+  let degradedReason: AnalysisUnavailableReason | undefined;
 
   if (!process.env.PERPLEXITY_API_KEY?.trim()) {
     if (!indicatorFallback) {
@@ -643,6 +649,7 @@ Return strictly JSON (no markdown, no explanation). All narrative strings must b
     console.warn("📉 [Perplexity] No API key — indicator-only plan (degraded, no web AI)");
     data = buildOfflineAiPayload(symbol, market, priceData, langCode);
     degraded = true;
+    degradedReason = "MISSING_PERPLEXITY_API_KEY";
     tpdbg("degraded_missing_key", {
       recommendation: data.recommendation,
       sentiment: data.sentiment,
@@ -722,6 +729,7 @@ RESPONSE RULES:
         console.warn(`📉 [Perplexity] HTTP ${response.status} — indicator-only fallback`);
         data = buildOfflineAiPayload(symbol, market, priceData, langCode);
         degraded = true;
+        degradedReason = `PERPLEXITY_HTTP_${response.status}` as AnalysisUnavailableReason;
         tpdbg("degraded_http", {
           status: response.status,
           recommendation: data.recommendation,
@@ -790,6 +798,7 @@ RESPONSE RULES:
           console.warn("📉 [Perplexity] Parse/schema failed — indicator-only fallback");
           data = buildOfflineAiPayload(symbol, market, priceData, langCode);
           degraded = true;
+          degradedReason = "PERPLEXITY_PARSE_OR_SCHEMA";
           tpdbg("degraded_parse", {
             recommendation: data.recommendation,
             probabilityScore: data.probabilityScore,
@@ -821,6 +830,7 @@ RESPONSE RULES:
       console.warn("📉 [Perplexity] Network/request error — indicator-only fallback");
       data = buildOfflineAiPayload(symbol, market, priceData, langCode);
       degraded = true;
+      degradedReason = "PERPLEXITY_NETWORK";
       tpdbg("degraded_network", {
         recommendation: data.recommendation,
         probabilityScore: data.probabilityScore,
@@ -1000,8 +1010,10 @@ RESPONSE RULES:
     },
     trailingStopStrategy: stripAnalysisMetaPrefix(data.trailingStopStrategy),
     probabilityScore: Number(data.probabilityScore) || 0,
-    explanatoryNotes: degraded ? DEGRADED_ANALYSIS_MARKER + explanatoryBase : explanatoryBase,
+    explanatoryNotes: degraded
+      ? `${DEGRADED_ANALYSIS_MARKER}Reason: ${degradedReason ?? "UNKNOWN"}\n\n${explanatoryBase}`
+      : explanatoryBase,
   };
 
-  return { result, degraded };
+  return { result, degraded, degradedReason };
 }

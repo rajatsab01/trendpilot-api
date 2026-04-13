@@ -26,6 +26,7 @@ export default function Dashboard() {
   const wouterSearch = useSearch();
   const { t, language, setLanguage } = useLanguage();
   const { toast } = useToast();
+  const [degradedBanner, setDegradedBanner] = useState<{ reason?: string | null } | null>(null);
   const [symbol, setSymbol] = useState("");
   const [duration, setDuration] = useState("swing");
   const [market, setMarket] = useState("");
@@ -473,10 +474,20 @@ export default function Dashboard() {
         return;
       }
       if (data.degraded) {
-        toast({
-          title: t.degradedAnalysisToastTitle,
-          description: t.degradedAnalysisToastDesc,
-        });
+        // Not an error: API returns 200 with degraded=true when live Perplexity was not used (no token charge).
+        // Server sends degradedReason (e.g. PERPLEXITY_HTTP_401); older servers omit it.
+        const reason = (data as { degradedReason?: string | null }).degradedReason ?? null;
+        setDegradedBanner({ reason });
+        try {
+          sessionStorage.setItem("lastDegradedReason", reason ?? "");
+        } catch {
+          /* ignore */
+        }
+        console.info(
+          "[Analysis] Indicator-only run (no token charge). degradedReason:",
+          reason ?? "(not reported — deploy latest server or check Network → analyze response)",
+        );
+        // Keep the old toast for non-mobile users, but the main UX is now the top banner (more readable).
       }
       const qs = `?analysisId=${encodeURIComponent(id)}`;
       setLocation(`/dashboard${qs}`);
@@ -719,6 +730,44 @@ export default function Dashboard() {
         </header>
 
         <main className="flex-1 px-4 py-6 space-y-6">
+          {degradedBanner && (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-amber-200 text-sm font-semibold">
+                    {t.degradedAnalysisToastTitle}
+                  </p>
+                  <p className="text-amber-100/90 text-sm whitespace-pre-line break-words mt-1 select-text">
+                    {degradedBanner.reason
+                      ? `${t.degradedAnalysisToastDesc}\n\nReason: ${degradedBanner.reason}`
+                      : t.degradedAnalysisToastDesc}
+                  </p>
+                  {degradedBanner.reason && (
+                    <button
+                      type="button"
+                      className="mt-2 inline-flex items-center rounded-lg bg-amber-500/20 px-3 py-1.5 text-amber-100 text-xs font-semibold hover:bg-amber-500/30"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard?.writeText(degradedBanner.reason || "");
+                        } catch {}
+                      }}
+                      data-testid="button-copy-degraded-reason"
+                    >
+                      Copy reason
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="shrink-0 rounded-lg p-1 text-amber-200/80 hover:text-amber-200"
+                  onClick={() => setDegradedBanner(null)}
+                  aria-label="Dismiss"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+          )}
           <div className="space-y-4">
             {/* Currency & Exchange Preference - 50/50 split */}
             <div className="grid grid-cols-2 gap-3">

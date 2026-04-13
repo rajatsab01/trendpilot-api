@@ -124,7 +124,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ---------------------------------------------
   app.post("/api/auth/verify-phone", async (req: Request, res: Response) => {
     try {
-      const { userJsonUrl } = req.body as { userJsonUrl?: string };
+      const { userJsonUrl, user_country_code, user_phone_number, phoneNumber } = req.body as {
+        userJsonUrl?: string;
+        user_country_code?: string;
+        user_phone_number?: string;
+        phoneNumber?: string;
+      };
+
+      // Prefer direct phone data when provided (avoids relying on user.phone.email JSON fetch).
+      // Phone.Email callback commonly provides these fields.
+      const directCountry = (user_country_code || "").toString().replace(/^\+/, "").trim();
+      const directLocal = (user_phone_number || "").toString().replace(/\D/g, "").trim();
+      const directE164 = (phoneNumber || "").toString().trim();
+
+      if (directE164) {
+        const digits = directE164.replace(/\D/g, "");
+        if (digits.length < 10) return res.status(400).json({ error: "Invalid phone data" });
+        return res.json({ phoneNumber: `+${digits}`, verified: true });
+      }
+
+      if (directCountry && directLocal) {
+        if (directLocal.length < 8) return res.status(400).json({ error: "Invalid phone data" });
+        const phoneNumber = `+${directCountry}${directLocal}`;
+        return res.json({ phoneNumber, countryCode: directCountry, verified: true });
+      }
+
       if (!userJsonUrl) return res.status(400).json({ error: "User JSON URL required" });
 
       let parsedUrl: URL;
@@ -147,14 +171,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!response.ok) return res.status(400).json({ error: "Failed to verify phone number" });
 
       const data = await response.json();
-      const { user_country_code, user_phone_number } = data || {};
+      const { user_country_code: fetchedCountry, user_phone_number: fetchedLocal } = data || {};
 
-      if (!user_country_code || !user_phone_number) {
+      if (!fetchedCountry || !fetchedLocal) {
         return res.status(400).json({ error: "Invalid phone data" });
       }
 
-      const phoneNumber = `+${user_country_code}${user_phone_number}`;
-      res.json({ phoneNumber, countryCode: user_country_code, verified: true });
+      const verifiedPhoneNumber = `+${fetchedCountry}${fetchedLocal}`;
+      res.json({ phoneNumber: verifiedPhoneNumber, countryCode: fetchedCountry, verified: true });
     } catch (error: any) {
       console.error("Phone verification error:", error);
       if (error.name === 'AbortError') {
@@ -654,7 +678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       */
 
-      const { result: analysisResult, degraded } = await analyzeMarketWithPerplexity(
+      const { result: analysisResult, degraded, degradedReason } = await analyzeMarketWithPerplexity(
         symbol,
         duration,
         market,
@@ -721,6 +745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           analysisId: newAnalysis.id,
           newBalance: user.tokens,
           degraded: true,
+          degradedReason: degradedReason ?? null,
         });
       }
 

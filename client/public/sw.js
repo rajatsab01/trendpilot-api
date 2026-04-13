@@ -1,6 +1,6 @@
 // Trend Pilot Service Worker - PWA Support
 // Bump CACHE_NAME on any logic change so old cached shells are dropped.
-const CACHE_NAME = 'trend-pilot-v5';
+const CACHE_NAME = 'trend-pilot-v6';
 const urlsToCache = ['/manifest.json', '/favicon.png'];
 
 // Install service worker and cache lightweight static assets only (not HTML —

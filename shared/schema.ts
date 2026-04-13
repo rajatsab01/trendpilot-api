@@ -318,4 +318,4 @@ export const DEGRADED_ANALYSIS_MARKER = "__TRENDPILOT_DEGRADED__\n";
 // v1.2.4 - PRE-BOOT VERSION CHECK: Forces cache clear BEFORE React loads (fixes PWA update issues)
 // v1.2.5 - FIXED DASHBOARD: Added missing swing option + blocking update modal for cached users
 // v1.2.6 - Analyze: indicator fallback when Perplexity fails (no token charge) + degraded UI disclosure
-export const APP_VERSION = "1.2.6";
+export const APP_VERSION = "1.2.8";

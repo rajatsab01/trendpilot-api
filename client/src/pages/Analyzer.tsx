@@ -316,11 +316,31 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
       ? rawNotes.slice(DEGRADED_ANALYSIS_MARKER.length)
       : rawNotes;
 
+    let degradedReasonInline: string | null = null;
+    let notesBody = notesWithoutMarker;
+    if (isDegradedPlan) {
+      const firstLine = (notesWithoutMarker.split("\n")[0] || "").trim();
+      const m = firstLine.match(/^Reason:\s*(.+)\s*$/i);
+      if (m?.[1]) {
+        degradedReasonInline = m[1].trim();
+        notesBody = notesWithoutMarker.slice((notesWithoutMarker.indexOf("\n") + 1) || 0).trimStart();
+        // If we had "Reason: X\n\n...", remove the extra leading blank line.
+        notesBody = notesBody.replace(/^\n+/, "");
+      }
+    }
+    let lastDegradedReason: string | null = null;
+    try {
+      const s = sessionStorage.getItem("lastDegradedReason") || "";
+      lastDegradedReason = s.trim() ? s.trim() : null;
+    } catch {
+      /* ignore */
+    }
+
     const displayMarketSentiment = fmtNarrative(analysis.marketSentiment);
     const displayDeepAnalysis = fmtNarrative(analysis.deepAnalysis);
     const displayAiVerdict = fmtNarrative(analysis.analysis);
     const displayTrailing = fmtNarrative(analysis.trailingStopStrategy, true);
-    const displayExplanatory = fmtNarrative(notesWithoutMarker, true);
+    const displayExplanatory = fmtNarrative(notesBody, true);
 
     // Format price with correct currency symbol and decimal places
     // Forex: 4 decimals (e.g., £0.7500) - precision matters in forex
@@ -376,6 +396,11 @@ export default function Analyzer({ onExitToDashboard }: AnalyzerProps) {
               <span className="material-symbols-outlined text-amber-200 mt-0.5">info</span>
               <div className="flex-1">
                 {t.degradedAnalyzerBanner}
+                {(degradedReasonInline || lastDegradedReason) && (
+                  <div className="mt-2 text-amber-100/90 text-xs select-text break-words whitespace-pre-line">
+                    Reason: {degradedReasonInline || lastDegradedReason}
+                  </div>
+                )}
               </div>
               <button
                 type="button"

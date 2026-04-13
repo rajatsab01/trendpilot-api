@@ -10,7 +10,12 @@ import trendPilotLogo from "@assets/trendpilot-logo.png";
 
 declare global {
   interface Window {
-    phoneEmailListener: (userObj: { user_json_url: string }) => void;
+    phoneEmailListener: (userObj: {
+      user_json_url?: string;
+      user_country_code?: string;
+      user_phone_number?: string;
+      phoneNumber?: string;
+    }) => void;
   }
 }
 
@@ -31,9 +36,14 @@ export default function Login() {
   } = usePWAInstall();
 
   const verifyPhoneMutation = useMutation({
-    mutationFn: async (userJsonUrl: string) => {
+    mutationFn: async (payload: {
+      userJsonUrl?: string;
+      user_country_code?: string;
+      user_phone_number?: string;
+      phoneNumber?: string;
+    }) => {
       const result = await apiRequest("POST", "/api/auth/verify-phone", {
-        userJsonUrl,
+        ...payload,
       });
       return await result.json();
     },
@@ -113,9 +123,16 @@ export default function Login() {
     }
 
     // Define callback function
-    window.phoneEmailListener = (userObj: { user_json_url: string }) => {
+    window.phoneEmailListener = (userObj) => {
       console.log("phoneEmailListener fired:", userObj);
-      verifyPhoneMutation.mutate(userObj.user_json_url);
+      // Prefer direct phone fields if present to avoid relying on user.phone.email JSON fetch
+      // (some networks/browsers see TLS errors for that domain).
+      verifyPhoneMutation.mutate({
+        phoneNumber: userObj.phoneNumber,
+        user_country_code: userObj.user_country_code,
+        user_phone_number: userObj.user_phone_number,
+        userJsonUrl: userObj.user_json_url,
+      });
     };
 
     return () => {
